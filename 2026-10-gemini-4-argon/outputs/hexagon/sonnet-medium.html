@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Balls in a spinning hexagon</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0e1016; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { width: 960px; height: 540px; background: #151823; box-shadow: 0 0 30px #000; }
+</style>
+</head>
+<body>
+<canvas id="c" width="960" height="540"></canvas>
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const W = 960, H = 540, CX = W / 2, CY = H / 2;
+
+  const HEX_R = 255;                       // circumradius
+  const APOTHEM = HEX_R * Math.cos(Math.PI / 6);
+  const OMEGA = 0.35;                      // rad/s, hexagon spin
+  const GRAVITY = 900;                     // px/s^2
+  const BALL_R = 22;
+  const N = 12;
+  const E_WALL = 0.82;                     // wall restitution
+  const E_BALL = 0.9;                      // ball restitution
+  const MU = 0.25;                         // wall friction coefficient
+  const AIR = 0.12;                        // air drag (1/s)
+  const DT = 1 / 480;                      // fixed physics step
+
+  const colors = ['#e6194b','#f58231','#ffe119','#bfef45','#3cb44b','#42d4f4',
+                  '#4363d8','#911eb4','#f032e6','#fabed4','#aaffc3','#dcbeff'];
+
+  let rot = 0;
+  const balls = [];
+
+  // place balls without overlap, inside the hexagon
+  for (let i = 0; i < N; i++) {
+    let x, y, ok, tries = 0;
+    do {
+      const a = Math.random() * Math.PI * 2;
+      const d = Math.sqrt(Math.random()) * (APOTHEM - BALL_R - 10);
+      x = CX + Math.cos(a) * d;
+      y = CY + Math.sin(a) * d;
+      ok = balls.every(b => Math.hypot(b.x - x, b.y - y) > BALL_R * 2 + 4);
+    } while (!ok && ++tries < 1000);
+    const sp = 150 + Math.random() * 250, va = Math.random() * Math.PI * 2;
+    balls.push({
+      x, y, vx: Math.cos(va) * sp, vy: Math.sin(va) * sp,
+      ang: Math.random() * Math.PI * 2, spin: 0,
+      n: i + 1, color: colors[i]
+    });
+  }
+
+  function collideWalls(b) {
+    for (let k = 0; k < 6; k++) {
+      const a = rot + k * Math.PI / 3 + Math.PI / 6;   // outward normal of edge k
+      const nx = Math.cos(a), ny = Math.sin(a);
+      const rx = b.x - CX, ry = b.y - CY;
+      const pen = rx * nx + ry * ny + BALL_R - APOTHEM;
+      if (pen > 0) {
+        b.x -= nx * pen;
+        b.y -= ny * pen;
+        // velocity of the wall at the ball's position (rigid rotation)
+        const wx = -OMEGA * (b.y - CY), wy = OMEGA * (b.x - CX);
+        let rvx = b.vx - wx, rvy = b.vy - wy;
+        const vn = rvx * nx + rvy * ny;
+        if (vn > 0) {
+          rvx -= (1 + E_WALL) * vn * nx;
+          rvy -= (1 + E_WALL) * vn * ny;
+          // Coulomb friction along the tangent
+          const tx = -ny, ty = nx;
+          const vt = rvx * tx + rvy * ty;
+          const jf = Math.min(Math.abs(vt), MU * (1 + E_WALL) * vn);
+          const s = vt > 0 ? -1 : 1;
+          rvx += s * jf * tx;
+          rvy += s * jf * ty;
+          const vt2 = rvx * tx + rvy * ty;
+          b.spin += (-vt2 / BALL_R - b.spin) * 0.15;
+        }
+        b.vx = rvx + wx;
+        b.vy = rvy + wy;
+      }
+    }
+  }
+
+  function collideBalls() {
+    for (let i = 0; i < N; i++) {
+      for (let j = i + 1; j < N; j++) {
+        const p = balls[i], q = balls[j];
+        let dx = q.x - p.x, dy = q.y - p.y;
+        const d2 = dx * dx + dy * dy, min = BALL_R * 2;
+        if (d2 >= min * min) continue;
+        let d = Math.sqrt(d2);
+        if (d < 1e-6) { dx = 1; dy = 0; d = 1e-6; }
+        const nx = dx / d, ny = dy / d;
+        const push = (min - d) / 2;
+        p.x -= nx * push; p.y -= ny * push;
+        q.x += nx * push; q.y += ny * push;
+        const vn = (p.vx - q.vx) * nx + (p.vy - q.vy) * ny;
+        if (vn > 0) {
+          const j2 = (1 + E_BALL) * vn / 2;
+          p.vx -= j2 * nx; p.vy -= j2 * ny;
+          q.vx += j2 * nx; q.vy += j2 * ny;
+          // tangential friction transfers some spin
+          const tx = -ny, ty = nx;
+          const vt = (p.vx - q.vx) * tx + (p.vy - q.vy) * ty;
+          const f = vt * 0.02;
+          p.vx -= f * tx; p.vy -= f * ty;
+          q.vx += f * tx; q.vy += f * ty;
+          p.spin -= f / BALL_R * 2;
+          q.spin -= f / BALL_R * 2;
+        }
+      }
+    }
+  }
+
+  function step(dt) {
+    rot += OMEGA * dt;
+    const drag = Math.exp(-AIR * dt);
+    for (const b of balls) {
+      b.vy += GRAVITY * dt;
+      b.vx *= drag; b.vy *= drag;
+      b.spin *= Math.exp(-0.3 * dt);
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.ang += b.spin * dt;
+    }
+    for (let it = 0; it < 3; it++) {
+      collideBalls();
+      for (const b of balls) collideWalls(b);
+    }
+    // final guarantee: walls have the last word
+    for (const b of balls) collideWalls(b);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // hexagon
+    ctx.beginPath();
+    for (let k = 0; k < 6; k++) {
+      const a = rot + k * Math.PI / 3;
+      const x = CX + Math.cos(a) * HEX_R, y = CY + Math.sin(a) * HEX_R;
+      k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = '#1b2030';
+    ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#7fa6ff';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // balls
+    for (const b of balls) {
+      const g = ctx.createRadialGradient(b.x - 7, b.y - 8, 3, b.x, b.y, BALL_R);
+      g.addColorStop(0, '#ffffff');
+      g.addColorStop(0.25, b.color);
+      g.addColorStop(1, '#00000088');
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
+      ctx.fillStyle = b.color;
+      ctx.fill();
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#000000aa';
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.ang);
+      ctx.beginPath();
+      ctx.arc(0, 0, 11, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffffd0';
+      ctx.fill();
+      ctx.fillStyle = '#111';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(b.n, 0, 1);
+      ctx.restore();
+    }
+  }
+
+  let last = performance.now(), acc = 0;
+  function frame(now) {
+    acc += Math.min(0.05, (now - last) / 1000);
+    last = now;
+    while (acc >= DT) { step(DT); acc -= DT; }
+    draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

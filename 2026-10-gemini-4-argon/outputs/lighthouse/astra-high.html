@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stormlight</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #03080e;
+  }
+  body {
+    display: grid;
+    place-items: center;
+  }
+  canvas {
+    display: block;
+    width: min(100vw, 177.777778vh);
+    height: min(56.25vw, 100vh);
+    background: #09131e;
+  }
+</style>
+</head>
+<body>
+<canvas id="scene" width="960" height="540"
+  role="img"
+  aria-label="A lighthouse above a stormy sea. Its beam sweeps through rain as waves crash against a rocky cliff and lightning illuminates the sky.">
+</canvas>
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("scene");
+  const ctx = canvas.getContext("2d");
+  const W = 960, H = 540, TAU = Math.PI * 2, DURATION = 16;
+  const lantern = { x: 756, y: 164 };
+
+  // Every animated component shares this exact sixteen-second cycle.
+  let seed = 81629;
+  const random = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  const range = (a, b) => a + (b - a) * random();
+  const mod = (n, m) => ((n % m) + m) % m;
+  const mix = (a, b, p) => a + (b - a) * p;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  function polygon(points, fill, stroke, width = 1) {
+    ctx.beginPath();
+    points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    }
+  }
+
+  function line(points, color, width = 1) {
+    ctx.beginPath();
+    points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+  }
+
+  function glow(x, y, radius, inner, outer = "rgba(140,190,210,0)") {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
+    g.addColorStop(0, inner);
+    g.addColorStop(1, outer);
+    ctx.fillStyle = g;
+    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+
+  const clouds = Array.from({ length: 34 }, () => ({
+    x: range(-150, 1100), y: range(-50, 210),
+    rx: range(75, 205), ry: range(22, 68),
+    phase: range(0, TAU), alpha: range(.035, .12)
+  }));
+
+  const rain = Array.from({ length: 680 }, () => ({
+    x: random(), phase: random(),
+    cycles: Math.floor(range(12, 24)),
+    length: range(9, 28), alpha: range(.055, .28),
+    width: range(.45, 1.15)
+  }));
+
+  const seaMarks = Array.from({ length: 115 }, () => ({
+    x: range(-40, 1020), y: range(305, 540),
+    width: range(9, 85), phase: range(0, TAU),
+    alpha: range(.05, .22), speed: Math.floor(range(2, 6))
+  }));
+
+  const spray = Array.from({ length: 145 }, () => ({
+    delay: range(0, .38), speed: range(55, 160),
+    angle: range(-2.8, -1.15), size: range(.7, 2.2),
+    drift: range(-28, 20)
+  }));
+
+  const cliffOutline = [
+    [565,540], [582,493], [603,459], [613,416], [649,389],
+    [673,364], [710,354], [731,343], [792,343], [823,332],
+    [857,340], [895,329], [934,346], [960,341], [960,540]
+  ];
+
+  const rockFacets = [
+    { p:[[673,364],[710,354],[699,408],[658,456],[613,416]], c:"#25353c" },
+    { p:[[710,354],[731,343],[758,348],[729,420],[699,408]], c:"#344047" },
+    { p:[[758,348],[792,343],[802,398],[754,438],[729,420]], c:"#1b2932" },
+    { p:[[792,343],[823,332],[857,340],[839,415],[802,398]], c:"#2a3940" },
+    { p:[[857,340],[895,329],[884,400],[839,415]], c:"#172631" },
+    { p:[[895,329],[934,346],[960,341],[960,418],[916,403],[884,400]], c:"#304047" },
+    { p:[[613,416],[658,456],[627,495],[582,493],[603,459]], c:"#182b34" },
+    { p:[[699,408],[729,420],[708,488],[659,540],[627,495],[658,456]], c:"#111f29" },
+    { p:[[729,420],[754,438],[779,500],[751,540],[708,488]], c:"#27353c" },
+    { p:[[754,438],[802,398],[839,415],[820,489],[779,500]], c:"#111e27" },
+    { p:[[839,415],[884,400],[906,464],[874,540],[820,489]], c:"#24343c" },
+    { p:[[916,403],[960,418],[960,540],[909,540],[906,464],[884,400]], c:"#14232d" }
+  ];
+
+  function lightningStrength(t) {
+    const p = mod(t - 2.5, 4);
+    return Math.exp(-Math.pow(p / .055, 2))
+      + .64 * Math.exp(-Math.pow((p - .15) / .045, 2))
+      + .23 * Math.exp(-Math.pow((p - .31) / .11, 2));
+  }
+
+  function drawSky(t, phase, flash) {
+    const sky = ctx.createLinearGradient(0, 0, 0, 340);
+    sky.addColorStop(0, "#070e19");
+    sky.addColorStop(.62, "#182938");
+    sky.addColorStop(1, "#3a505c");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, 350);
+
+    glow(302, 139, 240, "rgba(105,137,155,.09)");
+
+    for (const c of clouds) {
+      const x = c.x + 24 * Math.sin(phase + c.phase);
+      const y = c.y + 7 * Math.cos(phase + c.phase);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(c.rx, c.ry);
+      const g = ctx.createRadialGradient(0, 0, .1, 0, 0, 1);
+      g.addColorStop(0, `rgba(0,5,13,${c.alpha * 3})`);
+      g.addColorStop(1, "rgba(0,5,13,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(-1, -1, 2, 2);
+      ctx.restore();
+    }
+
+    if (flash > .008) {
+      ctx.fillStyle = `rgba(166,194,222,${flash * .43})`;
+      ctx.fillRect(0, 0, W, 340);
+
+      const event = Math.floor(mod(t - 2.5, DURATION) / 4);
+      const x = [283, 411, 214, 352][event];
+      const bolt = [
+        [x,45],[x-17,78],[x+7,103],[x-20,134],[x-9,143],
+        [x-45,183],[x-27,178],[x-62,230],[x-74,266]
+      ];
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, flash * 1.4);
+      ctx.shadowColor = "#cbe6ff";
+      ctx.shadowBlur = 22;
+      line(bolt, "#badcf5", 3);
+      line(bolt, "#effaff", 1.15);
+      line([[x-20,134],[x+22,153],[x+28,175],[x+58,202]],
+        "#c5e4fa", 1);
+      line([[x-45,183],[x-77,189],[x-96,215]],
+        "#b3d8ee", .8);
+      ctx.restore();
+    }
+
+    // Distant headlands dissolve into the horizon.
+    polygon([[0,293],[44,283],[71,289],[120,273],[157,279],
+      [204,298],[285,308],[0,317]], "#243943");
+    polygon([[960,279],[900,286],[862,276],[817,294],
+      [791,312],[960,315]], "#283c46");
+  }
+
+  function drawSea(t, phase, flash) {
+    const water = ctx.createLinearGradient(0, 297, 0, H);
+    water.addColorStop(0, "#304854");
+    water.addColorStop(.27, "#172f3c");
+    water.addColorStop(1, "#071923");
+    ctx.fillStyle = water;
+    ctx.fillRect(0, 305, W, H - 305);
+
+    for (let row = 0; row < 17; row++) {
+      const y = 310 + Math.pow(row / 16, 1.65) * 240;
+      const amplitude = 1.5 + row * .8;
+      ctx.beginPath();
+      for (let x = -10; x <= W + 10; x += 7) {
+        const yy = y
+          + Math.sin(x * .018 + phase * 3 + row * .83) * amplitude
+          + Math.sin(x * .041 - phase * 2 + row * 2) * amplitude * .35;
+        x === -10 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy);
+      }
+      ctx.strokeStyle = `rgba(126,169,184,${.07 + row * .006 + flash * .09})`;
+      ctx.lineWidth = .8 + row * .075;
+      ctx.stroke();
+    }
+
+    for (const s of seaMarks) {
+      const a = phase * s.speed + s.phase;
+      const x = s.x + Math.sin(a) * 18;
+      const y = s.y + Math.cos(a) * 3;
+      const opacity = s.alpha * (.5 + .5 * Math.sin(a));
+      line([[x,y],[x+s.width*.4,y-1.7],[x+s.width,y]],
+        `rgba(136,178,188,${opacity})`, 1);
+    }
+
+    if (flash > .01) {
+      const reflection = ctx.createLinearGradient(0, 305, 0, 540);
+      reflection.addColorStop(0, `rgba(172,207,229,${flash*.2})`);
+      reflection.addColorStop(1, "rgba(172,207,229,0)");
+      ctx.fillStyle = reflection;
+      ctx.fillRect(0, 305, W, 235);
+    }
+  }
+
+  function drawBeam(phase) {
+    const angle = Math.PI + .1 + .24 * Math.sin(phase);
+    const spread = .085 + .02 * Math.cos(phase);
+    const reach = 1120;
+
+    ctx.save();
+    ctx.translate(lantern.x, lantern.y);
+    ctx.rotate(angle);
+    ctx.globalCompositeOperation = "screen";
+
+    for (let layer = 5; layer >= 1; layer--) {
+      const width = spread * (1 + layer * .13);
+      const g = ctx.createLinearGradient(0, 0, reach, 0);
+      g.addColorStop(0, "rgba(255,231,175,.07)");
+      g.addColorStop(.2, "rgba(232,224,190,.033)");
+      g.addColorStop(.72, "rgba(189,208,206,.012)");
+      g.addColorStop(1, "rgba(189,208,206,0)");
+      polygon([[0,-2],[reach,-reach*width],[reach,reach*width],[0,2]], g);
+    }
+
+    const core = ctx.createLinearGradient(0, 0, reach, 0);
+    core.addColorStop(0, "rgba(255,235,185,.23)");
+    core.addColorStop(.15, "rgba(238,229,191,.13)");
+    core.addColorStop(.7, "rgba(207,222,212,.035)");
+    core.addColorStop(1, "rgba(207,222,212,0)");
+    polygon([[0,-2],[reach,-reach*spread],[reach,reach*spread],[0,2]], core);
+    ctx.restore();
+
+    glow(lantern.x, lantern.y, 48, "rgba(255,216,139,.17)");
+  }
+
+  function drawCliff(flash) {
+    polygon(cliffOutline, "#14242d");
+    for (const f of rockFacets) polygon(f.p, f.c);
+
+    line([[611,417],[651,389],[676,367],[710,357],[733,346],
+      [792,347],[824,336],[856,344],[895,333],[935,350],[960,345]],
+      "#52615f", 3);
+
+    const cracks = [
+      [[710,359],[699,385],[704,401],[682,433]],
+      [[754,357],[744,392],[754,414],[742,452]],
+      [[821,347],[814,377],[827,390]],
+      [[884,351],[872,388],[880,422],[859,446]],
+      [[640,429],[654,449],[645,479]],
+      [[793,457],[782,488],[795,521]],
+      [[921,431],[909,463],[921,492]]
+    ];
+    cracks.forEach(p => line(p, "rgba(4,12,19,.65)", 2));
+
+    polygon([[673,364],[710,351],[733,340],[790,339],[823,329],
+      [856,337],[896,326],[935,342],[960,337],[960,348],
+      [936,352],[895,338],[855,349],[824,341],[793,352],[734,353],[707,361]],
+      "#263934");
+
+    if (flash > .01) {
+      ctx.save();
+      polygon(cliffOutline);
+      ctx.clip();
+      ctx.fillStyle = `rgba(166,194,214,${flash*.15})`;
+      ctx.fillRect(560, 320, 400, 220);
+      ctx.restore();
+    }
+
+    // Small outlying rocks at the waterline.
+    polygon([[468,513],[479,494],[507,480],[525,487],[541,511]], "#101f29");
+    polygon([[479,494],[507,480],[518,488],[492,500]], "#32434a");
+    polygon([[538,540],[543,519],[563,509],[585,531],[590,540]], "#101e27");
+  }
+
+  function drawLighthouse(phase, flash) {
+    // Keeper's cottage.
+    polygon([[789,311],[835,309],[851,324],[851,345],[789,345]], "#465052");
+    polygon([[780,314],[812,295],[843,299],[861,316]], "#14242c", "#607074", 1);
+    polygon([[812,295],[843,299],[861,316],[831,312]], "#29353b");
+    ctx.fillStyle = "#293239";
+    ctx.fillRect(840, 287, 8, 18);
+    ctx.fillStyle = "#d3a35d";
+    ctx.fillRect(803, 322, 8, 10);
+    glow(807, 327, 18, "rgba(233,177,88,.1)");
+    ctx.fillStyle = "#15232b";
+    ctx.fillRect(827, 324, 10, 21);
+
+    // Tapered masonry tower.
+    const wall = ctx.createLinearGradient(727, 0, 783, 0);
+    wall.addColorStop(0, "#9aaba8");
+    wall.addColorStop(.26, "#c0c7b9");
+    wall.addColorStop(.57, "#7e908f");
+    wall.addColorStop(1, "#35494f");
+    polygon([[741,188],[771,188],[785,347],[727,347]], wall, "#263c44", 1);
+
+    ctx.save();
+    polygon([[741,188],[771,188],[785,347],[727,347]]);
+    ctx.clip();
+
+    polygon([[732,267],[779,267],[782,298],[729,298]], "#623b3b");
+    polygon([[732,267],[744,267],[742,298],[729,298]], "#986259");
+    polygon([[765,267],[779,267],[782,298],[767,298]], "#3e3034");
+
+    for (let y = 207; y < 347; y += 16)
+      line([[725,y],[786,y]], "rgba(24,43,48,.12)", .65);
+
+    if (flash > .01) {
+      ctx.fillStyle = `rgba(217,231,239,${flash*.25})`;
+      ctx.fillRect(725, 188, 62, 159);
+    }
+    ctx.restore();
+
+    // Narrow windows and entrance.
+    ctx.fillStyle = "#1b303a";
+    ctx.fillRect(752, 215, 7, 13);
+    ctx.fillRect(751, 250, 7, 11);
+    ctx.fillStyle = "#d9b66e";
+    ctx.fillRect(753, 217, 3, 9);
+    ctx.fillStyle = "#12232c";
+    ctx.beginPath();
+    ctx.roundRect(749, 323, 13, 24, [6,6,0,0]);
+    ctx.fill();
+    line([[751,346],[751,330]], "#8f9b93", 1);
+
+    polygon([[725,345],[787,345],[790,351],[723,351]], "#536260");
+
+    // Lantern platform and ironwork.
+    polygon([[732,185],[780,185],[777,194],[736,194]], "#283c43");
+    ctx.fillStyle = "#152731";
+    ctx.fillRect(728, 180, 56, 5);
+    line([[729,171],[783,171]], "#8b9a97", 1.1);
+    for (let x = 731; x <= 783; x += 9)
+      line([[x,170],[x,182]], "#52686c", 1);
+
+    const glass = ctx.createLinearGradient(742, 0, 771, 0);
+    glass.addColorStop(0, "#8a987d");
+    glass.addColorStop(.46, "#f8dc91");
+    glass.addColorStop(.7, "#c4ba85");
+    glass.addColorStop(1, "#566e69");
+    ctx.fillStyle = glass;
+    ctx.fillRect(741, 151, 30, 27);
+
+    glow(756, 164, 17, "rgba(255,226,150,.65)");
+    ctx.fillStyle = "#fff2bd";
+    ctx.fillRect(751, 159, 10, 10);
+
+    for (const x of [741, 748, 764, 771])
+      line([[x,151],[x,178]], "#253943", 2);
+    line([[740,154],[772,154]], "#506362", 1.5);
+    line([[740,176],[772,176]], "#233943", 3);
+
+    polygon([[735,151],[742,144],[750,139],[761,139],[770,144],[778,151]],
+      "#172b34", "#617577", 1);
+    line([[756,139],[756,128]], "#6a7a7b", 1.5);
+    glow(756, 164, 6, "rgba(255,242,185,.8)");
+
+    // Sparse wind-bent grass along the cliff top.
+    for (let i = 0; i < 33; i++) {
+      const x = 858 + i * 3.2;
+      const y = 341 + Math.sin(i * .8) * 3;
+      const sway = Math.sin(phase * 4 + i * .45) * 2;
+      line([[x,y],[x-4+sway,y-7-(i%4)]], "#152c2c", 1);
+    }
+  }
+
+  function drawBreakers(t, phase) {
+    for (let n = 0; n < 4; n++) {
+      const p = mod(t / 4 + n * .25, 1);
+      const x = mix(205, 609, p);
+      const y = mix(486, 449, p);
+      const fade = Math.sin(Math.PI * p);
+      const crest = 9 + 15 * p;
+
+      ctx.beginPath();
+      ctx.moveTo(x - 175, y + 22);
+      ctx.bezierCurveTo(x - 98, y + 27, x - 43, y - crest, x, y);
+      ctx.bezierCurveTo(x + 23, y + 5, x + 15, y + 17, x + 58, y + 19);
+      ctx.lineTo(x + 62, y + 39);
+      ctx.lineTo(x - 175, y + 39);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(34,72,85,${fade*.7})`;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(x - 164, y + 21);
+      ctx.bezierCurveTo(x - 85, y + 23, x - 44, y - crest, x, y);
+      ctx.bezierCurveTo(x + 15, y + 3, x + 9, y + 12, x + 27, y + 15);
+      ctx.strokeStyle = `rgba(180,208,208,${fade*.58})`;
+      ctx.lineWidth = 1.5 + p * 2;
+      ctx.stroke();
+    }
+
+    // Repeating impacts: droplets fade completely before their reset.
+    for (let impact = 0; impact < 2; impact++) {
+      const age = mod(t + impact * 1.9, 4);
+      const ox = impact ? 579 : 611;
+      const oy = impact ? 499 : 454;
+
+      for (const s of spray) {
+        const a = age - s.delay;
+        if (a < 0 || a > 1.7) continue;
+        const visibility = Math.sin(Math.PI * a / 1.7);
+        const vx = Math.cos(s.angle) * s.speed;
+        const vy = Math.sin(s.angle) * s.speed;
+        const x = ox + vx * a - 23 * a * a + s.drift;
+        const y = oy + vy * a + 83 * a * a;
+        if (y > oy + 25) continue;
+
+        ctx.fillStyle = `rgba(191,219,222,${visibility*.58})`;
+        ctx.beginPath();
+        ctx.ellipse(x, y, s.size, s.size * .62, -.4, 0, TAU);
+        ctx.fill();
+      }
+
+      const surge = Math.pow(Math.max(0, Math.sin(age / 4 * Math.PI)), 3);
+      ctx.save();
+      ctx.translate(ox - 12, oy + 4);
+      ctx.scale(1, .23);
+      glow(0, 0, 74 + surge * 22, `rgba(177,213,218,${.08+surge*.16})`);
+      ctx.restore();
+    }
+
+    for (let i = 0; i < 8; i++) {
+      const x = 460 + i * 16;
+      const y = 523 - i * 5 + Math.sin(phase * 4 + i) * 3;
+      ctx.beginPath();
+      ctx.ellipse(x, y, 24 + i * 2, 3.2, -.22, Math.PI * .05, Math.PI);
+      ctx.strokeStyle = `rgba(169,207,212,${.14+.1*Math.sin(phase*4+i)})`;
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+    }
+  }
+
+  function drawRain(t, flash) {
+    ctx.save();
+    ctx.lineCap = "round";
+    for (const r of rain) {
+      const p = mod(t / DURATION * r.cycles + r.phase, 1);
+      const y = p * (H + 80) - 40;
+      const x = mod(r.x * (W + 320) - p * 240, W + 320) - 160;
+      line([[x,y],[x-r.length*.43,y+r.length]],
+        `rgba(174,204,218,${r.alpha + flash*.13})`, r.width);
+    }
+    ctx.restore();
+  }
+
+  const start = performance.now();
+  function render(now) {
+    const t = mod((now - start) / 1000, DURATION);
+    const phase = t / DURATION * TAU;
+    const flash = lightningStrength(t);
+
+    ctx.clearRect(0, 0, W, H);
+    drawSky(t, phase, flash);
+    drawSea(t, phase, flash);
+    drawBeam(phase);
+    drawCliff(flash);
+    drawLighthouse(phase, flash);
+    drawBreakers(t, phase);
+    drawRain(t, flash);
+
+    const vignette = ctx.createRadialGradient(490, 260, 160, 480, 270, 575);
+    vignette.addColorStop(0, "rgba(0,5,12,0)");
+    vignette.addColorStop(1, "rgba(0,5,12,.52)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, W, H);
+
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+})();
+</script>
+</body>
+</html>

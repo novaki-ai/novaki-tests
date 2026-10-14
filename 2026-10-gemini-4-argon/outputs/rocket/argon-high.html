@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Night Rocket Launch — 10s Loop</title>
+<style>
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #02040a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    user-select: none;
+  }
+
+  #viewport {
+    position: relative;
+    width: 960px;
+    height: 540px;
+    background: #050915;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  canvas {
+    display: block;
+    width: 960px;
+    height: 540px;
+  }
+
+  /* Big Countdown Overlay */
+  #hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #countdown-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 240px;
+    height: 240px;
+    transform: translateY(-36px);
+    opacity: 0;
+  }
+
+  #countdown-number {
+    font-size: 138px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: #ffffff;
+    text-shadow:
+      0 0 24px rgba(120, 210, 255, 0.85),
+      0 0 60px rgba(60, 150, 255, 0.45),
+      0 6px 20px rgba(0, 0, 0, 0.85);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #telemetry {
+    position: absolute;
+    top: 20px;
+    left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: rgba(180, 220, 255, 0.78);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  }
+
+  #telemetry .mission-clock {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.08em;
+  }
+
+  #telemetry .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  #telemetry .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #38ef7d;
+    box-shadow: 0 0 8px #38ef7d;
+  }
+</style>
+</head>
+<body>
+  <div id="viewport">
+    <canvas id="scene" width="960" height="540"></canvas>
+    <div id="hud">
+      <div id="telemetry">
+        <div class="mission-clock" id="clock-text">T- 00:03.0</div>
+        <div class="status-pill">
+          <span class="dot" id="status-dot"></span>
+          <span id="status-text">PAD 39A // GO FOR LAUNCH</span>
+        </div>
+      </div>
+      <div id="countdown-wrap">
+        <div id="countdown-number">3</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const W = 960;
+  const H = 540;
+  const LOOP_SECONDS = 10.0;
+
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+
+  const countdownWrap = document.getElementById('countdown-wrap');
+  const countdownNumber = document.getElementById('countdown-number');
+  const clockText = document.getElementById('clock-text');
+  const statusText = document.getElementById('status-text');
+  const statusDot = document.getElementById('status-dot');
+
+  // Timeline constants (10.0 second loop)
+  // 0.0 - 0.8s : Night pad ambiance, searchlights, cryo venting
+  // 0.8 - 1.8s : Big Countdown "3"
+  // 1.8 - 2.8s : Big Countdown "2" (umbilical arm begins retracting)
+  // 2.8 - 3.8s : Big Countdown "1" (igniter sparks shoot beneath nozzle)
+  // 3.8 - 5.0s : Engine IGNITION, flames & billowing smoke build up on pad
+  // 5.0 - 8.7s : LIFTOFF! Rocket accelerates upward & leaves top of frame
+  // 8.7 - 10.0s: Smoke drifts, upper stage star flash, fade transition & reset
+  const T_COUNT_3 = 0.8;
+  const T_COUNT_2 = 1.8;
+  const T_COUNT_1 = 2.8;
+  const T_IGNITION = 3.8;
+  const T_LIFTOFF  = 5.0;
+  const T_FADE_OUT = 9.25;
+
+  const PAD_X = W * 0.5;
+  const PAD_Y = 436; // Top surface of concrete launch mount
+
+  // Deterministic pseudo-random helper for scenery
+  let seed = 42;
+  function sRand() {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  }
+
+  // Generate stars
+  const stars = [];
+  for (let i = 0; i < 210; i++) {
+    const yBias = Math.pow(sRand(), 1.35);
+    stars.push({
+      x: sRand() * W,
+      y: yBias * (PAD_Y - 25),
+      r: 0.4 + Math.pow(sRand(), 2.4) * 1.7,
+      baseAlpha: 0.25 + sRand() * 0.75,
+      twinkleSpeed: 1.5 + sRand() * 4.5,
+      twinklePhase: sRand() * Math.PI * 2,
+      hue: sRand() < 0.25 ? 210 : (sRand() < 0.5 ? 42 : 225),
+      sat: sRand() < 0.4 ? 65 : 15
+    });
+  }
+
+  // Generate distant mountain ridges
+  function makeRidge(baseY, amp1, amp2, freq1, freq2, phase) {
+    const pts = [];
+    for (let x = 0; x <= W; x += 12) {
+      const y = baseY
+        - Math.sin(x * freq1 + phase) * amp1
+        - Math.cos(x * freq2 + phase * 1.7) * amp2
+        - Math.sin(x * 0.035 + phase * 0.4) * (amp2 * 0.4);
+      pts.push({ x, y });
+    }
+    return pts;
+  }
+  const farMountains = makeRidge(416, 26, 12, 0.0055, 0.014, 1.1);
+  const nearHills    = makeRidge(432, 14, 7,  0.008,  0.021, 3.6);
+
+  // Distant coastline / city lights
+  const distantLights = [];
+  for (let i = 0; i < 42; i++) {
+    const lx = 40 + sRand() * (W - 80);
+    if (Math.abs(lx - PAD_X) < 150) continue;
+    distantLights.push({
+      x: lx,
+      y: 432 + sRand() * 5,
+      color: sRand() < 0.65 ? '#ffcf70' : '#7ce0ff',
+      alpha: 0.3 + sRand() * 0.5
+    });
+  }
+
+  // Particle pools
+  let smokeParticles = [];
+  let sparkParticles = [];
+  let ventParticles = [];
+  let iceParticles = [];
+  let lastLoopTime = -1;
+
+  function resetSimulation() {
+    smokeParticles.length = 0;
+    sparkParticles.length = 0;
+    ventParticles.length = 0;
+    iceParticles.length = 0;
+    // Pre-populate some gentle cryo vent mist so t=0 already feels alive
+    for (let i = 0; i < 18; i++) {
+      ventParticles.push({
+        x: PAD_X + 7 + Math.random() * 14,
+        y: PAD_Y - 75 - Math.random() * 45,
+        vx: 14 + Math.random() * 16,
+        vy: -4 + Math.random() * 8,
+        r: 4 + Math.random() * 8,
+        age: Math.random() * 1.2,
+        life: 1.2 + Math.random() * 0.8
+      });
+    }
+  }
+
+  function clamp(v, min, max) {
+    return v < min ? min : (v > max ? max : v);
+  }
+
+  function lerp(a, b, t) {
+    return a + (b - a) * clamp(t, 0, 1);
+  }
+
+  function smoothstep(edge0, edge1, x) {
+    const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+
+  // Rocket kinematics: returns { y, vy, accel, pitchShake }
+  function getRocketState(t) {
+    if (t <= T_LIFTOFF) {
+      return { y: PAD_Y, altitude: 0, vy: 0, throttle: t >= T_IGNITION ? smoothstep(T_IGNITION, T_IGNITION + 0.55, t) : 0 };
+    }
+    const dt = t - T_LIFTOFF;
+    // Realistic slow initial liftoff followed by strong cubic acceleration
+    const altitude = 9.5 * dt * dt + 22.0 * dt * dt * dt + 4.8 * Math.pow(dt, 4.15);
+    const vy = 19.0 * dt + 66.0 * dt * dt + 19.9 * Math.pow(dt, 3.15);
+    return {
+      y: PAD_Y - altitude,
+      altitude,
+      vy,
+      throttle: 1.0
+    };
+  }
+
+  // Spawn particles based on current time t and frame delta dt
+  function updateParticles(t, dt, rocket) {
+    // 1. Cryo venting mist before liftoff + early liftoff
+    if (t < T_LIFTOFF + 0.8) {
+      const ventRate = t < T_IGNITION ? 25 : 40;
+      const count = Math.floor(ventRate * dt + (Math.random() < (ventRate * dt) % 1 ? 1 : 0));
+      for (let i = 0; i < count; i++) {
+        const ventY = rocket.y - (72 + (Math.random() < 0.5 ? 0 : 28));
+        ventParticles.push({
+          x: PAD_X + 7,
+          y: ventY + (Math.random() - 0.5) * 6,
+          vx: 18 + Math.random() * 22,
+          vy: -6 + Math.random() * 14,
+          r: 2.5 + Math.random() * 3.5,
+          age: 0,
+          life: 0.9 + Math.random() * 0.7
+        });
+      }
+    }
+
+    for (let i = ventParticles.length - 1; i >= 0; i--) {
+      const p = ventParticles[i];
+      p.age += dt;
+      if (p.age >= p.life) {
+        ventParticles.splice(i, 1);
+        continue;
+      }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 4 * dt;
+      p.r += 9 * dt;
+    }
+
+    // 2. Pre-ignition ROFI sparks (t = 3.1s to 4.3s) & engine embers (t >= 3.8s)
+    if (t >= 3.1 && t < 8.4) {
+      const isRofi = t < T_IGNITION;
+      const rate = isRofi ? 95 : (rocket.y > -80 ? 110 : 0);
+      const count = Math.floor(rate * dt + (Math.random() < (rate * dt) % 1 ? 1 : 0));
+      for (let i = 0; i < count; i++) {
+        const dir = Math.random() < 0.5 ? -1 : 1;
+        const speed = isRofi ? (55 + Math.random() * 95) : (70 + Math.random() * 160);
+        const angle = isRofi
+          ? (Math.PI * 0.5 + dir * (0.35 + Math.random() * 0.55))
+          : (Math.PI * 0.5 + (Math.random() - 0.5) * 0.65);
+
+        let sx = PAD_X + (Math.random() - 0.5) * 10;
+        let sy = rocket.y + 4;
+        let vx = Math.cos(angle) * speed;
+        let vy = Math.sin(angle) * speed;
+
+        // Deflect off flame trench if rocket is near pad
+        if (sy + 18 >= PAD_Y) {
+          vx = dir * (80 + Math.random() * 160);
+          vy = -15 - Math.random() * 65;
+          sy = PAD_Y - 2;
+        }
+
+        sparkParticles.push({
+          x: sx,
+          y: sy,
+          vx,
+          vy,
+          age: 0,
+          life: 0.25 + Math.random() * 0.45,
+          size: 1.2 + Math.random() * 1.8,
+          hue: 28 + Math.random() * 28
+        });
+      }
+    }
+
+    for (let i = sparkParticles.length - 1; i >= 0; i--) {
+      const p = sparkParticles[i];
+      p.age += dt;
+      if (p.age >= p.life) {
+        sparkParticles.splice(i, 1);
+        continue;
+      }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 180 * dt; // gravity
+      if (p.y > PAD_Y + 6) {
+        p.y = PAD_Y + 6;
+        p.vy *= -0.45;
+        p.vx *= 0.8;
+      }
+    }
+
+    // 3. Shedding frost/ice flakes during ignition and early liftoff
+    if (t >= T_IGNITION && t < T_LIFTOFF + 2.2) {
+      const iceRate = 28;
+      const count = Math.floor(iceRate * dt + (Math.random() < (iceRate * dt) % 1 ? 1 : 0));
+      for (let i = 0; i < count; i++) {
+        iceParticles.push({
+          x: PAD_X + (Math.random() - 0.5) * 16,
+          y: rocket.y - 30 - Math.random() * 70,
+          vx: (Math.random() - 0.5) * 26,
+          vy: 15 + Math.random() * 35,
+          age: 0,
+          life: 0.6 + Math.random() * 0.6,
+          size: 1.3 + Math.random() * 1.5
+        });
+      }
+    }
+
+    for (let i = iceParticles.length - 1; i >= 0; i--) {
+      const p = iceParticles[i];
+      p.age += dt;
+      if (p.age >= p.life) {
+        iceParticles.splice(i, 1);
+        continue;
+      }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 110 * dt;
+    }
+
+    // 4. Billowing smoke & steam clouds
+    if (t >= T_IGNITION && rocket.y > -200) {
+      const throttle = rocket.throttle;
+      const alt = rocket.altitude;
+
+      // A. Ground / Trench deflected billowing clouds (when rocket is close to pad)
+      const trenchFactor = clamp(1 - alt / 210, 0, 1) * throttle;
+      if (trenchFactor > 0.02) {
+        const trenchRate = 115 * trenchFactor;
+        const count = Math.floor(trenchRate * dt + (Math.random() < (trenchRate * dt) % 1 ? 1 : 0));
+        for (let i = 0; i < count; i++) {
+          const side = Math.random() < 0.5 ? -1 : 1;
+          const speed = 45 + Math.random() * 135 * trenchFactor;
+          smokeParticles.push({
+            x: PAD_X + side * (8 + Math.random() * 18),
+            y: PAD_Y - 2 + (Math.random() - 0.5) * 8,
+            vx: side * speed,
+            vy: -4 - Math.random() * 18,
+            r: 9 + Math.random() * 12,
+            grow: 22 + Math.random() * 26,
+            age: 0,
+            life: 2.4 + Math.random() * 2.2,
+            heat: 0.85 * trenchFactor + Math.random() * 0.25,
+            turbulence: (Math.random() - 0.5) * 2.5,
+            isPlume: false
+          });
+        }
+      }
+
+      // B. Rising rocket exhaust smoke column
+      const plumeRate = 95 * throttle;
+      const pCount = Math.floor(plumeRate * dt + (Math.random() < (plumeRate * dt) % 1 ? 1 : 0));
+      for (let i = 0; i < pCount; i++) {
+        const frac = Math.random(); // interpolate along frame motion to avoid gaps at high speed
+        const spawnY = rocket.y + 18 + frac * Math.min(rocket.vy * dt, 36);
+        const clampedY = Math.min(spawnY, PAD_Y - 1);
+        const nearGround = clampedY >= PAD_Y - 18;
+        const side = Math.random() < 0.5 ? -1 : 1;
+
+        smokeParticles.push({
+          x: PAD_X + (Math.random() - 0.5) * (nearGround ? 18 : 8),
+          y: clampedY,
+          vx: nearGround ? side * (35 + Math.random() * 85) : (Math.random() - 0.5) * 28,
+          vy: nearGround ? (-8 - Math.random() * 22) : (35 + Math.random() * 45),
+          r: (nearGround ? 10 : 6) + Math.random() * 7,
+          grow: nearGround ? (26 + Math.random() * 20) : (14 + Math.random() * 16),
+          age: 0,
+          life: (nearGround ? 2.6 : 1.9) + Math.random() * 1.8,
+          heat: 1.0,
+          turbulence: (Math.random() - 0.5) * 2.0,
+          isPlume: !nearGround
+        });
+      }
+    }
+
+    // Update smoke physics
+    for (let i = smokeParticles.length - 1; i >= 0; i--) {
+      const p = smokeParticles[i];
+      p.age += dt;
+      if (p.age >= p.life) {
+        smokeParticles.splice(i, 1);
+        continue;
+      }
+
+      // Drag slows down horizontal rush and curls smoke upward (buoyancy)
+      const drag = p.isPlume ? 0.94 : 0.965;
+      p.vx *= Math.pow(drag, dt * 60);
+      p.vy *= Math.pow(0.96, dt * 60);
+
+      // Buoyant upward curl as smoke expands
+      p.vy -= (p.isPlume ? 18 : 26) * dt;
+      p.vx += Math.sin(p.age * 3.5 + p.turbulence) * 14 * dt;
+
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+
+      if (p.y > PAD_Y + 4) {
+        p.y = PAD_Y + 4;
+        p.vy = -Math.abs(p.vy) * 0.35 - 6;
+      }
+
+      p.r += p.grow * dt * (1 - 0.45 * (p.age / p.life));
+      p.heat = Math.max(0, p.heat - dt * (p.isPlume ? 1.65 : 1.15));
+    }
+  }
+
+  function drawSkyAndStars(t, rocket) {
+    // Calculate sky illumination from rocket exhaust
+    const engineOn = t >= T_IGNITION && rocket.y > -220;
+    const altAtten = clamp(1 - rocket.altitude / 520, 0, 1);
+    const padGlow = engineOn ? rocket.throttle * (0.35 + 0.65 * altAtten) : 0;
+
+    // Sky background gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, PAD_Y);
+    skyGrad.addColorStop(0.0, '#030611');
+    skyGrad.addColorStop(0.45, '#071024');
+    skyGrad.addColorStop(0.82, padGlow > 0.01 ? `rgb(${Math.round(16 + padGlow * 55)}, ${Math.round(28 + padGlow * 30)}, ${Math.round(58 + padGlow * 12)})` : '#101c3a');
+    skyGrad.addColorStop(1.0,  padGlow > 0.01 ? `rgb(${Math.round(28 + padGlow * 115)}, ${Math.round(38 + padGlow * 58)}, ${Math.round(68 + padGlow * 15)})` : '#1a2b52');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, PAD_Y + 10);
+
+    // Subtle Milky Way / nebula band
+    ctx.save();
+    ctx.translate(W * 0.35, H * 0.25);
+    ctx.rotate(-0.38);
+    const nebGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, 340);
+    nebGrad.addColorStop(0, 'rgba(95, 135, 220, 0.07)');
+    nebGrad.addColorStop(0.5, 'rgba(65, 95, 180, 0.03)');
+    nebGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = nebGrad;
+    ctx.scale(1.8, 0.42);
+    ctx.beginPath();
+    ctx.arc(0, 0, 340, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Twinkling stars
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      const twinkle = 0.65 + 0.35 * Math.sin(t * s.twinkleSpeed + s.twinklePhase);
+      // Wash out stars slightly near intense pad glare
+      const glareWash = padGlow * clamp(1 - (PAD_Y - s.y) / 220, 0, 0.6);
+      const alpha = clamp(s.baseAlpha * twinkle - glareWash, 0.04, 1);
+
+      ctx.fillStyle = `hsla(${s.hue}, ${s.sat}%, 92%, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cross-starburst on brightest stars
+      if (s.r > 1.65) {
+        ctx.strokeStyle = `hsla(${s.hue}, ${s.sat}%, 95%, ${alpha * 0.45})`;
+        ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        ctx.moveTo(s.x - s.r * 3.2, s.y);
+        ctx.lineTo(s.x + s.r * 3.2, s.y);
+        ctx.moveTo(s.x, s.y - s.r * 3.2);
+        ctx.lineTo(s.x, s.y + s.r * 3.2);
+        ctx.stroke();
+      }
+    }
+
+    // Crescent Moon (top right)
+    const moonX = 815;
+    const moonY = 92;
+    const moonGlow = ctx.createRadialGradient(moonX, moonY, 14, moonX, moonY, 95);
+    moonGlow.addColorStop(0, 'rgba(210, 230, 255, 0.18)');
+    moonGlow.addColorStop(0.4, 'rgba(160, 195, 255, 0.06)');
+    moonGlow.addColorStop(1, 'rgba(160, 195, 255, 0)');
+    ctx.fillStyle = moonGlow;
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 95, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 19, 0, Math.PI * 2);
+    ctx.fillStyle = '#eef4ff';
+    ctx.fill();
+    // Shadow cutout for crescent
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(moonX - 7, moonY - 4, 17.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    // Redraw sky behind cutout seamlessly via crescent path
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 19, -Math.PI * 0.38, Math.PI * 0.62, false);
+    ctx.arc(moonX - 6.5, moonY - 3.5, 17.2, Math.PI * 0.56, -Math.PI * 0.32, true);
+    ctx.closePath();
+    ctx.fillStyle = '#e8f1ff';
+    ctx.shadowColor = 'rgba(190, 220, 255, 0.5)';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.restore();
+
+    // Dynamic orange atmospheric glow behind rocket & pad during burn
+    if (engineOn) {
+      const glowY = clamp(rocket.y + 22, 60, PAD_Y);
+      const rad = 280 + padGlow * 140;
+      const fireAmb = ctx.createRadialGradient(PAD_X, glowY, 8, PAD_X, glowY, rad);
+      fireAmb.addColorStop(0, `rgba(255, 190, 95, ${0.42 * rocket.throttle})`);
+      fireAmb.addColorStop(0.35, `rgba(255, 120, 40, ${0.22 * rocket.throttle})`);
+      fireAmb.addColorStop(0.7, `rgba(180, 60, 25, ${0.08 * rocket.throttle})`);
+      fireAmb.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = fireAmb;
+      ctx.fillRect(0, 0, W, PAD_Y + 20);
+    }
+  }
+
+  function drawLandscapeAndSearchlights(t, rocket) {
+    // Far mountains
+    ctx.beginPath();
+    ctx.moveTo(0, PAD_Y + 10);
+    for (const p of farMountains) ctx.lineTo(p.x, p.y);
+    ctx.lineTo(W, PAD_Y + 10);
+    ctx.closePath();
+    ctx.fillStyle = '#091226';
+    ctx.fill();
+
+    // Near hills
+    ctx.beginPath();
+    ctx.moveTo(0, PAD_Y + 10);
+    for (const p of nearHills) ctx.lineTo(p.x, p.y);
+    ctx.lineTo(W, PAD_Y + 10);
+    ctx.closePath();
+    ctx.fillStyle = '#060c1a';
+    ctx.fill();
+
+    // Distant coastal lights
+    for (const l of distantLights) {
+      ctx.fillStyle = l.color;
+      ctx.globalAlpha = l.alpha * (0.7 + 0.3 * Math.sin(t * 3 + l.x));
+      ctx.fillRect(l.x, l.y, 1.6, 1.6);
+    }
+    ctx.globalAlpha = 1;
+
+    // Ground & coastal water lagoon
+    const groundGrad = ctx.createLinearGradient(0, PAD_Y, 0, H);
+    groundGrad.addColorStop(0, '#070d1c');
+    groundGrad.addColorStop(0.35, '#050914');
+    groundGrad.addColorStop(1, '#020409');
+    ctx.fillStyle = groundGrad;
+    ctx.fillRect(0, PAD_Y, W, H - PAD_Y);
+
+    // Water reflection shimmer on the lower foreground
+    const engineOn = t >= T_IGNITION && rocket.y > -200;
+    if (engineOn) {
+      const reflAlpha = clamp(1 - rocket.altitude / 450, 0.08, 1) * rocket.throttle;
+      const waterGrad = ctx.createRadialGradient(PAD_X, PAD_Y + 45, 5, PAD_X, PAD_Y + 55, 290);
+      waterGrad.addColorStop(0, `rgba(255, 165, 70, ${0.28 * reflAlpha})`);
+      waterGrad.addColorStop(0.45, `rgba(240, 95, 30, ${0.11 * reflAlpha})`);
+      waterGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = waterGrad;
+      ctx.fillRect(0, PAD_Y + 8, W, H - PAD_Y);
+    }
+
+    // Searchlight beams sweeping onto the rocket / sky
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    const targetY = clamp(rocket.y - 55, 80, PAD_Y - 55);
+    const beamSources = [
+      { x: PAD_X - 165, y: PAD_Y + 2 },
+      { x: PAD_X + 165, y: PAD_Y + 2 }
+    ];
+
+    beamSources.forEach((src, idx) => {
+      const sway = Math.sin(t * 1.1 + idx * Math.PI) * 14;
+      const aimX = PAD_X + sway * (rocket.altitude > 40 ? 2.5 : 0.4);
+      const aimY = targetY;
+      const dx = aimX - src.x;
+      const dy = aimY - src.y;
+      const angle = Math.atan2(dy, dx);
+      const len = 460;
+      const spread = 0.095;
+
+      const x1 = src.x + Math.cos(angle - spread) * len;
+      const y1 = src.y + Math.sin(angle - spread) * len;
+      const x2 = src.x + Math.cos(angle + spread) * len;
+      const y2 = src.y + Math.sin(angle + spread) * len;
+
+      const beamGrad = ctx.createLinearGradient(src.x, src.y, src.x + Math.cos(angle) * len, src.y + Math.sin(angle) * len);
+      beamGrad.addColorStop(0, 'rgba(170, 215, 255, 0.22)');
+      beamGrad.addColorStop(0.45, 'rgba(140, 195, 255, 0.08)');
+      beamGrad.addColorStop(1, 'rgba(120, 180, 255, 0)');
+
+      ctx.fillStyle = beamGrad;
+      ctx.beginPath();
+      ctx.moveTo(src.x, src.y);
+      ctx.lineTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.closePath();
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  function drawLaunchPadStructure(t, rocket) {
+    const engineGlow = (t >= T_IGNITION)
+      ? clamp(1 - rocket.altitude / 320, 0, 1) * rocket.throttle
+      : 0;
+
+    // Lightning mast (far right of pad)
+    const mastX = PAD_X + 96;
+    ctx.strokeStyle = engineGlow > 0.1 ? `rgb(${55 + Math.round(engineGlow * 90)}, ${62 + Math.round(engineGlow * 55)}, 82)` : '#2a354b';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(mastX, PAD_Y);
+    ctx.lineTo(mastX, PAD_Y - 175);
+    ctx.stroke();
+    // Red aviation obstruction beacon on top of mast
+    const beaconPulse = 0.5 + 0.5 * Math.sin(t * 6.2);
+    ctx.fillStyle = `rgba(255, 60, 60, ${0.4 + 0.6 * beaconPulse})`;
+    ctx.beginPath();
+    ctx.arc(mastX, PAD_Y - 177, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Launch Umbilical Tower (left of rocket)
+    const towerX = PAD_X - 48;
+    const towerW = 18;
+    const towerH = 148;
+    const towerTop = PAD_Y - towerH;
+
+    // Tower vertical columns
+    ctx.strokeStyle = engineGlow > 0.05
+      ? `rgb(${68 + Math.round(engineGlow * 120)}, ${76 + Math.round(engineGlow * 75)}, ${96 + Math.round(engineGlow * 20)})`
+      : '#3b4a66';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(towerX, PAD_Y);
+    ctx.lineTo(towerX, towerTop);
+    ctx.moveTo(towerX + towerW, PAD_Y);
+    ctx.lineTo(towerX + towerW, towerTop);
+    ctx.stroke();
+
+    // Tower cross-bracing trusses
+    ctx.lineWidth = 1.1;
+    const levels = 10;
+    const stepH = towerH / levels;
+    ctx.beginPath();
+    for (let i = 0; i < levels; i++) {
+      const y0 = PAD_Y - i * stepH;
+      const y1 = y0 - stepH;
+      ctx.moveTo(towerX, y1);
+      ctx.lineTo(towerX + towerW, y1);
+      ctx.moveTo(towerX, y0);
+      ctx.lineTo(towerX + towerW, y1);
+      ctx.moveTo(towerX + towerW, y0);
+      ctx.lineTo(towerX, y1);
+    }
+    ctx.stroke();
+
+    // Tower top crane & beacon
+    ctx.beginPath();
+    ctx.moveTo(towerX, towerTop);
+    ctx.lineTo(towerX + towerW + 10, towerTop - 8);
+    ctx.lineTo(towerX + towerW, towerTop);
+    ctx.stroke();
+    ctx.fillStyle = `rgba(255, 70, 70, ${0.4 + 0.6 * Math.cos(t * 6.2)})`;
+    ctx.beginPath();
+    ctx.arc(towerX + 9, towerTop - 3, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Retractable Umbilical Arms (swing back between t = 1.9s and t = 3.9s)
+    const retract = smoothstep(1.9, 3.8, t);
+    const armAngles = [
+      { y: PAD_Y - 106, len: 29 },
+      { y: PAD_Y - 76,  len: 29 }
+    ];
+    ctx.strokeStyle = '#5c7094';
+    ctx.lineWidth = 2.6;
+    armAngles.forEach((arm, idx) => {
+      const rot = -retract * (1.18 + idx * 0.08);
+      ctx.save();
+      ctx.translate(towerX + towerW, arm.y);
+      ctx.rotate(rot);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(arm.len, 0);
+      ctx.stroke();
+      // Umbilical hose droop
+      ctx.strokeStyle = '#33415c';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(4, 2);
+      ctx.quadraticCurveTo(arm.len * 0.5, 9, arm.len - 2, 1);
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    // Concrete Launch Pad Bunker & Flame Trench
+    const padBaseW = 136;
+    const padDeckW = 86;
+    const padH = 22;
+
+    // Sloped concrete bunker
+    const padGrad = ctx.createLinearGradient(PAD_X, PAD_Y - 4, PAD_X, PAD_Y + padH);
+    const rBoost = Math.round(engineGlow * 130);
+    const gBoost = Math.round(engineGlow * 70);
+    padGrad.addColorStop(0, `rgb(${48 + rBoost}, ${56 + gBoost}, 74)`);
+    padGrad.addColorStop(1, '#121826');
+
+    ctx.fillStyle = padGrad;
+    ctx.beginPath();
+    ctx.moveTo(PAD_X - padDeckW * 0.5, PAD_Y);
+    ctx.lineTo(PAD_X + padDeckW * 0.5, PAD_Y);
+    ctx.lineTo(PAD_X + padBaseW * 0.5, PAD_Y + padH);
+    ctx.lineTo(PAD_X - padBaseW * 0.5, PAD_Y + padH);
+    ctx.closePath();
+    ctx.fill();
+
+    // Dark flame trench cutout in center of pad
+    ctx.fillStyle = engineGlow > 0.05
+      ? `rgba(255, 150, 60, ${0.35 + 0.55 * engineGlow})`
+      : '#070b14';
+    ctx.beginPath();
+    ctx.moveTo(PAD_X - 22, PAD_Y + 2);
+    ctx.lineTo(PAD_X + 22, PAD_Y + 2);
+    ctx.lineTo(PAD_X + 34, PAD_Y + padH);
+    ctx.lineTo(PAD_X - 34, PAD_Y + padH);
+    ctx.closePath();
+    ctx.fill();
+
+    // Hold-down clamps on launch table (open at liftoff)
+    const clampOpen = smoothstep(T_LIFTOFF - 0.25, T_LIFTOFF + 0.15, t);
+    [-13, 13].forEach((offset) => {
+      const sign = Math.sign(offset);
+      ctx.save();
+      ctx.translate(PAD_X + offset, PAD_Y);
+      ctx.rotate(sign * clampOpen * 0.65);
+      ctx.fillStyle = '#4a5a78';
+      ctx.fillRect(sign > 0 ? -2 : -4, -7, 6, 7);
+      ctx.restore();
+    });
+
+    // Floodlight fixtures at +/- 165
+    [-165, 165].forEach((dx) => {
+      ctx.fillStyle = '#9fd5ff';
+      ctx.beginPath();
+      ctx.arc(PAD_X + dx, PAD_Y + 2, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function drawExhaustFlame(t, rocket) {
+    if (t < T_IGNITION || rocket.y < -220) return;
+
+    const throttle = rocket.throttle;
+    const flicker = 0.9 + 0.18 * Math.sin(t * 65) + 0.08 * Math.cos(t * 113);
+    const flameLen = (78 + 45 * smoothstep(T_LIFTOFF, T_LIFTOFF + 1.8, t)) * throttle * flicker;
+    const flameWidth = (14 + 5 * throttle) * (0.94 + 0.1 * Math.sin(t * 80));
+
+    const nozzleX = PAD_X;
+    const nozzleY = rocket.y + 3;
+
+    // Clamp bottom of main vertical flame to pad deck so it splays along the ground before liftoff
+    const groundClipY = PAD_Y + 12;
+    const effectiveEndY = Math.min(nozzleY + flameLen, groundClipY);
+    const impinging = (nozzleY + flameLen) > PAD_Y;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+
+    // 1. Wide outer orange/red bloom
+    const bloomGrad = ctx.createRadialGradient(
+      nozzleX, (nozzleY + effectiveEndY) * 0.5, 4,
+      nozzleX, (nozzleY + effectiveEndY) * 0.5, flameLen * 0.85
+    );
+    bloomGrad.addColorStop(0, `rgba(255, 150, 50, ${0.55 * throttle})`);
+    bloomGrad.addColorStop(0.45, `rgba(255, 75, 15, ${0.25 * throttle})`);
+    bloomGrad.addColorStop(1, 'rgba(255, 40, 0, 0)');
+    ctx.fillStyle = bloomGrad;
+    ctx.beginPath();
+    ctx.arc(nozzleX, (nozzleY + effectiveEndY) * 0.5, flameLen * 0.85, 0, Math.PI * 2);
+    ctx.fill();
+
+    // If impinging on pad, draw horizontal deflected fire jets in the trench
+    if (impinging) {
+      const impingeFactor = clamp(((nozzleY + flameLen) - PAD_Y) / 75, 0, 1) * throttle;
+      const spreadX = (55 + 65 * impingeFactor) * flicker;
+      const trenchFire = ctx.createRadialGradient(PAD_X, PAD_Y + 2, 4, PAD_X, PAD_Y + 2, spreadX);
+      trenchFire.addColorStop(0, 'rgba(255, 250, 210, 0.95)');
+      trenchFire.addColorStop(0.3, 'rgba(255, 175, 55, 0.75)');
+      trenchFire.addColorStop(0.7, 'rgba(255, 75, 15, 0.35)');
+      trenchFire.addColorStop(1, 'rgba(255, 30, 0, 0)');
+      ctx.fillStyle = trenchFire;
+      ctx.beginPath();
+      ctx.ellipse(PAD_X, PAD_Y + 3, spreadX, 14 + 10 * impingeFactor, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 2. Outer turbulent orange-gold flame cone
+    const outerGrad = ctx.createLinearGradient(nozzleX, nozzleY, nozzleX, effectiveEndY);
+    outerGrad.addColorStop(0, 'rgba(255, 230, 140, 0.95)');
+    outerGrad.addColorStop(0.4, 'rgba(255, 140, 30, 0.88)');
+    outerGrad.addColorStop(0.85, 'rgba(255, 55, 10, 0.45)');
+    outerGrad.addColorStop(1, 'rgba(200, 20, 0, 0)');
+
+    ctx.fillStyle = outerGrad;
+    ctx.beginPath();
+    ctx.moveTo(nozzleX - 5, nozzleY);
+    ctx.quadraticCurveTo(nozzleX - flameWidth, nozzleY + (effectiveEndY - nozzleY) * 0.55, nozzleX, effectiveEndY + 8);
+    ctx.quadraticCurveTo(nozzleX + flameWidth, nozzleY + (effectiveEndY - nozzleY) * 0.55, nozzleX + 5, nozzleY);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3. Brilliant white-cyan inner core
+    const coreEndY = Math.min(nozzleY + flameLen * 0.62, groundClipY - 2);
+    const coreGrad = ctx.createLinearGradient(nozzleX, nozzleY, nozzleX, coreEndY);
+    coreGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    coreGrad.addColorStop(0.5, 'rgba(255, 245, 195, 0.92)');
+    coreGrad.addColorStop(1, 'rgba(255, 180, 60, 0)');
+
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.moveTo(nozzleX - 3.5, nozzleY);
+    ctx.quadraticCurveTo(nozzleX - flameWidth * 0.48, (nozzleY + coreEndY) * 0.5, nozzleX, coreEndY);
+    ctx.quadraticCurveTo(nozzleX + flameWidth * 0.48, (nozzleY + coreEndY) * 0.5, nozzleX + 3.5, nozzleY);
+    ctx.closePath();
+    ctx.fill();
+
+    // 4. Mach diamonds inside the supersonic jet
+    const numDiamonds = Math.min(4, Math.floor((effectiveEndY - nozzleY) / 16));
+    for (let i = 0; i < numDiamonds; i++) {
+      const dy = nozzleY + 10 + i * 14 * flicker;
+      if (dy > effectiveEndY - 6) break;
+      const dw = (3.5 - i * 0.6) * throttle;
+      const dh = 5.5;
+      ctx.fillStyle = `rgba(215, 245, 255, ${0.75 - i * 0.15})`;
+      ctx.beginPath();
+      ctx.moveTo(nozzleX, dy - dh);
+      ctx.lineTo(nozzleX + dw, dy);
+      ctx.lineTo(nozzleX, dy + dh);
+      ctx.lineTo(nozzleX - dw, dy);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawSmokeAndParticles(t, rocket) {
+    const flameX = PAD_X;
+    const flameY = Math.min(rocket.y + 24, PAD_Y);
+    const engineActive = (t >= T_IGNITION && rocket.y > -200) ? rocket.throttle : 0;
+
+    // 1. Billowing Smoke Clouds
+    for (let i = 0; i < smokeParticles.length; i++) {
+      const p = smokeParticles[i];
+      const lifeRatio = p.age / p.life;
+      const fadeIn = smoothstep(0, 0.08, lifeRatio);
+      const fadeOut = 1 - Math.pow(lifeRatio, 1.45);
+      const alpha = fadeIn * fadeOut * 0.78;
+      if (alpha <= 0.01) continue;
+
+      // Dynamic internal illumination from engine flame & pad fire
+      const distToFlame = Math.hypot(p.x - flameX, p.y - flameY);
+      const distToPad   = Math.hypot(p.x - PAD_X, p.y - PAD_Y);
+      const proximityLight = engineActive * (
+        clamp(1 - distToFlame / 165, 0, 1) * 0.85 +
+        clamp(1 - distToPad / 185, 0, 1) * clamp(1 - rocket.altitude / 240, 0, 1) * 0.75
+      );
+      const heat = clamp(p.heat * 0.65 + proximityLight, 0, 1);
+
+      // Color transitions from incandescent gold -> warm amber-gray -> cool night slate smoke
+      const r = Math.round(lerp(52, 255, Math.pow(heat, 0.75)));
+      const g = Math.round(lerp(62, 175, Math.pow(heat, 0.95)));
+      const b = Math.round(lerp(84, 95,  Math.pow(heat, 1.3)));
+
+      const grad = ctx.createRadialGradient(
+        p.x, p.y - p.r * 0.15, p.r * 0.1,
+        p.x, p.y, p.r
+      );
+      grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+      grad.addColorStop(0.55, `rgba(${Math.round(r * 0.78)}, ${Math.round(g * 0.78)}, ${Math.round(b * 0.85)}, ${alpha * 0.65})`);
+      grad.addColorStop(1, `rgba(28, 36, 52, 0)`);
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 2. Cryo Vent Mist
+    for (let i = 0; i < ventParticles.length; i++) {
+      const p = ventParticles[i];
+      const ratio = p.age / p.life;
+      const alpha = Math.sin(ratio * Math.PI) * 0.32;
+      ctx.fillStyle = `rgba(205, 232, 255, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 3. Shedding Frost / Ice Flakes
+    ctx.fillStyle = 'rgba(225, 245, 255, 0.85)';
+    for (let i = 0; i < iceParticles.length; i++) {
+      const p = iceParticles[i];
+      const alpha = 1 - p.age / p.life;
+      ctx.globalAlpha = alpha;
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    }
+    ctx.globalAlpha = 1;
+
+    // 4. Igniter & Exhaust Sparks
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < sparkParticles.length; i++) {
+      const p = sparkParticles[i];
+      const alpha = 1 - p.age / p.life;
+      ctx.strokeStyle = `hsla(${p.hue}, 100%, 70%, ${alpha})`;
+      ctx.lineWidth = p.size;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - p.vx * 0.022, p.y - p.vy * 0.022);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawRocket(t, rocket) {
+    if (rocket.y < -190) return;
+
+    const rx = PAD_X;
+    const ry = rocket.y; // Base of rocket body (top of nozzle)
+    const bodyW = 16;
+    const halfW = bodyW * 0.5;
+    const bodyH = 86;
+    const noseH = 32;
+
+    // Subtle high-frequency vibration during ignition & liftoff
+    const vib = (t >= T_IGNITION && t < T_LIFTOFF + 1.5)
+      ? Math.sin(t * 95) * 0.45 * rocket.throttle
+      : 0;
+
+    ctx.save();
+    ctx.translate(rx + vib, ry);
+
+    // 1. Engine Bell Nozzle
+    const nozzleGlow = t >= T_IGNITION ? rocket.throttle : 0;
+    const nozGrad = ctx.createLinearGradient(-6, -4, 6, 4);
+    nozGrad.addColorStop(0, '#2a3346');
+    nozGrad.addColorStop(0.5, nozzleGlow > 0 ? `rgb(${110 + Math.round(nozzleGlow * 145)}, ${85 + Math.round(nozzleGlow * 75)}, 75)` : '#586782');
+    nozGrad.addColorStop(1, '#1d2433');
+    ctx.fillStyle = nozGrad;
+    ctx.beginPath();
+    ctx.moveTo(-4, -5);
+    ctx.lineTo(4, -5);
+    ctx.lineTo(6.5, 3.5);
+    ctx.lineTo(-6.5, 3.5);
+    ctx.closePath();
+    ctx.fill();
+
+    // 2. Aerodynamic Delta Fins (Left & Right)
+    const finLit = nozzleGlow * 0.65;
+    const finColorLeft  = `rgb(${Math.round(195 + finLit * 60)}, ${Math.round(42 + finLit * 50)}, ${Math.round(48 + finLit * 20)})`;
+    const finColorRight = `rgb(${Math.round(150 + finLit * 80)}, ${Math.round(28 + finLit * 45)}, ${Math.round(35 + finLit * 20)})`;
+
+    // Left fin
+    ctx.fillStyle = finColorLeft;
+    ctx.beginPath();
+    ctx.moveTo(-halfW, -28);
+    ctx.lineTo(-halfW - 11, 2);
+    ctx.lineTo(-halfW - 11, 5);
+    ctx.lineTo(-halfW, -4);
+    ctx.closePath();
+    ctx.fill();
+
+    // Right fin
+    ctx.fillStyle = finColorRight;
+    ctx.beginPath();
+    ctx.moveTo(halfW, -28);
+    ctx.lineTo(halfW + 11, 2);
+    ctx.lineTo(halfW + 11, 5);
+    ctx.lineTo(halfW, -4);
+    ctx.closePath();
+    ctx.fill();
+
+    // Center fin spine
+    ctx.fillStyle = '#b8252d';
+    ctx.fillRect(-1.2, -26, 2.4, 22);
+
+    // 3. Cylindrical Fuselage with 3D Cylindrical Shading
+    const bodyGrad = ctx.createLinearGradient(-halfW, 0, halfW, 0);
+    bodyGrad.addColorStop(0.0, '#aebcd1');
+    bodyGrad.addColorStop(0.28, '#f5f8ff');
+    bodyGrad.addColorStop(0.62, '#dce5f2');
+    bodyGrad.addColorStop(0.88, '#8c9db8');
+    bodyGrad.addColorStop(1.0, nozzleGlow > 0.1 ? '#d49b7e' : '#657591');
+
+    ctx.fillStyle = bodyGrad;
+    ctx.fillRect(-halfW, -bodyH, bodyW, bodyH - 4);
+
+    // Black & White Roll Pattern / Interstage Bands
+    ctx.fillStyle = '#182030';
+    // Lower engine skirt band
+    ctx.fillRect(-halfW, -11, bodyW, 7);
+    // Interstage band with checkerboard segments
+    ctx.fillRect(-halfW, -64, bodyW, 10);
+    ctx.fillStyle = '#eef4ff';
+    ctx.fillRect(-halfW + 4, -64, 4, 5);
+    ctx.fillRect(0, -59, 4, 5);
+
+    // Accent stripe & Circular Porthole/Sensor on Upper Stage
+    ctx.fillStyle = '#d9383a';
+    ctx.fillRect(-1.5, -48, 3, 24);
+
+    ctx.fillStyle = '#152238';
+    ctx.beginPath();
+    ctx.arc(0, -75, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#7ad7ff';
+    ctx.beginPath();
+    ctx.arc(-0.6, -75.6, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 4. Nose Cone / Fairing
+    const noseTopY = -bodyH - noseH;
+    ctx.beginPath();
+    ctx.moveTo(-halfW, -bodyH);
+    ctx.quadraticCurveTo(-halfW, -bodyH - noseH * 0.55, 0, noseTopY);
+    ctx.quadraticCurveTo(halfW, -bodyH - noseH * 0.55, halfW, -bodyH);
+    ctx.closePath();
+    ctx.fillStyle = bodyGrad;
+    ctx.fill();
+
+    // Red painted tip on nose cone
+    ctx.save();
+    ctx.clip();
+    ctx.fillStyle = '#d9383a';
+    ctx.fillRect(-halfW, noseTopY, bodyW, 11);
+    ctx.restore();
+
+    // Escape tower / probe needle at tip
+    ctx.strokeStyle = '#e2ecff';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(0, noseTopY);
+    ctx.lineTo(0, noseTopY - 8);
+    ctx.stroke();
+
+    // Warm orange bounce light on the lower fuselage during ignition
+    if (nozzleGlow > 0.01) {
+      const bounceGrad = ctx.createLinearGradient(0, 0, 0, -45);
+      bounceGrad.addColorStop(0, `rgba(255, 145, 50, ${0.55 * nozzleGlow})`);
+      bounceGrad.addColorStop(1, 'rgba(255, 145, 50, 0)');
+      ctx.fillStyle = bounceGrad;
+      ctx.fillRect(-halfW, -45, bodyW, 41);
+    }
+
+    ctx.restore();
+  }
+
+  // Draw high-altitude star flash after rocket exits top of frame
+  function drawHighAltitudeFlash(t) {
+    if (t < 8.15 || t > 9.35) return;
+    const p = (t - 8.15) / 1.2;
+    const pulse = Math.sin(p * Math.PI);
+    const fx = PAD_X;
+    const fy = 18;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(fx, fy, 1, fx, fy, 42 * pulse);
+    g.addColorStop(0, `rgba(255, 245, 220, ${0.85 * pulse})`);
+    g.addColorStop(0.35, `rgba(140, 205, 255, ${0.45 * pulse})`);
+    g.addColorStop(1, 'rgba(100, 160, 255, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(fx, fy, 42 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Crisp horizontal & vertical flare spikes
+    ctx.strokeStyle = `rgba(220, 240, 255, ${0.7 * pulse})`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(fx - 28 * pulse, fy);
+    ctx.lineTo(fx + 28 * pulse, fy);
+    ctx.moveTo(fx, fy - 14 * pulse);
+    ctx.lineTo(fx, fy + 14 * pulse);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Draw HUD Countdown Ring on Canvas + update DOM text
+  function updateHUD(t) {
+    // Mission clock readout relative to T_IGNITION (3.8s)
+    const relT = t - T_IGNITION;
+    const sign = relT < 0 ? '-' : '+';
+    const absT = Math.abs(relT);
+    const secs = Math.floor(absT);
+    const tenths = Math.floor((absT - secs) * 10);
+    clockText.textContent = `T${sign} 00:0${secs}.${tenths}`;
+
+    if (t < T_IGNITION) {
+      statusText.textContent = t < 2.0 ? 'PAD 39A // GO FOR LAUNCH' : 'PAD 39A // AUTO SEQUENCE';
+      statusDot.style.background = '#38ef7d';
+      statusDot.style.boxShadow = '0 0 8px #38ef7d';
+    } else if (t < T_LIFTOFF) {
+      statusText.textContent = 'MAIN ENGINE IGNITION';
+      statusDot.style.background = '#ff9f43';
+      statusDot.style.boxShadow = '0 0 10px #ff9f43';
+    } else {
+      statusText.textContent = 'LIFTOFF // STAGE 1 ASCENT';
+      statusDot.style.background = '#00d2ff';
+      statusDot.style.boxShadow = '0 0 10px #00d2ff';
+    }
+
+    // Big 3, 2, 1 Countdown display
+    if (t >= T_COUNT_3 && t < T_IGNITION) {
+      let digit = '3';
+      let localT = 0;
+      if (t < T_COUNT_2) {
+        digit = '3';
+        localT = (t - T_COUNT_3) / (T_COUNT_2 - T_COUNT_3);
+      } else if (t < T_COUNT_1) {
+        digit = '2';
+        localT = (t - T_COUNT_2) / (T_COUNT_1 - T_COUNT_2);
+      } else {
+        digit = '1';
+        localT = (t - T_COUNT_1) / (T_IGNITION - T_COUNT_1);
+      }
+
+      countdownNumber.textContent = digit;
+
+      // Pop-in scale & smooth fade-out at end of each second
+      const scale = 0.82 + 0.28 * Math.pow(1 - localT, 2.2);
+      const alpha = localT < 0.12
+        ? localT / 0.12
+        : (localT > 0.78 ? (1 - localT) / 0.22 : 1.0);
+
+      countdownWrap.style.opacity = alpha.toFixed(3);
+      countdownWrap.style.transform = `translateY(-42px) scale(${scale.toFixed(3)})`;
+
+      // Draw circular target reticle around the countdown on canvas
+      const cx = W * 0.5;
+      const cy = H * 0.5 - 42;
+      const ringR = 86;
+
+      ctx.save();
+      ctx.strokeStyle = `rgba(130, 210, 255, ${0.22 * alpha})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Animated sweep arc for current second
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.75 * alpha})`;
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(cx, cy, ringR, -Math.PI * 0.5, -Math.PI * 0.5 + localT * Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      countdownWrap.style.opacity = '0';
+    }
+  }
+
+  let startTimestamp = null;
+
+  function renderFrame(timestamp) {
+    if (startTimestamp === null) {
+      startTimestamp = timestamp;
+      resetSimulation();
+    }
+
+    const elapsedSec = (timestamp - startTimestamp) * 0.001;
+    const t = elapsedSec % LOOP_SECONDS;
+
+    // Detect loop wrap-around and reset particles cleanly
+    if (t < lastLoopTime) {
+      resetSimulation();
+    }
+    const dt = clamp(t >= lastLoopTime ? (t - lastLoopTime) : (1 / 60), 0.001, 0.05);
+    lastLoopTime = t;
+
+    const rocket = getRocketState(t);
+    updateParticles(t, dt, rocket);
+
+    // Camera rumble during ignition and initial liftoff
+    let shakeX = 0;
+    let shakeY = 0;
+    if (t >= T_IGNITION && t < 7.2) {
+      const rumbleEnv = smoothstep(T_IGNITION, T_IGNITION + 0.3, t) * clamp(1 - (t - T_LIFTOFF) / 2.2, 0, 1);
+      shakeX = (Math.sin(t * 73) * 1.6 + Math.cos(t * 131) * 1.1) * rumbleEnv;
+      shakeY = (Math.cos(t * 89) * 1.8 + Math.sin(t * 117) * 1.1) * rumbleEnv;
+    }
+
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+
+    // Render scene layers back-to-front
+    drawSkyAndStars(t, rocket);
+    drawLandscapeAndSearchlights(t, rocket);
+    drawLaunchPadStructure(t, rocket);
+    drawExhaustFlame(t, rocket);
+    drawRocket(t, rocket);
+    drawSmokeAndParticles(t, rocket);
+    drawHighAltitudeFlash(t);
+
+    ctx.restore();
+
+    // Update HUD & Countdown
+    updateHUD(t);
+
+    // Smooth cross-fade at loop boundary (t = 9.25s -> 10.0s and 0.0s -> 0.45s)
+    let fadeBlack = 0;
+    if (t > T_FADE_OUT) {
+      fadeBlack = smoothstep(T_FADE_OUT, LOOP_SECONDS, t);
+    } else if (t < 0.45) {
+      fadeBlack = 1 - smoothstep(0.0, 0.45, t);
+    }
+    if (fadeBlack > 0.001) {
+      ctx.fillStyle = `rgba(3, 6, 17, ${fadeBlack.toFixed(3)})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    requestAnimationFrame(renderFrame);
+  }
+
+  requestAnimationFrame(renderFrame);
+})();
+</script>
+</body>
+</html>

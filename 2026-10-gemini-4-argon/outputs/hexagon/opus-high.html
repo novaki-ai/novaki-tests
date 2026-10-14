@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bouncing Balls in a Spinning Hexagon</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0b0e14;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  canvas {
+    display: block;
+    width: 960px;
+    height: 540px;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(() => {
+  const W = 960, H = 540;
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Hexagon geometry
+  const CX = W / 2, CY = H / 2;
+  const R = 250;                          // centre-to-vertex radius (inner wall)
+  const APO = R * Math.cos(Math.PI / 6);  // centre-to-edge distance
+  const WALL = 14;                        // drawn wall thickness
+  const OMEGA = 0.35;                     // hexagon angular velocity (rad/s)
+
+  // Physics parameters
+  const G = 1100;          // gravity (px/s^2)
+  const E_WALL = 0.72;     // restitution vs. walls
+  const E_BALL = 0.85;     // restitution ball vs. ball
+  const MU_WALL = 0.25;    // Coulomb friction vs. walls
+  const MU_BALL = 0.08;    // Coulomb friction ball vs. ball
+  const REST_VN = 40;      // below this normal speed, impacts are inelastic (kills jitter)
+  const AIR = 0.12;        // linear air drag (1/s)
+  const SPIN_DAMP = 0.25;  // rolling resistance on spin (1/s)
+  const MAX_V = 2500;
+  const SUBSTEPS = 10;
+
+  const COLORS = [
+    '#f5c518', '#1f5fd1', '#e0322b', '#6a2fb0', '#f07a1a', '#178a43',
+    '#8b1f2a', '#222222', '#f5c518', '#1f5fd1', '#e0322b', '#6a2fb0'
+  ];
+
+  let theta = 0;
+  const balls = [];
+
+  for (let i = 0; i < 12; i++) {
+    const r = 16 + (i % 4) * 2;
+    const ang = i * Math.PI / 6;
+    const m = r * r;
+    balls.push({
+      x: CX + Math.cos(ang) * 115,
+      y: CY + Math.sin(ang) * 115,
+      vx: (Math.random() - 0.5) * 400,
+      vy: (Math.random() - 0.5) * 400,
+      r, m, inv: 1 / m,
+      w: 0,          // angular velocity (rad/s)
+      a: 0,          // visual rotation angle
+      n: i + 1,
+      color: COLORS[i],
+      stripe: i >= 8
+    });
+  }
+
+  function collideBalls() {
+    for (let i = 0; i < balls.length; i++) {
+      const a = balls[i];
+      for (let j = i + 1; j < balls.length; j++) {
+        const b = balls[j];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        const rs = a.r + b.r;
+        const d2 = dx * dx + dy * dy;
+        if (d2 >= rs * rs) continue;
+
+        let dist = Math.sqrt(d2);
+        if (dist < 1e-6) { dx = 1; dy = 0; dist = 1e-6; }
+        const nx = dx / dist, ny = dy / dist;
+        const invSum = a.inv + b.inv;
+
+        // Positional correction (mass-weighted)
+        const overlap = rs - dist;
+        a.x -= nx * overlap * a.inv / invSum;
+        a.y -= ny * overlap * a.inv / invSum;
+        b.x += nx * overlap * b.inv / invSum;
+        b.y += ny * overlap * b.inv / invSum;
+
+        // Normal impulse
+        const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+        const vn = rvx * nx + rvy * ny;
+        if (vn >= 0) continue;
+        const e = vn > -REST_VN ? 0 : E_BALL;
+        const jn = -(1 + e) * vn / invSum;
+        a.vx -= jn * nx * a.inv; a.vy -= jn * ny * a.inv;
+        b.vx += jn * nx * b.inv; b.vy += jn * ny * b.inv;
+
+        // Friction impulse at contact (solid discs, I = m r^2 / 2)
+        const tx = -ny, ty = nx;
+        const s = (b.vx - a.vx) * tx + (b.vy - a.vy) * ty - b.w * b.r - a.w * a.r;
+        let jt = -s / (3 * invSum);
+        const maxJt = MU_BALL * jn;
+        if (jt > maxJt) jt = maxJt; else if (jt < -maxJt) jt = -maxJt;
+        a.vx -= jt * tx * a.inv; a.vy -= jt * ty * a.inv;
+        b.vx += jt * tx * b.inv; b.vy += jt * ty * b.inv;
+        a.w -= 2 * jt * a.inv / a.r;
+        b.w -= 2 * jt * b.inv / b.r;
+      }
+    }
+  }
+
+  function collideWalls() {
+    for (const b of balls) {
+      for (let k = 0; k < 6; k++) {
+        const ang = theta + k * Math.PI / 3 + Math.PI / 6;
+        const ux = Math.cos(ang), uy = Math.sin(ang);       // outward edge normal
+        const d = APO - ((b.x - CX) * ux + (b.y - CY) * uy); // distance from edge, inside positive
+        if (d >= b.r) continue;
+
+        const nx = -ux, ny = -uy;                           // inward normal
+        b.x += nx * (b.r - d);
+        b.y += ny * (b.r - d);
+
+        // Velocity of the rotating wall at the contact point
+        const px = b.x + ux * b.r, py = b.y + uy * b.r;
+        const wvx = -OMEGA * (py - CY);
+        const wvy =  OMEGA * (px - CX);
+
+        let rvx = b.vx - wvx, rvy = b.vy - wvy;
+        const vn = rvx * nx + rvy * ny;
+        if (vn >= 0) continue;
+
+        const e = vn > -REST_VN ? 0 : E_WALL;
+        const jn = -(1 + e) * vn;           // per unit mass
+        rvx += jn * nx; rvy += jn * ny;
+
+        // Friction: drive contact slip toward zero, limited by Coulomb cone
+        const tx = -ny, ty = nx;
+        const s = rvx * tx + rvy * ty - b.w * b.r;
+        let jt = -s / 3;
+        const maxJt = MU_WALL * jn;
+        if (jt > maxJt) jt = maxJt; else if (jt < -maxJt) jt = -maxJt;
+        rvx += jt * tx; rvy += jt * ty;
+        b.w -= 2 * jt / b.r;
+
+        b.vx = wvx + rvx;
+        b.vy = wvy + rvy;
+      }
+    }
+  }
+
+  function step(dt) {
+    theta += OMEGA * dt;
+    const drag = Math.exp(-AIR * dt);
+    const spinDrag = Math.exp(-SPIN_DAMP * dt);
+
+    for (const b of balls) {
+      b.vy += G * dt;
+      b.vx *= drag; b.vy *= drag;
+      const sp = Math.hypot(b.vx, b.vy);
+      if (sp > MAX_V) { b.vx *= MAX_V / sp; b.vy *= MAX_V / sp; }
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      b.w *= spinDrag;
+      b.a += b.w * dt;
+    }
+
+    collideBalls();
+    // Walls last so containment is always enforced after ball pushes
+    collideWalls();
+    collideWalls();
+  }
+
+  function hexPath(radius) {
+    ctx.beginPath();
+    for (let k = 0; k < 6; k++) {
+      const ang = theta + k * Math.PI / 3;
+      const x = CX + Math.cos(ang) * radius;
+      const y = CY + Math.sin(ang) * radius;
+      k === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  }
+
+  function drawBall(b) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+
+    // Shadow
+    ctx.beginPath();
+    ctx.arc(2, 3, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fill();
+
+    ctx.rotate(b.a);
+
+    // Body
+    ctx.beginPath();
+    ctx.arc(0, 0, b.r, 0, Math.PI * 2);
+    if (b.stripe) {
+      ctx.fillStyle = '#f4f1e8';
+      ctx.fill();
+      ctx.save();
+      ctx.clip();
+      ctx.fillStyle = b.color;
+      ctx.fillRect(-b.r, -b.r * 0.55, b.r * 2, b.r * 1.1);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = b.color;
+      ctx.fill();
+    }
+
+    // Number disc
+    ctx.beginPath();
+    ctx.arc(0, 0, b.r * 0.52, 0, Math.PI * 2);
+    ctx.fillStyle = '#fbfaf5';
+    ctx.fill();
+    ctx.fillStyle = '#111';
+    ctx.font = `bold ${Math.round(b.r * 0.72)}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(b.n), 0, b.r * 0.04);
+
+    ctx.restore();
+
+    // Fixed specular highlight (doesn't rotate with the ball)
+    const g = ctx.createRadialGradient(
+      b.x - b.r * 0.4, b.y - b.r * 0.45, b.r * 0.05,
+      b.x, b.y, b.r
+    );
+    g.addColorStop(0, 'rgba(255,255,255,0.65)');
+    g.addColorStop(0.35, 'rgba(255,255,255,0.08)');
+    g.addColorStop(1, 'rgba(0,0,0,0.35)');
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+
+  function draw() {
+    const bg = ctx.createRadialGradient(CX, CY, 50, CX, CY, 560);
+    bg.addColorStop(0, '#1b2233');
+    bg.addColorStop(1, '#0b0e14');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Wall: outer hex filled, inner hex cut out
+    const outerR = R + WALL / Math.cos(Math.PI / 6);
+    ctx.save();
+    ctx.shadowColor = 'rgba(80,160,255,0.55)';
+    ctx.shadowBlur = 24;
+    hexPath(outerR);
+    ctx.fillStyle = '#3d7bd9';
+    ctx.fill();
+    ctx.restore();
+
+    hexPath(R);
+    const inner = ctx.createRadialGradient(CX, CY - 60, 20, CX, CY, R);
+    inner.addColorStop(0, '#1e3b2f');
+    inner.addColorStop(1, '#0f2219');
+    ctx.fillStyle = inner;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(160,210,255,0.6)';
+    ctx.stroke();
+
+    // Centre marker to show rotation
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.rotate(theta);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 2;
+    for (let k = 0; k < 3; k++) {
+      ctx.rotate(Math.PI / 3);
+      ctx.beginPath();
+      ctx.moveTo(-R * 0.9, 0);
+      ctx.lineTo(R * 0.9, 0);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    for (const b of balls) drawBall(b);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '13px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Click to shake the balls', 14, 12);
+  }
+
+  canvas.addEventListener('pointerdown', () => {
+    for (const b of balls) {
+      b.vx += (Math.random() - 0.5) * 900;
+      b.vy -= 400 + Math.random() * 700;
+    }
+  });
+
+  let last = performance.now();
+  function frame(now) {
+    let dt = (now - last) / 1000;
+    last = now;
+    if (dt > 1 / 30) dt = 1 / 30;
+    const h = dt / SUBSTEPS;
+    for (let i = 0; i < SUBSTEPS; i++) step(h);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1892 @@
+{
+ "argon-low": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sol-low": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "astra-low": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "argon-medium": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sol-medium": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "astra-medium": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "argon-high": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sol-high": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "astra-high": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "opus-low": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sonnet-low": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "opus-medium": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sonnet-medium": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "opus-high": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sonnet-high": {
+  "passed": 20,
+  "total": 20,
+  "tests": [
+   {
+    "input": "1h 30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "1h30m",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "90s",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "2H",
+    "expected": 7200,
+    "got": 7200,
+    "pass": true
+   },
+   {
+    "input": "1.5h",
+    "expected": 5400,
+    "got": 5400,
+    "pass": true
+   },
+   {
+    "input": "  45m 30s ",
+    "expected": 2730,
+    "got": 2730,
+    "pass": true
+   },
+   {
+    "input": "1d 2h",
+    "expected": 93600,
+    "got": 93600,
+    "pass": true
+   },
+   {
+    "input": "90",
+    "expected": 90,
+    "got": 90,
+    "pass": true
+   },
+   {
+    "input": "0s",
+    "expected": 0,
+    "got": 0,
+    "pass": true
+   },
+   {
+    "input": "1d2h3m4s",
+    "expected": 93784,
+    "got": 93784,
+    "pass": true
+   },
+   {
+    "input": "0.5d",
+    "expected": 43200,
+    "got": 43200,
+    "pass": true
+   },
+   {
+    "input": "2h 0.5m",
+    "expected": 7230,
+    "got": 7230,
+    "pass": true
+   },
+   {
+    "input": "1m 1m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "30m 1h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "-5m",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "5x",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.5.5h",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "   ",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ }
+}

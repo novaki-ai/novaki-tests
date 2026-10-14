@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Snake</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #111; }
+  #wrap { position: relative; width: 960px; height: 540px; margin: 0 auto; overflow: hidden; }
+  canvas { display: block; background: #1b1b1b; }
+  #hud { position: absolute; top: 12px; left: 16px; color: #eee; font: 20px monospace; }
+  #msg {
+    position: absolute; left: 0; right: 0; top: 200px; text-align: center;
+    color: #fff; font: 28px monospace; white-space: pre-line;
+    text-shadow: 0 0 6px #000;
+  }
+  #gameover { color: #ff5555; font-size: 56px; font-weight: bold; display: none; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="960" height="540"></canvas>
+  <div id="hud">Score: <span id="score">0</span></div>
+  <div id="msg">
+    <div id="gameover">Game Over</div>
+    <div id="hint">Press Space to start</div>
+  </div>
+</div>
+<script>
+(function () {
+  var GRID = 20, CELL = 27, OFFX = (960 - GRID * CELL) / 2, OFFY = 0;
+  var TICK = 150;
+  var canvas = document.getElementById('c');
+  var ctx = canvas.getContext('2d');
+  var scoreEl = document.getElementById('score');
+  var gameOverEl = document.getElementById('gameover');
+  var hintEl = document.getElementById('hint');
+
+  var VEC = { up: {x: 0, y: -1}, down: {x: 0, y: 1}, left: {x: -1, y: 0}, right: {x: 1, y: 0} };
+  var OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+
+  var snake, dir, lastMoved, food, score, running, gameOver, timer;
+
+  function reset() {
+    snake = [{x: 10, y: 10}, {x: 9, y: 10}, {x: 8, y: 10}];
+    dir = 'right';
+    lastMoved = 'right';
+    score = 0;
+    running = false;
+    gameOver = false;
+    placeFood();
+    updateUI();
+  }
+
+  function placeFood() {
+    var free = [];
+    for (var x = 0; x < GRID; x++) {
+      for (var y = 0; y < GRID; y++) {
+        if (!snake.some(function (s) { return s.x === x && s.y === y; })) free.push({x: x, y: y});
+      }
+    }
+    food = free.length ? free[Math.floor(Math.random() * free.length)] : {x: -1, y: -1};
+  }
+
+  function updateUI() {
+    scoreEl.textContent = score;
+    gameOverEl.style.display = gameOver ? 'block' : 'none';
+    hintEl.style.display = running ? 'none' : 'block';
+    hintEl.textContent = gameOver ? 'Press Space to restart' : 'Press Space to start';
+  }
+
+  function start() {
+    if (running) return;
+    if (gameOver) reset();
+    running = true;
+    updateUI();
+    clearInterval(timer);
+    timer = setInterval(step, TICK);
+  }
+
+  function end() {
+    running = false;
+    gameOver = true;
+    clearInterval(timer);
+    updateUI();
+    draw();
+  }
+
+  function step() {
+    if (!running) return;
+    var v = VEC[dir];
+    var head = snake[0];
+    var nx = head.x + v.x, ny = head.y + v.y;
+    lastMoved = dir;
+
+    if (nx < 0 || ny < 0 || nx >= GRID || ny >= GRID) return end();
+
+    var eating = nx === food.x && ny === food.y;
+    // the tail cell is vacated this tick unless the snake grows
+    var body = eating ? snake : snake.slice(0, -1);
+    if (body.some(function (s) { return s.x === nx && s.y === ny; })) return end();
+
+    snake.unshift({x: nx, y: ny});
+    if (eating) {
+      score += 10;
+      placeFood();
+      updateUI();
+    } else {
+      snake.pop();
+    }
+    draw();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, 960, 540);
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, 960, 540);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(OFFX, OFFY, GRID * CELL, GRID * CELL);
+    ctx.strokeStyle = '#2d2d2d';
+    ctx.lineWidth = 1;
+    for (var i = 0; i <= GRID; i++) {
+      ctx.beginPath();
+      ctx.moveTo(OFFX + i * CELL + 0.5, OFFY);
+      ctx.lineTo(OFFX + i * CELL + 0.5, OFFY + GRID * CELL);
+      ctx.moveTo(OFFX, OFFY + i * CELL + 0.5);
+      ctx.lineTo(OFFX + GRID * CELL, OFFY + i * CELL + 0.5);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = '#666';
+    ctx.strokeRect(OFFX + 0.5, OFFY + 0.5, GRID * CELL, GRID * CELL);
+
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(OFFX + food.x * CELL + 3, OFFY + food.y * CELL + 3, CELL - 6, CELL - 6);
+
+    snake.forEach(function (s, idx) {
+      ctx.fillStyle = idx === 0 ? '#7CFC00' : '#2ecc71';
+      ctx.fillRect(OFFX + s.x * CELL + 1, OFFY + s.y * CELL + 1, CELL - 2, CELL - 2);
+    });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    var k = e.key;
+    if (k === ' ' || k === 'Spacebar' || e.code === 'Space') {
+      e.preventDefault();
+      start();
+      return;
+    }
+    var map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+    if (map[k]) {
+      e.preventDefault();
+      var d = map[k];
+      if (d !== OPP[lastMoved]) dir = d;
+    }
+  });
+
+  window.snake = {
+    state: function () {
+      return {
+        running: running,
+        gameOver: gameOver,
+        score: score,
+        length: snake.length,
+        head: {x: snake[0].x, y: snake[0].y},
+        food: {x: food.x, y: food.y},
+        dir: dir
+      };
+    },
+    setFood: function (x, y) {
+      food = {x: x, y: y};
+      draw();
+    }
+  };
+
+  reset();
+  draw();
+})();
+</script>
+</body>
+</html>

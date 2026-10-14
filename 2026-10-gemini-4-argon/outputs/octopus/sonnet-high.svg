@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#cdeffd"/>
+  <circle cx="680" cy="90" r="45" fill="#ffe27a"/>
+  <rect y="470" width="800" height="130" fill="#8fd18a"/>
+  <rect y="470" width="800" height="12" fill="#6fb86a"/>
+  <path d="M0 482 H800" stroke="#555" stroke-width="0"/>
+  <rect y="500" width="800" height="50" fill="#9a9a9a"/>
+  <g stroke="#fff" stroke-width="6" stroke-dasharray="40 30">
+    <path d="M0 525 H800"/>
+  </g>
+
+  <!-- Bicycle wheels -->
+  <g fill="none" stroke="#222" stroke-width="8">
+    <circle cx="250" cy="440" r="85"/>
+    <circle cx="560" cy="440" r="85"/>
+  </g>
+  <g stroke="#888" stroke-width="2">
+    <path d="M250 355 V525 M165 440 H335 M190 380 L310 500 M310 380 L190 500"/>
+    <path d="M560 355 V525 M475 440 H645 M500 380 L620 500 M620 380 L500 500"/>
+  </g>
+
+  <!-- Bicycle frame -->
+  <g fill="none" stroke="#d62839" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M250 440 L340 440 L420 320 L500 320 L560 440"/>
+    <path d="M250 440 L420 320"/>
+    <path d="M340 440 L380 340"/>
+    <path d="M500 320 L485 290"/>
+    <path d="M485 290 H530" stroke="#222"/>
+    <path d="M340 440 L420 320 L500 320" stroke="#d62839"/>
+  </g>
+  <!-- Seat -->
+  <path d="M355 335 Q385 320 415 335 Q385 345 355 335Z" fill="#222"/>
+  <path d="M385 335 L375 345" stroke="#222" stroke-width="6"/>
+  <!-- Hubs & pedals -->
+  <circle cx="250" cy="440" r="8" fill="#222"/>
+  <circle cx="560" cy="440" r="8" fill="#222"/>
+  <circle cx="340" cy="440" r="18" fill="none" stroke="#444" stroke-width="5"/>
+  <circle cx="340" cy="440" r="6" fill="#222"/>
+  <path d="M340 440 L315 478 M340 440 L365 402" stroke="#444" stroke-width="6" stroke-linecap="round"/>
+  <rect x="297" y="474" width="30" height="9" rx="3" fill="#222"/>
+  <rect x="353" y="396" width="30" height="9" rx="3" fill="#222"/>
+
+  <!-- Octopus tentacles (back ones trailing) -->
+  <g fill="none" stroke="#8e44ad" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <!-- trailing tentacles behind -->
+    <path d="M345 270 Q290 270 250 300 Q215 325 180 300"/>
+    <path d="M350 285 Q300 300 270 340 Q245 370 205 360"/>
+    <path d="M360 295 Q320 330 310 370 Q300 400 270 400"/>
+    <!-- pedaling tentacles -->
+    <path d="M385 300 Q380 350 365 402"/>
+    <path d="M375 305 Q340 380 315 474"/>
+    <!-- gripping handlebar -->
+    <path d="M420 250 Q470 250 485 290"/>
+    <path d="M425 265 Q490 270 520 292"/>
+  </g>
+
+  <!-- Octopus head/body -->
+  <ellipse cx="385" cy="215" rx="70" ry="82" fill="#9b59b6"/>
+  <ellipse cx="385" cy="285" rx="55" ry="35" fill="#9b59b6"/>
+  <!-- Spots -->
+  <g fill="#8e44ad">
+    <circle cx="360" cy="170" r="8"/>
+    <circle cx="400" cy="155" r="6"/>
+    <circle cx="420" cy="185" r="7"/>
+    <circle cx="345" cy="205" r="5"/>
+  </g>
+  <!-- Suction cups -->
+  <g fill="#e8c9f2">
+    <circle cx="378" cy="340" r="3"/>
+    <circle cx="368" cy="372" r="3"/>
+    <circle cx="335" cy="440" r="3"/>
+    <circle cx="470" cy="256" r="3"/>
+  </g>
+
+  <!-- Helmet -->
+  <path d="M320 205 Q330 130 395 128 Q450 130 455 205 Q390 190 320 205Z" fill="#f4b400" stroke="#c48a00" stroke-width="4"/>
+  <path d="M385 128 V195" stroke="#c48a00" stroke-width="3"/>
+
+  <!-- Eyes -->
+  <ellipse cx="365" cy="235" rx="20" ry="24" fill="#fff"/>
+  <ellipse cx="415" cy="235" rx="20" ry="24" fill="#fff"/>
+  <circle cx="372" cy="238" r="10" fill="#222"/>
+  <circle cx="422" cy="238" r="10" fill="#222"/>
+  <circle cx="375" cy="234" r="3" fill="#fff"/>
+  <circle cx="425" cy="234" r="3" fill="#fff"/>
+  <!-- Smile -->
+  <path d="M370 275 Q392 295 415 275" fill="none" stroke="#5b2c6f" stroke-width="4" stroke-linecap="round"/>
+</svg>

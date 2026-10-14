@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night Launch</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #030711;
+  }
+  body { display: grid; place-items: center; }
+  canvas {
+    display: block;
+    width: min(100vw, 177.7778vh);
+    height: min(56.25vw, 100vh);
+    aspect-ratio: 16 / 9;
+  }
+</style>
+</head>
+<body>
+<canvas id="scene" width="960" height="540"
+  aria-label="A looping night launch with a three-second countdown, engine ignition, smoke, and rocket liftoff."></canvas>
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("scene");
+  const ctx = canvas.getContext("2d");
+  const W = 960, H = 540, LOOP = 10;
+  const rocketX = 480, groundY = 414;
+  let particles = [];
+  let lastTime = null, lastPhase = 0;
+  let smokeBudget = 0, sparkBudget = 0;
+  let seed = 1847;
+
+  function random() {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+  const range = (a, b) => a + (b - a) * random();
+  const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+
+  const stars = Array.from({ length: 155 }, () => ({
+    x: range(12, 948), y: range(12, 375),
+    r: range(.45, 1.55), phase: range(0, Math.PI * 2)
+  }));
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  function path(points, fill) {
+    ctx.beginPath();
+    points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
+
+  function background(t, power) {
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, "#030916");
+    sky.addColorStop(.68, "#10243b");
+    sky.addColorStop(1, "#233547");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    const moonGlow = ctx.createRadialGradient(786, 92, 8, 786, 92, 85);
+    moonGlow.addColorStop(0, "rgba(162,205,238,.13)");
+    moonGlow.addColorStop(1, "rgba(162,205,238,0)");
+    ctx.fillStyle = moonGlow;
+    ctx.fillRect(696, 2, 180, 180);
+
+    for (const star of stars) {
+      const alpha = .4 + .35 * Math.sin(t * 1.1 + star.phase);
+      ctx.fillStyle = `rgba(219,236,255,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = "#dce8ee";
+    ctx.beginPath();
+    ctx.arc(786, 92, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#b5c6d2";
+    [[779, 85, 5], [793, 101, 4], [796, 81, 2.5]].forEach(([x, y, r]) => {
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    });
+
+    path([[0, 397], [82, 341], [151, 381], [227, 326], [340, 399],
+      [445, 365], [550, 400], [663, 342], [745, 380], [858, 332],
+      [960, 394], [960, 540], [0, 540]], "#101e2e");
+    path([[0, 416], [132, 385], [250, 408], [375, 390], [502, 411],
+      [644, 380], [789, 413], [895, 390], [960, 416],
+      [960, 540], [0, 540]], "#0a1522");
+
+    ctx.fillStyle = "#09111c";
+    ctx.fillRect(0, groundY, W, H - groundY);
+
+    if (power > 0) {
+      const glow = ctx.createRadialGradient(rocketX, groundY, 0, rocketX, groundY, 220);
+      glow.addColorStop(0, `rgba(255,148,50,${power * .32})`);
+      glow.addColorStop(1, "rgba(255,110,20,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(260, 275, 440, 265);
+    }
+
+    ctx.fillStyle = "#152432";
+    ctx.fillRect(366, 412, 228, 16);
+    ctx.fillStyle = "#304553";
+    ctx.fillRect(380, 406, 200, 7);
+    ctx.fillStyle = "#0b121a";
+    ctx.fillRect(399, 428, 15, 31);
+    ctx.fillRect(546, 428, 15, 31);
+
+    // A slim service mast with cross braces.
+    ctx.strokeStyle = "#304352";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(395, 405); ctx.lineTo(395, 294);
+    ctx.moveTo(419, 405); ctx.lineTo(419, 294);
+    ctx.moveTo(391, 294); ctx.lineTo(423, 294);
+    ctx.stroke();
+    ctx.lineWidth = 2;
+    for (let y = 300; y < 400; y += 22) {
+      ctx.beginPath();
+      ctx.moveTo(395, y); ctx.lineTo(419, y + 22);
+      ctx.moveTo(419, y); ctx.lineTo(395, y + 22);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "#ed6b55";
+    ctx.shadowColor = "#ff6454";
+    ctx.shadowBlur = 9;
+    ctx.beginPath(); ctx.arc(407, 291, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    for (let x = 326; x <= 634; x += 44) {
+      ctx.fillStyle = "#ffaa54";
+      ctx.fillRect(x, 438, 3, 2);
+    }
+  }
+
+  function emitSmoke(x, y, grounded) {
+    const direction = random() < .5 ? -1 : 1;
+    particles.push({
+      kind: "smoke", x, y,
+      vx: grounded ? direction * range(30, 115) : range(-22, 22),
+      vy: grounded ? range(-27, -7) : range(35, 95),
+      age: 0, life: range(2.5, 4),
+      radius: grounded ? range(7, 16) : range(5, 10),
+      growth: range(12, 24),
+      shade: Math.floor(range(109, 150))
+    });
+  }
+
+  function emitSpark(x, y) {
+    particles.push({
+      kind: "spark", x, y,
+      vx: range(-55, 55), vy: range(100, 220),
+      age: 0, life: range(.2, .55), radius: range(1, 2.2)
+    });
+  }
+
+  function updateParticles(dt) {
+    for (const p of particles) {
+      p.age += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      if (p.kind === "smoke") {
+        p.vx *= Math.exp(-.3 * dt);
+        p.vy -= 10 * dt;
+      } else {
+        p.vy += 160 * dt;
+      }
+    }
+    particles = particles.filter(p => p.age < p.life);
+  }
+
+  function drawParticles(kind) {
+    for (const p of particles) {
+      if (p.kind !== kind) continue;
+      const progress = p.age / p.life;
+      if (kind === "smoke") {
+        const r = p.radius + p.age * p.growth;
+        const alpha = .32 * Math.min(1, p.age * 8) * (1 - progress);
+        const cloud = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+        cloud.addColorStop(0, `rgba(${p.shade},${p.shade + 8},${p.shade + 16},${alpha})`);
+        cloud.addColorStop(.6, `rgba(${p.shade},${p.shade + 8},${p.shade + 16},${alpha * .65})`);
+        cloud.addColorStop(1, `rgba(${p.shade},${p.shade + 8},${p.shade + 16},0)`);
+        ctx.fillStyle = cloud;
+        ctx.fillRect(p.x - r, p.y - r, r * 2, r * 2);
+      } else {
+        ctx.globalAlpha = 1 - progress;
+        ctx.fillStyle = "#ffd58b";
+        ctx.fillRect(p.x, p.y, p.radius, p.radius * 3);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  function drawRocket(y, t, power) {
+    ctx.save();
+    ctx.translate(rocketX + (t >= 3 && t < 4 ? Math.sin(t * 80) * .6 : 0), y);
+
+    if (power > 0) {
+      const length = power * (65 + 11 * Math.sin(t * 47) + 7 * Math.sin(t * 71));
+      const glow = ctx.createRadialGradient(0, 52, 1, 0, 62, 82);
+      glow.addColorStop(0, `rgba(255,170,54,${power * .65})`);
+      glow.addColorStop(1, "rgba(255,100,20,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(-82, -20, 164, 164);
+
+      ctx.beginPath();
+      ctx.moveTo(-9, 39);
+      ctx.bezierCurveTo(-22, 62, -9, 72, 0, 42 + length);
+      ctx.bezierCurveTo(12, 77, 20, 60, 9, 39);
+      ctx.closePath();
+      ctx.fillStyle = "#ff6929";
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(-6, 40);
+      ctx.quadraticCurveTo(-11, 61, 0, 42 + length * .78);
+      ctx.quadraticCurveTo(11, 62, 6, 40);
+      ctx.closePath();
+      ctx.fillStyle = "#ffc45d";
+      ctx.fill();
+
+      path([[-4, 40], [0, 42 + length * .48], [4, 40]], "#fff5c7");
+    }
+
+    path([[-13, 12], [-29, 35], [-29, 45], [-12, 36]], "#df5c4c");
+    path([[13, 12], [29, 35], [29, 45], [12, 36]], "#a93139");
+    path([[-9, 33], [-7, 43], [7, 43], [9, 33]], "#374452");
+
+    const body = ctx.createLinearGradient(-15, 0, 15, 0);
+    body.addColorStop(0, "#8eacbf");
+    body.addColorStop(.4, "#f2f6ef");
+    body.addColorStop(.7, "#d6e1e5");
+    body.addColorStop(1, "#6d899e");
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(0, -57);
+    ctx.bezierCurveTo(-8, -49, -15, -37, -15, -24);
+    ctx.lineTo(-15, 31);
+    ctx.quadraticCurveTo(0, 38, 15, 31);
+    ctx.lineTo(15, -24);
+    ctx.bezierCurveTo(15, -37, 8, -49, 0, -57);
+    ctx.fill();
+
+    path([[0, -57], [-10, -40], [10, -40]], "#e96555");
+    ctx.fillStyle = "#cf5145";
+    ctx.fillRect(-15, 17, 30, 6);
+
+    ctx.fillStyle = "#364f66";
+    ctx.beginPath(); ctx.arc(0, -15, 8.5, 0, Math.PI * 2); ctx.fill();
+    const glass = ctx.createLinearGradient(-5, -21, 6, -9);
+    glass.addColorStop(0, "#93e4ee");
+    glass.addColorStop(1, "#1a547d");
+    ctx.fillStyle = glass;
+    ctx.beginPath(); ctx.arc(0, -15, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.7)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(-1, -16, 3.7, 3.4, 5.2); ctx.stroke();
+    ctx.restore();
+  }
+
+  function overlay(t) {
+    ctx.textAlign = "center";
+    if (t < 3) {
+      const segment = t % 1;
+      const opacity = clamp(segment / .1) * clamp((1 - segment) / .22);
+      const scale = 1 + .14 * (1 - segment);
+      ctx.save();
+      ctx.translate(480, 173);
+      ctx.scale(scale, scale);
+      ctx.globalAlpha = opacity;
+      ctx.font = "bold 112px system-ui, sans-serif";
+      ctx.fillStyle = "#f0f7ff";
+      ctx.shadowColor = "#83bcff";
+      ctx.shadowBlur = 25;
+      ctx.fillText(String(3 - Math.floor(t)), 0, 0);
+      ctx.restore();
+    }
+
+    let label = "LAUNCH SEQUENCE";
+    if (t >= 3 && t < 4) label = "IGNITION";
+    else if (t >= 4 && t < 6.8) label = "LIFTOFF";
+    else if (t >= 6.8) label = "TO THE STARS";
+
+    ctx.font = "12px system-ui, sans-serif";
+    ctx.fillStyle = "rgba(186,208,229,.65)";
+    ctx.fillText(label.split("").join(" "), 480, 492);
+
+    const fade = t > 9.45 ? (t - 9.45) / .55 : t < .25 ? 1 - t / .25 : 0;
+    if (fade > 0) {
+      ctx.fillStyle = `rgba(3,7,17,${clamp(fade)})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function frame(timestamp) {
+    const seconds = timestamp / 1000;
+    if (lastTime === null) lastTime = seconds;
+    const t = seconds % LOOP;
+    let dt = Math.min(seconds - lastTime, .05);
+    lastTime = seconds;
+
+    if (t < lastPhase) {
+      particles = [];
+      smokeBudget = sparkBudget = 0;
+      seed = 2918;
+      dt = 0;
+    }
+    lastPhase = t;
+
+    const flight = Math.max(0, t - 4);
+    const y = 365 - 95 * flight * flight;
+    const power = t >= 3 && t < 7 ? clamp((t - 3) / .5) : 0;
+    const visibleEngine = power > 0 && y + 43 > -90;
+
+    if (visibleEngine) {
+      smokeBudget += dt * (t < 4 ? 100 : 65) * power;
+      while (smokeBudget >= 1) {
+        smokeBudget--;
+        emitSmoke(rocketX + range(-9, 9),
+          t < 4 ? groundY - 1 : y + 68, t < 4.25);
+      }
+      sparkBudget += dt * 65 * power;
+      while (sparkBudget >= 1) {
+        sparkBudget--;
+        emitSpark(rocketX + range(-6, 6), y + 48);
+      }
+    }
+
+    updateParticles(dt);
+    background(t, power * Math.exp(-flight * 1.5));
+    drawParticles("smoke");
+    if (y + 150 > 0) drawRocket(y, t, power);
+    drawParticles("spark");
+    overlay(t);
+    requestAnimationFrame(frame);
+  }
+
+  // Use a local clock so every opening begins with the countdown.
+  let start = null;
+  function animate(timestamp) {
+    if (start === null) start = timestamp;
+    frame(timestamp - start);
+  }
+  // Route subsequent frames through the same local clock.
+  const nativeRAF = window.requestAnimationFrame.bind(window);
+  function requestAnimationFrame() {
+    nativeRAF(animate);
+  }
+  nativeRAF(animate);
+})();
+</script>
+</body>
+</html>

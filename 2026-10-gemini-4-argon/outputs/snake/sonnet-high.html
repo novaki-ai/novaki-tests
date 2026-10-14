@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Snake</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #111; color: #eee; font-family: system-ui, sans-serif; }
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  #wrap { position: relative; width: 960px; height: 540px; background: #1a1a1f; }
+  canvas { display: block; width: 960px; height: 540px; }
+  #hud { position: absolute; left: 24px; top: 24px; font-size: 24px; }
+  #score { font-weight: bold; color: #7CFC9A; }
+  #overlay {
+    position: absolute; left: 210px; top: 0; width: 540px; height: 540px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; pointer-events: none;
+  }
+  #gameover { display: none; font-size: 56px; font-weight: bold; color: #ff5d5d; text-shadow: 0 2px 8px #000; }
+  #hint { margin-top: 12px; font-size: 20px; color: #ddd; text-shadow: 0 2px 6px #000; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="960" height="540"></canvas>
+  <div id="hud">Score: <span id="score">0</span></div>
+  <div id="overlay">
+    <div id="gameover">Game Over</div>
+    <div id="hint">Press Space to start</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var GRID = 20;
+  var CELL = 27;                 // 20 * 27 = 540
+  var OFFSET_X = (960 - GRID * CELL) / 2;
+  var OFFSET_Y = 0;
+  var TICK_MS = 150;
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var scoreEl = document.getElementById('score');
+  var gameOverEl = document.getElementById('gameover');
+  var hintEl = document.getElementById('hint');
+
+  var VECTORS = {
+    up:    { x: 0,  y: -1 },
+    down:  { x: 0,  y: 1 },
+    left:  { x: -1, y: 0 },
+    right: { x: 1,  y: 0 }
+  };
+  var OPPOSITE = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  var KEY_DIRS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+
+  var snakeCells, dir, inputQueue, food, score, running, gameOver, timer;
+
+  function reset() {
+    snakeCells = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+    dir = 'right';
+    inputQueue = [];
+    score = 0;
+    running = false;
+    gameOver = false;
+    food = { x: 15, y: 10 };
+    spawnFood();
+    updateUI();
+  }
+
+  function isOnSnake(x, y) {
+    for (var i = 0; i < snakeCells.length; i++) {
+      if (snakeCells[i].x === x && snakeCells[i].y === y) return true;
+    }
+    return false;
+  }
+
+  function spawnFood() {
+    var free = [];
+    for (var y = 0; y < GRID; y++) {
+      for (var x = 0; x < GRID; x++) {
+        if (!isOnSnake(x, y)) free.push({ x: x, y: y });
+      }
+    }
+    if (free.length === 0) return false;
+    food = free[Math.floor(Math.random() * free.length)];
+    return true;
+  }
+
+  function updateUI() {
+    scoreEl.textContent = String(score);
+    if (gameOver) {
+      gameOverEl.style.display = 'block';
+      hintEl.style.display = 'block';
+      hintEl.textContent = 'Press Space to restart';
+    } else if (!running) {
+      gameOverEl.style.display = 'none';
+      hintEl.style.display = 'block';
+      hintEl.textContent = 'Press Space to start';
+    } else {
+      gameOverEl.style.display = 'none';
+      hintEl.style.display = 'none';
+    }
+  }
+
+  function start() {
+    reset();
+    running = true;
+    updateUI();
+    clearInterval(timer);
+    timer = setInterval(tick, TICK_MS);
+    draw();
+  }
+
+  function endGame() {
+    running = false;
+    gameOver = true;
+    clearInterval(timer);
+    timer = null;
+    updateUI();
+    draw();
+  }
+
+  function tick() {
+    if (!running) return;
+
+    if (inputQueue.length) dir = inputQueue.shift();
+
+    var v = VECTORS[dir];
+    var head = snakeCells[0];
+    var nx = head.x + v.x;
+    var ny = head.y + v.y;
+
+    if (nx < 0 || ny < 0 || nx >= GRID || ny >= GRID) {
+      endGame();
+      return;
+    }
+
+    var eating = (nx === food.x && ny === food.y);
+
+    // The tail cell is vacated this tick unless the snake is growing.
+    var limit = eating ? snakeCells.length : snakeCells.length - 1;
+    for (var i = 0; i < limit; i++) {
+      if (snakeCells[i].x === nx && snakeCells[i].y === ny) {
+        endGame();
+        return;
+      }
+    }
+
+    snakeCells.unshift({ x: nx, y: ny });
+    if (eating) {
+      score += 10;
+      if (!spawnFood()) {
+        updateUI();
+        endGame();
+        return;
+      }
+    } else {
+      snakeCells.pop();
+    }
+
+    updateUI();
+    draw();
+  }
+
+  function draw() {
+    ctx.fillStyle = '#1a1a1f';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // board
+    ctx.fillStyle = '#23232b';
+    ctx.fillRect(OFFSET_X, OFFSET_Y, GRID * CELL, GRID * CELL);
+
+    ctx.strokeStyle = '#2d2d37';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var i = 0; i <= GRID; i++) {
+      var p = i * CELL + 0.5;
+      ctx.moveTo(OFFSET_X + p, OFFSET_Y);
+      ctx.lineTo(OFFSET_X + p, OFFSET_Y + GRID * CELL);
+      ctx.moveTo(OFFSET_X, OFFSET_Y + p);
+      ctx.lineTo(OFFSET_X + GRID * CELL, OFFSET_Y + p);
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = '#555566';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(OFFSET_X - 1, OFFSET_Y + 1, GRID * CELL + 2, GRID * CELL - 2);
+
+    // food
+    ctx.fillStyle = '#ff5d5d';
+    ctx.beginPath();
+    ctx.arc(OFFSET_X + food.x * CELL + CELL / 2, OFFSET_Y + food.y * CELL + CELL / 2, CELL / 2 - 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // snake
+    for (var s = snakeCells.length - 1; s >= 0; s--) {
+      var c = snakeCells[s];
+      ctx.fillStyle = (s === 0) ? '#b6ffc8' : '#4cd97b';
+      ctx.fillRect(OFFSET_X + c.x * CELL + 1, OFFSET_Y + c.y * CELL + 1, CELL - 2, CELL - 2);
+    }
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.code === 'Space' || e.key === ' ') {
+      e.preventDefault();
+      if (!running) start();
+      return;
+    }
+
+    var d = KEY_DIRS[e.key];
+    if (!d) return;
+    e.preventDefault();
+
+    var last = inputQueue.length ? inputQueue[inputQueue.length - 1] : dir;
+    if (d === last || d === OPPOSITE[last]) return;
+    if (inputQueue.length >= 2) return;
+    inputQueue.push(d);
+  });
+
+  window.snake = {
+    state: function () {
+      return {
+        running: running,
+        gameOver: gameOver,
+        score: score,
+        length: snakeCells.length,
+        head: { x: snakeCells[0].x, y: snakeCells[0].y },
+        food: { x: food.x, y: food.y },
+        dir: dir
+      };
+    },
+    setFood: function (x, y) {
+      x = Math.floor(Number(x));
+      y = Math.floor(Number(y));
+      if (!(x >= 0 && x < GRID && y >= 0 && y < GRID)) return false;
+      food = { x: x, y: y };
+      draw();
+      return true;
+    }
+  };
+
+  reset();
+  draw();
+})();
+</script>
+</body>
+</html>

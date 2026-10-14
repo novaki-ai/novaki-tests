@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lighthouse in the Storm</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; width: 960px; height: 540px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="960" height="540"></canvas>
+<script>
+(() => {
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  const W = 960, H = 540, T = 16, TAU = Math.PI * 2, HOR = 330;
+  const LX = 780, LY = 152; // lamp position
+
+  // ---------- helpers ----------
+  function rng(s) {
+    return function () {
+      s |= 0; s = s + 0x6D2B79F5 | 0;
+      let t = Math.imul(s ^ s >>> 15, 1 | s);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  const R = rng(1337);
+  const rr = (a, b) => a + R() * (b - a);
+  const mod = (a, n) => ((a % n) + n) % n;
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const smooth = (a, b, x) => { const k = clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
+  const rgb = (a, b, f) => a.map((v, i) => lerp(v, b[i], f) | 0).join(',');
+
+  // ---------- clouds ----------
+  const CW = W + 400;
+  const clouds = [];
+  for (let i = 0; i < 80; i++) {
+    const layer = i < 40 ? 0 : 1;
+    clouds.push({
+      layer,
+      x: rr(0, CW),
+      y: layer ? rr(-30, 150) : rr(30, 250),
+      r: layer ? rr(80, 150) : rr(45, 95),
+      k: layer ? 2 : 1,             // integer wraps per loop -> seamless
+      a: layer ? rr(0.7, 0.95) : rr(0.5, 0.8)
+    });
+  }
+  function drawClouds(p, f, layer) {
+    const base = layer ? [20, 23, 32] : [38, 42, 56];
+    const lit = layer ? [120, 125, 155] : [170, 175, 205];
+    const col = rgb(base, lit, f);
+    for (const c of clouds) {
+      if (c.layer !== layer) continue;
+      const x = mod(c.x + c.k * CW * p, CW) - 200;
+      const g = ctx.createRadialGradient(x, c.y, 0, x, c.y, c.r);
+      g.addColorStop(0, `rgba(${col},${c.a})`);
+      g.addColorStop(0.6, `rgba(${col},${c.a * 0.55})`);
+      g.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(x - c.r, c.y - c.r, c.r * 2, c.r * 2);
+    }
+  }
+
+  // ---------- lightning ----------
+  function makeBolt(x, y, ty, w, dir, depth, out) {
+    const pts = [[x, y]];
+    while (y < ty) {
+      y = Math.min(ty, y + rr(8, 22));
+      x += rr(-14, 14) + dir * rr(4, 14);
+      pts.push([x, y]);
+      if (depth < 2 && R() < 0.13 && y < ty - 30) {
+        makeBolt(x, y, y + rr(40, 140) / (depth + 1), w * 0.5,
+          (R() < 0.5 ? -1 : 1) * rr(0.6, 1.4), depth + 1, out);
+      }
+    }
+    out.push({ pts, w });
+    return out;
+  }
+  const bolts = [
+    { t: 2.6, x: 230 },
+    { t: 8.4, x: 470 },
+    { t: 12.9, x: 110 }
+  ].map(b => { b.segs = makeBolt(b.x, -10, HOR, 3, rr(-0.3, 0.3), 0, []); return b; });
+
+  function flashAt(t) {
+    let f = 0, bolt = null, bx = 300, v = 0;
+    for (const b of bolts) {
+      const d = mod(t - b.t, T);
+      let k = 0;
+      if (d < 0.07) k = 1;
+      else if (d < 0.13) k = 0.25;
+      else if (d < 0.2) k = 0.85;
+      else if (d < 1.3) k = 0.85 * Math.exp(-(d - 0.2) * 5);
+      if (k > f) { f = k; bx = b.x; bolt = d < 0.45 ? b : null; v = k; }
+    }
+    return { f, bolt, bx, v };
+  }
+  function drawBolt(b, v) {
+    ctx.save();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(170,185,255,1)';
+    ctx.shadowBlur = 20;
+    for (const s of b.segs) {
+      ctx.strokeStyle = `rgba(235,240,255,${v})`;
+      ctx.lineWidth = s.w;
+      ctx.beginPath();
+      s.pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]));
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ---------- sky & sea ----------
+  function drawSky(f, bx) {
+    const g = ctx.createLinearGradient(0, 0, 0, HOR);
+    g.addColorStop(0, `rgb(${rgb([7, 9, 16], [90, 95, 130], f)})`);
+    g.addColorStop(1, `rgb(${rgb([22, 28, 42], [140, 150, 180], f)})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, HOR + 2);
+    if (f > 0.01) {
+      const rg = ctx.createRadialGradient(bx, 120, 0, bx, 120, 520);
+      rg.addColorStop(0, `rgba(210,215,255,${0.5 * f})`);
+      rg.addColorStop(1, 'rgba(210,215,255,0)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(0, 0, W, HOR + 2);
+    }
+  }
+
+  function drawSea(p, f) {
+    const g = ctx.createLinearGradient(0, HOR, 0, H);
+    g.addColorStop(0, `rgb(${rgb([18, 26, 38], [90, 100, 125], f)})`);
+    g.addColorStop(1, `rgb(${rgb([4, 8, 14], [30, 36, 50], f)})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, HOR, W, H - HOR);
+
+    const lc = rgb([90, 110, 140], [200, 210, 240], f);
+    for (let j = 0; j < 18; j++) {
+      const k = j / 17;
+      const y = HOR + 3 + Math.pow(k, 1.7) * 190;
+      const amp = 0.6 + k * 5, fr = 0.05 - k * 0.035;
+      const ph = TAU * p * (2 + j % 3) + j * 1.7;
+      const ph2 = TAU * p * 3 + j * 0.9;
+      ctx.strokeStyle = `rgba(${lc},${0.1 + 0.12 * k})`;
+      ctx.lineWidth = 0.6 + k * 1.4;
+      ctx.beginPath();
+      let drawing = false;
+      for (let x = 0; x <= W; x += 8) {
+        const yy = y + Math.sin(x * fr + ph) * amp + Math.sin(x * fr * 2.3 - ph2) * amp * 0.4;
+        const on = Math.sin(x * 0.013 + j * 2.1 + ph2) > -0.25;
+        if (on) { drawing ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy); drawing = true; }
+        else drawing = false;
+      }
+      ctx.stroke();
+    }
+
+    // mist band at horizon
+    const mg = ctx.createLinearGradient(0, HOR - 45, 0, HOR + 35);
+    mg.addColorStop(0, 'rgba(80,90,110,0)');
+    mg.addColorStop(0.55, `rgba(${rgb([70, 80, 100], [170, 180, 210], f)},0.25)`);
+    mg.addColorStop(1, 'rgba(80,90,110,0)');
+    ctx.fillStyle = mg;
+    ctx.fillRect(0, HOR - 45, W, 80);
+  }
+
+  // ---------- cliff, rocks ----------
+  const cliffPts = [[548, 540], [556, 500], [572, 478], [580, 452], [598, 430], [606, 404],
+    [626, 388], [640, 362], [662, 344], [680, 322], [702, 312], [730, 300], [900, 300],
+    [930, 292], [960, 288], [960, 540]];
+  const rocks = [
+    [[455, 500], [464, 478], [482, 468], [498, 472], [508, 488], [512, 505]],
+    [[516, 500], [526, 466], [542, 454], [556, 460], [566, 478], [570, 505]]
+  ];
+  const strata = [];
+  for (let i = 0; i < 34; i++) {
+    let x = rr(560, 960), y = rr(312, 540);
+    const slope = rr(-0.35, 0.1), n = Math.floor(rr(4, 10)), pts = [[x, y]];
+    for (let j = 0; j < n; j++) { x += rr(10, 22); y += slope * 16 + rr(-3, 3); pts.push([x, y]); }
+    strata.push(pts);
+  }
+  const grass = [];
+  for (let x = 704; x < 960; x += rr(3, 7)) grass.push({ x, h: rr(4, 10), o: R() * TAU });
+
+  function poly(pts) {
+    ctx.beginPath();
+    pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]));
+    ctx.closePath();
+  }
+
+  function drawRocks(f) {
+    for (const r of rocks) {
+      poly(r);
+      const g = ctx.createLinearGradient(r[0][0], 450, r[r.length - 1][0], 505);
+      g.addColorStop(0, `rgb(${rgb([24, 26, 33], [85, 90, 105], f)})`);
+      g.addColorStop(1, `rgb(${rgb([10, 11, 15], [45, 48, 58], f)})`);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+  }
+
+  function drawCliff(p, f) {
+    ctx.save();
+    poly(cliffPts);
+    const g = ctx.createLinearGradient(548, 290, 960, 540);
+    g.addColorStop(0, `rgb(${rgb([26, 28, 36], [95, 100, 118], f)})`);
+    g.addColorStop(0.5, `rgb(${rgb([16, 18, 24], [65, 68, 82], f)})`);
+    g.addColorStop(1, `rgb(${rgb([8, 9, 13], [35, 37, 46], f)})`);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.clip();
+    ctx.lineWidth = 1.2;
+    for (const s of strata) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+      ctx.beginPath();
+      s.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]));
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(${rgb([110, 120, 140], [200, 210, 235], f)},0.08)`;
+      ctx.beginPath();
+      s.forEach((q, i) => i ? ctx.lineTo(q[0], q[1] - 1.5) : ctx.moveTo(q[0], q[1] - 1.5));
+      ctx.stroke();
+    }
+    // warm spill from the lamp on the cliff top
+    const wg = ctx.createRadialGradient(LX, 300, 0, LX, 300, 170);
+    wg.addColorStop(0, 'rgba(255,200,120,0.12)');
+    wg.addColorStop(1, 'rgba(255,200,120,0)');
+    ctx.fillStyle = wg;
+    ctx.fillRect(LX - 170, 290, 340, 120);
+    ctx.restore();
+
+    // rim
+    ctx.strokeStyle = `rgba(${rgb([80, 90, 110], [200, 210, 235], f)},${0.35 + f * 0.4})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 1; i < cliffPts.length - 1; i++) {
+      const q = cliffPts[i];
+      i === 1 ? ctx.moveTo(q[0], q[1]) : ctx.lineTo(q[0], q[1]);
+    }
+    ctx.stroke();
+
+    // wind-blown grass
+    ctx.strokeStyle = `rgba(${rgb([22, 30, 26], [80, 95, 85], f)},0.9)`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const g2 of grass) {
+      const gy = g2.x < 900 ? 300 : 300 - (g2.x - 900) * 0.2;
+      const sway = -3 - 2.5 * Math.sin(TAU * p * 8 + g2.o);
+      ctx.moveTo(g2.x, gy + 1);
+      ctx.quadraticCurveTo(g2.x, gy - g2.h * 0.6, g2.x + sway, gy - g2.h);
+    }
+    ctx.stroke();
+  }
+
+  // ---------- buildings ----------
+  function drawHouse(f) {
+    const wall = rgb([52, 50, 56], [150, 148, 160], f);
+    const roof = rgb([30, 22, 24], [100, 80, 85], f);
+    ctx.fillStyle = `rgb(${wall})`;
+    ctx.fillRect(832, 278, 58, 23);
+    ctx.fillStyle = `rgb(${roof})`;
+    ctx.fillRect(872, 256, 7, 16);
+    ctx.beginPath();
+    ctx.moveTo(826, 280); ctx.lineTo(861, 260); ctx.lineTo(896, 280); ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,190,100,0.85)';
+    ctx.fillRect(842, 284, 10, 9);
+    ctx.fillRect(868, 284, 10, 9);
+    ctx.fillStyle = `rgb(${rgb([20, 18, 20], [60, 55, 60], f)})`;
+    ctx.fillRect(856, 286, 7, 15);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const wx of [847, 873]) {
+      const g = ctx.createRadialGradient(wx, 289, 0, wx, 289, 22);
+      g.addColorStop(0, 'rgba(255,180,90,0.25)');
+      g.addColorStop(1, 'rgba(255,180,90,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(wx - 22, 267, 44, 44);
+    }
+    ctx.restore();
+  }
+
+  function drawLighthouse(p, f) {
+    const bx = LX, by = 301, ty = 172, bw = 30, tw = 19;
+    const white = `rgb(${rgb([150, 154, 165], [235, 238, 245], f)})`;
+    const red = `rgb(${rgb([105, 28, 32], [200, 70, 70], f)})`;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(bx - bw, by); ctx.lineTo(bx - tw, ty); ctx.lineTo(bx + tw, ty); ctx.lineTo(bx + bw, by);
+    ctx.closePath();
+    ctx.clip();
+    const bands = 5;
+    for (let i = 0; i < bands; i++) {
+      const y0 = by - (by - ty) * i / bands, y1 = by - (by - ty) * (i + 1) / bands;
+      ctx.fillStyle = i % 2 ? red : white;
+      ctx.fillRect(bx - bw, y1, bw * 2, y0 - y1 + 0.5);
+    }
+    const sg = ctx.createLinearGradient(bx - bw, 0, bx + bw, 0);
+    sg.addColorStop(0, 'rgba(0,0,0,0.65)');
+    sg.addColorStop(0.42, 'rgba(0,0,0,0.05)');
+    sg.addColorStop(1, 'rgba(0,0,0,0.75)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(bx - bw, ty, bw * 2, by - ty);
+    ctx.restore();
+
+    // windows & door
+    ctx.fillStyle = 'rgba(255,200,110,0.75)';
+    ctx.fillRect(bx - 3, 262, 6, 9);
+    ctx.fillRect(bx - 3, 214, 6, 9);
+    ctx.fillStyle = `rgb(${rgb([18, 16, 18], [50, 45, 50], f)})`;
+    ctx.beginPath();
+    ctx.moveTo(bx - 6, by); ctx.lineTo(bx - 6, 288); ctx.arc(bx, 288, 6, Math.PI, 0); ctx.lineTo(bx + 6, by);
+    ctx.fill();
+
+    // gallery
+    const dark = `rgb(${rgb([22, 24, 28], [70, 74, 82], f)})`;
+    ctx.fillStyle = dark;
+    ctx.fillRect(bx - 26, ty - 5, 52, 6);
+    ctx.strokeStyle = dark;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = bx - 25; x <= bx + 25; x += 5) { ctx.moveTo(x, ty - 5); ctx.lineTo(x, ty - 14); }
+    ctx.moveTo(bx - 25, ty - 14); ctx.lineTo(bx + 25, ty - 14);
+    ctx.stroke();
+
+    // lantern room (glass)
+    const gl = ctx.createLinearGradient(bx - 13, 0, bx + 13, 0);
+    const th = TAU * p;
+    const spot = clamp(0.5 + Math.cos(th) * 0.35, 0.05, 0.95);
+    gl.addColorStop(0, 'rgba(255,200,110,0.8)');
+    gl.addColorStop(spot, 'rgba(255,250,225,1)');
+    gl.addColorStop(1, 'rgba(255,200,110,0.8)');
+    ctx.fillStyle = gl;
+    ctx.fillRect(bx - 13, ty - 34, 26, 29);
+    ctx.strokeStyle = dark;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (const dx of [-13, -6, 0, 6, 13]) { ctx.moveTo(bx + dx, ty - 34); ctx.lineTo(bx + dx, ty - 5); }
+    ctx.stroke();
+
+    // dome roof
+    ctx.fillStyle = `rgb(${rgb([30, 22, 24], [110, 70, 72], f)})`;
+    ctx.beginPath();
+    ctx.moveTo(bx - 17, ty - 34);
+    ctx.quadraticCurveTo(bx - 14, ty - 54, bx, ty - 56);
+    ctx.quadraticCurveTo(bx + 14, ty - 54, bx + 17, ty - 34);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(bx - 1, ty - 64, 2, 9);
+    ctx.beginPath();
+    ctx.arc(bx, ty - 64, 2.5, 0, TAU);
+    ctx.fill();
+  }
+
+  // ---------- foreground wave, spray ----------
+  const foam = [];
+  for (let i = 0; i < 50; i++) foam.push({ dx: rr(-80, 25), dy: R(), r: rr(0.8, 2.4), n: Math.floor(rr(4, 12)), o: R() });
+
+  function waveY(x, p, cx, h) {
+    const d = x - cx;
+    const bump = d < 0 ? Math.exp(-Math.pow(d / 120, 2)) : Math.exp(-Math.pow(d / 45, 2));
+    return 472 + Math.sin(x * 0.018 + TAU * p * 4) * 5 + Math.sin(x * 0.041 - TAU * p * 6) * 3 - h * bump;
+  }
+
+  function drawFrontWave(t, p, f) {
+    const q = mod(t, 4) / 4;
+    const cx = 650 - (1 - q) * 800;
+    const h = 42 * smooth(0, 0.35, q) * (1 - smooth(0.88, 1, q));
+
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 6) ctx.lineTo(x, waveY(x, p, cx, h));
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    const g = ctx.createLinearGradient(0, 420, 0, H);
+    g.addColorStop(0, `rgb(${rgb([20, 34, 50], [90, 110, 140], f)})`);
+    g.addColorStop(0.4, `rgb(${rgb([10, 18, 28], [50, 62, 82], f)})`);
+    g.addColorStop(1, `rgb(${rgb([3, 6, 10], [22, 28, 38], f)})`);
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(${rgb([150, 175, 210], [230, 240, 255], f)},0.35)`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 6) {
+      const y = waveY(x, p, cx, h);
+      x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+
+    // crest foam
+    const fa = h / 42;
+    if (fa > 0.02) {
+      for (const s of foam) {
+        const x = cx + s.dx;
+        const y = waveY(x, p, cx, h) + s.dy * 10 * fa - 1;
+        const tw = 0.5 + 0.5 * Math.sin(TAU * (p * s.n + s.o));
+        ctx.fillStyle = `rgba(220,232,250,${0.55 * fa * (0.4 + 0.6 * tw)})`;
+        ctx.beginPath();
+        ctx.arc(x, y, s.r, 0, TAU);
+        ctx.fill();
+      }
+    }
+  }
+
+  const SPRAY = [];
+  for (let b = 0; b < 4; b++) {
+    const ps = [];
+    for (let i = 0; i < 150; i++) {
+      ps.push({ ox: rr(-30, 20), oy: rr(-6, 6), vx: rr(-170, 45), vy: -rr(120, 440), r: rr(1, 3.6), life: rr(1.2, 2.2) });
+    }
+    SPRAY.push(ps);
+  }
+  const crashT = b => b * 4 + 3.55;
+
+  function drawSpray(t, f) {
+    const col = rgb([200, 215, 240], [245, 250, 255], f);
+    for (let b = 0; b < 4; b++) {
+      const a = mod(t - crashT(b), T);
+      if (a > 2.6) continue;
+      // mist cloud
+      const ma = 0.28 * smooth(0, 0.3, a) * Math.exp(-a * 1.1);
+      const mg = ctx.createRadialGradient(585, 420, 0, 585, 420, 140);
+      mg.addColorStop(0, `rgba(${col},${ma})`);
+      mg.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = mg;
+      ctx.fillRect(445, 280, 280, 280);
+      // foam sheet at the cliff base
+      const fa = Math.exp(-a * 1.4) * smooth(0, 0.1, a);
+      ctx.fillStyle = `rgba(${col},${0.45 * fa})`;
+      ctx.beginPath();
+      ctx.ellipse(575, 470, 40 + a * 25, 7 + a * 2, 0, 0, TAU);
+      ctx.fill();
+      // droplets
+      for (const s of SPRAY[b]) {
+        if (a > s.life) continue;
+        const x = 578 + s.ox + s.vx * a;
+        const y = 460 + s.oy + s.vy * a + 0.5 * 380 * a * a;
+        const al = 1 - a / s.life;
+        ctx.fillStyle = `rgba(${col},${al * 0.6})`;
+        ctx.beginPath();
+        ctx.arc(x, y, s.r * (1 + a * 1.4), 0, TAU);
+        ctx.fill();
+      }
+    }
+  }
+
+  // ---------- rain & splashes ----------
+  const splashes = [];
+  for (let i = 0; i < 80; i++) {
+    splashes.push({ x: rr(0, 570), y: rr(HOR + 15, H - 10), n: Math.floor(rr(6, 14)), o: R() });
+  }
+  function drawSplashes(p) {
+    ctx.lineWidth = 1;
+    for (const s of splashes) {
+      const a = mod(p * s.n + s.o, 1);
+      if (a > 0.35) continue;
+      const k = a / 0.35, sc = (s.y - HOR) / (H - HOR);
+      const r = 1 + k * 9 * sc;
+      ctx.strokeStyle = `rgba(170,190,220,${(1 - k) * 0.35})`;
+      ctx.beginPath();
+      ctx.ellipse(s.x, s.y, r + 1, r * 0.3 + 0.3, 0, 0, TAU);
+      ctx.stroke();
+    }
+  }
+
+  const drops = [];
+  for (let i = 0; i < 560; i++) {
+    const near = i < 170;
+    drops.push({
+      x: rr(0, W + 200), y: rr(0, H + 80),
+      k: near ? Math.floor(rr(20, 27)) : Math.floor(rr(12, 17)), // integer falls per loop
+      l: near ? rr(16, 26) : rr(8, 13),
+      near
+    });
+  }
+  function inBeam(x, y, info) {
+    for (const b of info) {
+      if (b.a < 0.04) continue;
+      const rx = x - LX, ry = y - LY;
+      const al = rx * b.ux + ry * b.uy;
+      if (al < 0 || al > b.len) continue;
+      const pe = Math.abs(rx * b.uy - ry * b.ux);
+      if (pe < 4 + b.w * al / b.len) return true;
+    }
+    return false;
+  }
+  function drawRain(p, info, f) {
+    const span = H + 80, slant = 0.22;
+    const far = new Path2D(), near = new Path2D(), lit = new Path2D();
+    for (const d of drops) {
+      const y = mod(d.y + span * d.k * p, span) - 40;
+      const x = mod(d.x - y * slant, W + 200) - 100;
+      const path = inBeam(x, y, info) ? lit : (d.near ? near : far);
+      path.moveTo(x, y);
+      path.lineTo(x + slant * d.l, y - d.l);
+    }
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = `rgba(${rgb([140, 160, 190], [220, 230, 255], f)},0.28)`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke(far);
+    ctx.strokeStyle = `rgba(${rgb([170, 190, 220], [235, 240, 255], f)},0.4)`;
+    ctx.lineWidth = 1.3;
+    ctx.stroke(near);
+    ctx.strokeStyle = 'rgba(255,245,210,0.75)';
+    ctx.lineWidth = 1.3;
+    ctx.stroke(lit);
+  }
+
+  // ---------- beam ----------
+  function drawBeams(p) {
+    const info = [];
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 2; i++) {
+      const th = TAU * p + i * Math.PI;
+      const dx = Math.cos(th), dz = Math.sin(th), adx = Math.abs(dx);
+      const len = 1200 * Math.max(adx, 0.03);
+      const sgn = dx < 0 ? -1 : 1;
+      const ex = LX + sgn * len, ey = LY + len * 0.05;
+      const w = 18 + len * 0.11 + 90 * Math.abs(dz) * Math.min(1, adx * 4);
+      const a = 0.26 * (dz < 0 ? 0.5 : 1) * Math.min(1, adx * 2.5);
+      const vl = Math.hypot(ex - LX, ey - LY);
+      info.push({ ux: (ex - LX) / vl, uy: (ey - LY) / vl, len: vl, w, a });
+
+      if (a > 0.005) {
+        for (const [ww, aa] of [[w, a * 0.55], [w * 0.38, a]]) {
+          const g = ctx.createLinearGradient(LX, LY, ex, ey);
+          g.addColorStop(0, `rgba(255,238,185,${aa})`);
+          g.addColorStop(0.35, `rgba(255,238,185,${aa * 0.45})`);
+          g.addColorStop(1, 'rgba(255,238,185,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.moveTo(LX, LY - 4);
+          ctx.lineTo(ex, ey - ww);
+          ctx.lineTo(ex, ey + ww);
+          ctx.lineTo(LX, LY + 4);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // flare when the beam faces the viewer
+      const fz = Math.pow(Math.max(0, dz), 14);
+      if (fz > 0.003) {
+        const r = 30 + 300 * fz;
+        const g = ctx.createRadialGradient(LX, LY, 0, LX, LY, r);
+        g.addColorStop(0, `rgba(255,250,225,${0.95 * fz})`);
+        g.addColorStop(0.2, `rgba(255,230,160,${0.45 * fz})`);
+        g.addColorStop(1, 'rgba(255,220,150,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(LX - r, LY - r, r * 2, r * 2);
+        const hw = 500 * fz;
+        const hg = ctx.createLinearGradient(LX - hw, 0, LX + hw, 0);
+        hg.addColorStop(0, 'rgba(255,230,170,0)');
+        hg.addColorStop(0.5, `rgba(255,240,200,${0.5 * fz})`);
+        hg.addColorStop(1, 'rgba(255,230,170,0)');
+        ctx.fillStyle = hg;
+        ctx.fillRect(LX - hw, LY - 2, hw * 2, 4);
+      }
+    }
+    ctx.restore();
+    return info;
+  }
+
+  function drawLampGlow() {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(LX, LY, 0, LX, LY, 75);
+    g.addColorStop(0, 'rgba(255,240,200,0.7)');
+    g.addColorStop(0.25, 'rgba(255,210,130,0.22)');
+    g.addColorStop(1, 'rgba(255,200,120,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(LX - 75, LY - 75, 150, 150);
+    ctx.restore();
+  }
+
+  const vignette = ctx.createRadialGradient(W / 2, H / 2, 280, W / 2, H / 2, 620);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.6)');
+
+  // ---------- main loop ----------
+  const t0 = performance.now();
+  function frame(now) {
+    const t = mod((now - t0) / 1000, T);
+    const p = t / T;
+    const fl = flashAt(t);
+    const f = fl.f;
+
+    drawSky(f, fl.bx);
+    drawClouds(p, f, 0);
+    if (fl.bolt) drawBolt(fl.bolt, fl.v);
+    drawClouds(p, f, 1);
+    drawSea(p, f);
+    drawRocks(f);
+    drawCliff(p, f);
+    drawHouse(f);
+    drawLighthouse(p, f);
+    drawFrontWave(t, p, f);
+    drawSplashes(p);
+    drawSpray(t, f);
+    const info = drawBeams(p);
+    drawRain(p, info, f);
+    drawLampGlow();
+
+    if (f > 0.01) {
+      ctx.fillStyle = `rgba(200,210,255,${f * 0.2})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, W, H);
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

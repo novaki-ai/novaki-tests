@@ -1,0 +1,202 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title desc">
+  <title id="title">An octopus riding a bicycle</title>
+  <desc id="desc">A cheerful coral octopus steers a teal bicycle, its eight curling arms holding the handlebars and pedaling along a sunny seaside path.</desc>
+
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1">
+      <stop stop-color="#e4f6fa"/>
+      <stop offset="1" stop-color="#fff6df"/>
+    </linearGradient>
+    <linearGradient id="coral" x1="0" y1="0" x2=".8" y2="1">
+      <stop stop-color="#ffac88"/>
+      <stop offset=".55" stop-color="#f87978"/>
+      <stop offset="1" stop-color="#dd596e"/>
+    </linearGradient>
+    <linearGradient id="sea" x2="0" y2="1">
+      <stop stop-color="#a5dcd9"/>
+      <stop offset="1" stop-color="#d3eeDF"/>
+    </linearGradient>
+
+    <g id="wheel">
+      <circle r="91" fill="#fffdf4" fill-opacity=".65" stroke="#243f50" stroke-width="13"/>
+      <circle r="80" fill="none" stroke="#8bb8bb" stroke-width="3"/>
+      <g stroke="#a4bfc2" stroke-width="2.5">
+        <path d="M-79 0H79M0-79V79"/>
+        <path d="M-56-56 56 56M-56 56 56-56"/>
+        <path d="m-30-73 60 146m-103-103 146 60"/>
+        <path d="m-73 30 146-60m-103 103 60-146"/>
+      </g>
+      <circle r="10" fill="#e6b653" stroke="#243f50" stroke-width="4"/>
+      <path d="M-70-45A83 83 0 0 1-34-76" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+    </g>
+
+    <!-- Eight independently curling arms. -->
+    <path id="arm1" d="M324 258C277 248 267 216 235 226C207 235 218 266 240 258"/>
+    <path id="arm2" d="M323 279C271 286 256 321 221 308C193 297 178 311 185 330C191 344 211 340 211 328"/>
+    <path id="arm3" d="M339 290C298 322 310 356 276 371C244 385 218 370 226 352"/>
+    <path id="arm4" d="M357 297C334 335 372 357 351 386C335 406 306 412 316 428C325 442 348 429 359 412"/>
+    <path id="arm5" d="M382 300C392 333 415 350 421 386C425 408 447 421 460 406C472 392 458 381 448 389"/>
+    <path id="arm6" d="M403 290C434 313 459 315 469 339C484 371 509 365 514 347C519 333 507 323 498 331"/>
+    <path id="arm7" d="M418 272C451 274 465 294 492 283C510 276 518 262 538 273"/>
+    <path id="arm8" d="M421 252C455 239 459 214 481 216C506 218 508 246 531 246C547 246 552 230 543 222"/>
+  </defs>
+
+  <!-- Sunny coastal backdrop. -->
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <circle cx="655" cy="111" r="48" fill="#ffda83"/>
+  <circle cx="643" cy="101" r="48" fill="#ffe6a5" opacity=".5"/>
+  <g fill="#fff" opacity=".85">
+    <path d="M76 130c-13-23 13-42 31-30 4-32 52-37 62-5 26-8 43 15 33 35Z"/>
+    <path d="M523 84c-7-15 11-29 25-20 5-23 35-24 43-2 19-4 31 9 27 22Z"/>
+  </g>
+  <g fill="none" stroke="#79a9b5" stroke-width="3" stroke-linecap="round">
+    <path d="M599 197q10-12 20 0 10-12 20 0"/>
+    <path d="M128 207q8-9 16 0 8-9 16 0"/>
+  </g>
+  <path d="M0 353Q145 331 295 351T580 350T800 343V488H0Z" fill="url(#sea)"/>
+  <g fill="none" stroke="#eaf9ee" stroke-width="4" stroke-linecap="round">
+    <path d="M58 388h68m482-7h88M92 419h48m540-5h58"/>
+  </g>
+  <path d="M0 462Q199 432 394 459T800 453V600H0Z" fill="#efdfbd"/>
+  <path d="M0 520Q350 491 800 522" fill="none" stroke="#f9edcf" stroke-width="8"/>
+  <ellipse cx="393" cy="535" rx="273" ry="18" fill="#b4aa91" opacity=".23"/>
+
+  <!-- Wheels and bicycle frame. -->
+  <use href="#wheel" transform="translate(230 435)"/>
+  <use href="#wheel" transform="translate(565 435)"/>
+
+  <path d="M148 392A95 95 0 0 1 302 372M490 374A95 95 0 0 1 645 387"
+        fill="none" stroke="#e8b956" stroke-width="8" stroke-linecap="round"/>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M230 435 320 326 378 435H230L499 326H320M378 435 499 326M489 293 565 435"
+          stroke="#254d59" stroke-width="14"/>
+    <path d="M230 435 320 326 378 435H230L499 326H320M378 435 499 326M489 293 565 435"
+          stroke="#2ca9a5" stroke-width="8"/>
+    <path d="m320 326-12-34m191 34-14-48 42-10"
+          stroke="#284757" stroke-width="9"/>
+    <path d="m486 278 41-10" stroke="#b9d7d5" stroke-width="5"/>
+    <path d="M527 268h19" stroke="#284757" stroke-width="12"/>
+    <path d="M534 280c-12 36 12 57 14 97" stroke="#284757" stroke-width="2.5"/>
+  </g>
+  <path d="M285 287q25-8 57 0 8 4 0 11h-54q-13-3-3-11" fill="#314553"/>
+  <path d="M289 288h43" stroke="#64818a" stroke-width="3" stroke-linecap="round"/>
+
+  <circle cx="378" cy="435" r="22" fill="#f8e5b6" stroke="#284757" stroke-width="5"/>
+  <circle cx="378" cy="435" r="13" fill="#55b9af"/>
+  <path d="m342 408 36 27 48 25" fill="none" stroke="#284757" stroke-width="7" stroke-linecap="round"/>
+  <g fill="#284757">
+    <rect x="324" y="402" width="37" height="10" rx="4"/>
+    <rect x="411" y="456" width="37" height="10" rx="4"/>
+  </g>
+  <circle cx="378" cy="435" r="5" fill="#fff5d5"/>
+  <circle cx="516" cy="258" r="9" fill="#e8b956" stroke="#284757" stroke-width="3"/>
+
+  <!-- The octopus's eight arms. -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#b95167" stroke-width="29">
+      <use href="#arm1"/><use href="#arm2"/>
+      <use href="#arm3"/><use href="#arm4"/>
+      <use href="#arm5"/><use href="#arm6"/>
+      <use href="#arm7"/><use href="#arm8"/>
+    </g>
+    <g stroke="#f78380" stroke-width="22">
+      <use href="#arm1"/><use href="#arm2"/>
+      <use href="#arm3"/><use href="#arm4"/>
+      <use href="#arm5"/><use href="#arm6"/>
+      <use href="#arm7"/><use href="#arm8"/>
+    </g>
+    <g stroke="#ffb49a" stroke-width="6">
+      <path d="M315 264c-31-9-46-33-66-31"/>
+      <path d="M314 286c-41 11-64 43-94 29"/>
+      <path d="M333 304c-28 26-20 54- fifty 62" visibility="hidden"/>
+      <path d="M329 309c-20 27-21 50-47 64"/>
+      <path d="M354 311c-11 25 21 53-10 81"/>
+      <path d="M390 313c8 21 27 45 29 67"/>
+      <path d="M416 303c26 16 40 19 48 36"/>
+      <path d="M432 274c24 9 40 21 63 7"/>
+      <path d="M435 252c24-12 29-31 44-29"/>
+    </g>
+  </g>
+
+  <!-- Suckers follow the curled tips. -->
+  <g fill="#ffd1ad" stroke="#de727b" stroke-width="1.5">
+    <ellipse cx="229" cy="241" rx="4.5" ry="6" transform="rotate(25 229 241)"/>
+    <ellipse cx="239" cy="254" rx="5" ry="3.5"/>
+    <ellipse cx="194" cy="321" rx="4" ry="5"/>
+    <ellipse cx="201" cy="333" rx="5" ry="3.5"/>
+    <ellipse cx="252" cy="375" rx="5.5" ry="4"/>
+    <ellipse cx="236" cy="368" rx="4" ry="5"/>
+    <ellipse cx="326" cy="422" rx="5" ry="3.5"/>
+    <ellipse cx="341" cy="420" rx="4" ry="5" transform="rotate(40 341 420)"/>
+    <ellipse cx="436" cy="406" rx="4.5" ry="4"/>
+    <ellipse cx="454" cy="403" rx="4.5" ry="4"/>
+    <ellipse cx="488" cy="354" rx="5" ry="3.5"/>
+    <ellipse cx="505" cy="346" rx="3.5" ry="5"/>
+    <ellipse cx="510" cy="274" rx="4" ry="5"/>
+    <ellipse cx="524" cy="268" rx="4" ry="5"/>
+    <ellipse cx="517" cy="242" rx="4" ry="5"/>
+    <ellipse cx="534" cy="241" rx="5" ry="3.5"/>
+  </g>
+
+  <!-- Rounded mantle and expressive face. -->
+  <path d="M307 243C282 214 293 159 317 139
+           C343 116 390 119 416 142
+           C440 162 453 211 436 246
+           C425 273 414 303 377 307
+           C345 311 321 284 307 243Z"
+        fill="url(#coral)" stroke="#b95167" stroke-width="4"/>
+  <path d="M309 189c3-26 21-47 46-51" fill="none" stroke="#ffc4a0" stroke-width="10" stroke-linecap="round" opacity=".8"/>
+  <g fill="#de6572" opacity=".55">
+    <circle cx="317" cy="214" r="5"/>
+    <circle cx="324" cy="199" r="3"/>
+    <circle cx="426" cy="209" r="5"/>
+    <circle cx="420" cy="192" r="3.5"/>
+    <circle cx="414" cy="265" r="4"/>
+  </g>
+
+  <g fill="#fffaf0" stroke="#b95167" stroke-width="3">
+    <ellipse cx="344" cy="221" rx="20" ry="25"/>
+    <ellipse cx="397" cy="217" rx="20" ry="25"/>
+  </g>
+  <g fill="#263e50">
+    <ellipse cx="350" cy="224" rx="10" ry="14"/>
+    <ellipse cx="403" cy="220" rx="10" ry="14"/>
+  </g>
+  <g fill="white">
+    <circle cx="354" cy="218" r="4"/>
+    <circle cx="407" cy="214" r="4"/>
+  </g>
+  <g fill="#ee6679">
+    <ellipse cx="326" cy="246" rx="12" ry="7"/>
+    <ellipse cx="416" cy="241" rx="12" ry="7"/>
+  </g>
+  <path d="M355 257q18 24 37-3" fill="#713f53" stroke="#b95167" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M363 266q9-8 18-1" fill="none" stroke="#ffac9e" stroke-width="5" stroke-linecap="round"/>
+  <path d="m332 187 13-4m42-3 13 2" stroke="#a85164" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- A little cycling cap. -->
+  <path d="M309 153q5-44 49-45 37-2 57 30Z" fill="#f6cb60" stroke="#9b7744" stroke-width="3"/>
+  <path d="M348 110q22 10 24 34" fill="none" stroke="#fff0b3" stroke-width="10"/>
+  <path d="M308 153q61-18 111-15l17 5q-24 15-64 10Z" fill="#e3ad43" stroke="#9b7744" stroke-width="3"/>
+  <circle cx="354" cy="108" r="5" fill="#9b7744"/>
+
+  <!-- Breezy motion and small roadside flowers. -->
+  <g fill="none" stroke="#7bb0b8" stroke-width="4" stroke-linecap="round">
+    <path d="M132 286h32m-54 18h44m-7 58h25"/>
+  </g>
+  <g stroke="#73988a" stroke-width="3" fill="none">
+    <path d="M690 515v-30m0 20 12-11m-12 5-10-8"/>
+    <path d="M104 546v-24m0 15-10-8"/>
+  </g>
+  <g fill="#fff8e7">
+    <circle cx="690" cy="481" r="9"/>
+    <circle cx="704" cy="492" r="7"/>
+    <circle cx="104" cy="519" r="7"/>
+  </g>
+  <g fill="#e8b956">
+    <circle cx="690" cy="481" r="4"/>
+    <circle cx="704" cy="492" r="3"/>
+    <circle cx="104" cy="519" r="3"/>
+  </g>
+</svg>

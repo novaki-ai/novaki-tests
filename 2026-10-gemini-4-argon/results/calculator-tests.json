@@ -1,0 +1,2807 @@
+{
+ "argon-low": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sol-low": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "astra-low": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "argon-medium": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sol-medium": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "astra-medium": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "argon-high": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sol-high": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "astra-high": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "opus-low": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sonnet-low": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "opus-medium": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sonnet-medium": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "opus-high": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ },
+ "sonnet-high": {
+  "passed": 30,
+  "total": 30,
+  "uses_eval": false,
+  "tests": [
+   {
+    "input": "1 + 2 * 3",
+    "expected": 7,
+    "got": 7,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2) * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 3 ^ 2",
+    "expected": 512,
+    "got": 512,
+    "pass": true
+   },
+   {
+    "input": "-2 ^ 2",
+    "expected": -4,
+    "got": -4,
+    "pass": true
+   },
+   {
+    "input": "(-2) ^ 2",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ -1",
+    "expected": 0.5,
+    "got": 0.5,
+    "pass": true
+   },
+   {
+    "input": "10 / 4",
+    "expected": 2.5,
+    "got": 2.5,
+    "pass": true
+   },
+   {
+    "input": " 7 - 3 - 2 ",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": "6 / 2 * 3",
+    "expected": 9,
+    "got": 9,
+    "pass": true
+   },
+   {
+    "input": "2 * -3",
+    "expected": -6,
+    "got": -6,
+    "pass": true
+   },
+   {
+    "input": "--3",
+    "expected": 3,
+    "got": 3,
+    "pass": true
+   },
+   {
+    "input": "1 - -1",
+    "expected": 2,
+    "got": 2,
+    "pass": true
+   },
+   {
+    "input": ".5 + 1.25",
+    "expected": 1.75,
+    "got": 1.75,
+    "pass": true
+   },
+   {
+    "input": "-(2 + 3) * 2",
+    "expected": -10,
+    "got": -10,
+    "pass": true
+   },
+   {
+    "input": "2^3*2",
+    "expected": 16,
+    "got": 16,
+    "pass": true
+   },
+   {
+    "input": "((((5))))",
+    "expected": 5,
+    "got": 5,
+    "pass": true
+   },
+   {
+    "input": "+4",
+    "expected": 4,
+    "got": 4,
+    "pass": true
+   },
+   {
+    "input": "2 ^ 0.5 ^ 2",
+    "expected": 1.189207115002721,
+    "got": 1.189207115002721,
+    "pass": true
+   },
+   {
+    "input": "3 + 4 * 2 / (1 - 5) ^ 2 ^ 3",
+    "expected": 3.0001220703125,
+    "got": 3.0001220703125,
+    "pass": true
+   },
+   {
+    "input": "8 / (3 - 3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 +",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "(1 + 2",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1 + 2)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2 * * 3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "abc",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "3 4",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "1.2.3",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "()",
+    "expected": null,
+    "got": null,
+    "pass": true
+   },
+   {
+    "input": "2(3)",
+    "expected": null,
+    "got": null,
+    "pass": true
+   }
+  ]
+ }
+}

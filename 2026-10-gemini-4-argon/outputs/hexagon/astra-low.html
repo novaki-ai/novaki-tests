@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rotating Hexagon Physics</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #090e1a;
+    display: grid;
+    place-items: center;
+  }
+  canvas {
+    display: block;
+    width: min(100vw, calc(100vh * 16 / 9));
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas" width="960" height="540"
+        aria-label="Twelve numbered balls bouncing inside a rotating hexagon"></canvas>
+<script>
+"use strict";
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const W = 960, H = 540;
+const center = { x: W / 2, y: H / 2 };
+const hexRadius = 238;
+const ballRadius = 15;
+const gravity = 720;
+const rotationSpeed = 0.18;
+const restitution = 0.78;
+const wallFriction = 0.30;
+const ballFriction = 0.16;
+const dt = 1 / 240;
+const balls = [];
+let angle = -Math.PI / 6;
+let vertices = [];
+let walls = [];
+
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+for (let i = 0; i < 12; i++) {
+  balls.push({
+    x: center.x + ((i % 4) - 1.5) * 39,
+    y: center.y - 125 + Math.floor(i / 4) * 39,
+    vx: Math.sin(i * 2.4) * 65,
+    vy: Math.cos(i * 1.7) * 30,
+    spin: 0,
+    orientation: 0,
+    number: i + 1,
+    hue: (i * 29 + 165) % 360
+  });
+}
+
+function buildWalls() {
+  vertices = [];
+  walls = [];
+  for (let i = 0; i < 6; i++) {
+    const a = angle + i * Math.PI / 3;
+    vertices.push({
+      x: center.x + Math.cos(a) * hexRadius,
+      y: center.y + Math.sin(a) * hexRadius
+    });
+  }
+  for (let i = 0; i < 6; i++) {
+    const a = vertices[i], b = vertices[(i + 1) % 6];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const length = Math.hypot(dx, dy);
+    walls.push({ x: a.x, y: a.y, nx: -dy / length, ny: dx / length });
+  }
+}
+
+function collideWall(ball, wall) {
+  const { nx, ny } = wall;
+  const distance = (ball.x - wall.x) * nx + (ball.y - wall.y) * ny;
+  if (distance > ballRadius + 0.02) return;
+
+  // Project the entire circle into the wall's inward half-plane.
+  if (distance < ballRadius) {
+    const correction = ballRadius - distance + 1e-7;
+    ball.x += nx * correction;
+    ball.y += ny * correction;
+  }
+
+  const contactX = ball.x - nx * ballRadius;
+  const contactY = ball.y - ny * ballRadius;
+
+  // A rotating wall has a different velocity at every contact point.
+  const wallVX = -rotationSpeed * (contactY - center.y);
+  const wallVY =  rotationSpeed * (contactX - center.x);
+  const relativeVX = ball.vx - wallVX;
+  const relativeVY = ball.vy - wallVY;
+  const normalSpeed = relativeVX * nx + relativeVY * ny;
+  if (normalSpeed >= 0) return;
+
+  // Suppress tiny repeated bounces so resting contacts remain stable.
+  const bounce = normalSpeed < -25 ? restitution : 0;
+  const normalImpulse = -(1 + bounce) * normalSpeed;
+  ball.vx += normalImpulse * nx;
+  ball.vy += normalImpulse * ny;
+
+  const tx = -ny, ty = nx;
+  const tangentSpeed =
+    relativeVX * tx + relativeVY * ty - ball.spin * ballRadius;
+
+  // Unit-mass solid disks: I = 0.5 r², giving tangent effective mass 1/3.
+  const tangentImpulse = clamp(
+    -tangentSpeed / 3,
+    -wallFriction * normalImpulse,
+     wallFriction * normalImpulse
+  );
+  ball.vx += tangentImpulse * tx;
+  ball.vy += tangentImpulse * ty;
+  ball.spin -= 2 * tangentImpulse / ballRadius;
+}
+
+function collideBalls(a, b) {
+  let dx = b.x - a.x, dy = b.y - a.y;
+  const diameter = ballRadius * 2;
+  const distanceSquared = dx * dx + dy * dy;
+  if (distanceSquared >= diameter * diameter) return;
+
+  let distance = Math.sqrt(distanceSquared);
+  let nx, ny;
+  if (distance < 1e-9) {
+    nx = 1; ny = 0; distance = 0;
+  } else {
+    nx = dx / distance;
+    ny = dy / distance;
+  }
+
+  const correction = (diameter - distance + 1e-7) * 0.5;
+  a.x -= nx * correction;
+  a.y -= ny * correction;
+  b.x += nx * correction;
+  b.y += ny * correction;
+
+  const rvx = b.vx - a.vx;
+  const rvy = b.vy - a.vy;
+  const normalSpeed = rvx * nx + rvy * ny;
+  if (normalSpeed >= 0) return;
+
+  const bounce = normalSpeed < -25 ? restitution : 0;
+  const normalImpulse = -(1 + bounce) * normalSpeed / 2;
+  const tx = -ny, ty = nx;
+  const tangentSpeed =
+    rvx * tx + rvy * ty - ballRadius * (a.spin + b.spin);
+  const tangentImpulse = clamp(
+    -tangentSpeed / 6,
+    -ballFriction * normalImpulse,
+     ballFriction * normalImpulse
+  );
+
+  const impulseX = normalImpulse * nx + tangentImpulse * tx;
+  const impulseY = normalImpulse * ny + tangentImpulse * ty;
+  a.vx -= impulseX;
+  a.vy -= impulseY;
+  b.vx += impulseX;
+  b.vy += impulseY;
+  a.spin -= 2 * tangentImpulse / ballRadius;
+  b.spin -= 2 * tangentImpulse / ballRadius;
+}
+
+function step(h) {
+  angle = (angle + rotationSpeed * h) % (Math.PI * 2);
+  buildWalls();
+
+  for (const b of balls) {
+    b.vy += gravity * h;
+    const drag = Math.exp(-0.045 * h);
+    b.vx *= drag;
+    b.vy *= drag;
+    b.spin *= Math.exp(-0.12 * h);
+    b.x += b.vx * h;
+    b.y += b.vy * h;
+    b.orientation += b.spin * h;
+  }
+
+  // Iteration resolves simultaneous contacts, corners, and stacked balls.
+  for (let iteration = 0; iteration < 10; iteration++) {
+    for (let i = 0; i < balls.length; i++) {
+      for (let j = i + 1; j < balls.length; j++) {
+        collideBalls(balls[i], balls[j]);
+      }
+    }
+    for (const b of balls) {
+      for (const wall of walls) collideWall(b, wall);
+    }
+  }
+
+  // Final containment projection: every circle must satisfy all six planes.
+  for (const b of balls) {
+    for (let pass = 0; pass < 12; pass++) {
+      let corrected = false;
+      for (const wall of walls) {
+        const d = (b.x - wall.x) * wall.nx + (b.y - wall.y) * wall.ny;
+        if (d < ballRadius) {
+          b.x += wall.nx * (ballRadius - d + 1e-7);
+          b.y += wall.ny * (ballRadius - d + 1e-7);
+          corrected = true;
+        }
+      }
+      if (!corrected) break;
+    }
+  }
+}
+
+function hexPath() {
+  ctx.beginPath();
+  vertices.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.closePath();
+}
+
+function draw() {
+  const background = ctx.createRadialGradient(480, 255, 20, 480, 270, 560);
+  background.addColorStop(0, "#18253b");
+  background.addColorStop(1, "#090e1a");
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = "#8c9db7";
+  ctx.font = "600 12px system-ui, sans-serif";
+  ctx.fillText("ROTATING", 30, 39);
+  ctx.fillStyle = "#ecf4ff";
+  ctx.font = "700 22px system-ui, sans-serif";
+  ctx.fillText("HEXAGON", 30, 65);
+  ctx.fillStyle = "#63758f";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText("12 balls · gravity + friction", 30, 88);
+
+  hexPath();
+  ctx.fillStyle = "#101b2c";
+  ctx.fill();
+  ctx.save();
+  ctx.strokeStyle = "#58cfea";
+  ctx.lineWidth = 3;
+  ctx.shadowColor = "#29bce9";
+  ctx.shadowBlur = 17;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  hexPath();
+  ctx.clip();
+  ctx.fillStyle = "#263449";
+  for (let x = 240; x <= 720; x += 24) {
+    for (let y = 30; y <= 510; y += 24) {
+      ctx.beginPath();
+      ctx.arc(x, y, 0.75, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  for (const b of balls) {
+    const gradient = ctx.createRadialGradient(
+      b.x - 5, b.y - 6, 1, b.x, b.y, ballRadius
+    );
+    gradient.addColorStop(0, `hsl(${b.hue}, 90%, 79%)`);
+    gradient.addColorStop(0.65, `hsl(${b.hue}, 75%, 57%)`);
+    gradient.addColorStop(1, `hsl(${b.hue}, 65%, 38%)`);
+
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, ballRadius, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.3)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // A small rotating mark makes friction-driven spin visible.
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, ballRadius - 3, b.orientation, b.orientation + 0.6);
+    ctx.strokeStyle = "rgba(255,255,255,0.6)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = "#102033";
+    ctx.font = "800 12px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(b.number, b.x, b.y + 0.5);
+  }
+  ctx.restore();
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+}
+
+buildWalls();
+let lastTime;
+let accumulator = 0;
+
+function frame(time) {
+  if (lastTime === undefined) lastTime = time;
+  accumulator += Math.min((time - lastTime) / 1000, 0.05);
+  lastTime = time;
+
+  while (accumulator >= dt) {
+    // Additional subdivisions prevent fast balls crossing one another.
+    let maxSpeed = 0;
+    for (const b of balls) {
+      maxSpeed = Math.max(maxSpeed, Math.hypot(b.vx, b.vy));
+    }
+    const subdivisions = Math.max(
+      1,
+      Math.ceil((maxSpeed + rotationSpeed * hexRadius) * dt / (ballRadius * 0.25))
+    );
+    for (let i = 0; i < subdivisions; i++) step(dt / subdivisions);
+    accumulator -= dt;
+  }
+  draw();
+  requestAnimationFrame(frame);
+}
+
+document.addEventListener("visibilitychange", () => {
+  lastTime = undefined;
+  accumulator = 0;
+});
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

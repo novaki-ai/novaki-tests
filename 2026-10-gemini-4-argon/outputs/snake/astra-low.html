@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snake</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #111827;
+    color: #f9fafb;
+    font-family: system-ui, sans-serif;
+  }
+  main {
+    width: 960px;
+    height: 540px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header {
+    width: 480px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  h1 { margin: 0; font-size: 22px; }
+  #score { font-weight: bold; }
+  .board { position: relative; width: 480px; height: 480px; }
+  canvas { display: block; background: #182234; }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #111827bb;
+    text-align: center;
+    pointer-events: none;
+  }
+  #overlay[hidden] { display: none; }
+  #message { font-size: 36px; font-weight: bold; }
+  #hint { margin-top: 12px; line-height: 1.8; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Snake</h1>
+    <span id="score" aria-live="polite">Score: 0</span>
+  </header>
+  <div class="board">
+    <canvas id="board" width="480" height="480"
+            aria-label="Snake game on a 20 by 20 grid"></canvas>
+    <div id="overlay">
+      <div id="message">Snake</div>
+      <div id="hint">Press Space to start<br>Use arrow keys to steer</div>
+    </div>
+  </div>
+</main>
+<script>
+(() => {
+  "use strict";
+
+  const SIZE = 20;
+  const CELL = 24;
+  const STEP_MS = 150;
+  const ctx = document.getElementById("board").getContext("2d");
+  const scoreElement = document.getElementById("score");
+  const overlay = document.getElementById("overlay");
+  const message = document.getElementById("message");
+  const hint = document.getElementById("hint");
+
+  const vectors = {
+    up: { x: 0, y: -1 },
+    down: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+    right: { x: 1, y: 0 }
+  };
+  const opposite = {
+    up: "down", down: "up", left: "right", right: "left"
+  };
+  const keys = {
+    ArrowUp: "up",
+    ArrowDown: "down",
+    ArrowLeft: "left",
+    ArrowRight: "right"
+  };
+
+  let body;
+  let food;
+  let dir;
+  let pendingDir;
+  let running = false;
+  let gameOver = false;
+  let score = 0;
+  let timer = null;
+
+  function placeRandomFood() {
+    const free = [];
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        if (!body.some(part => part.x === x && part.y === y)) {
+          free.push({ x, y });
+        }
+      }
+    }
+    if (!free.length) return false;
+    food = free[Math.floor(Math.random() * free.length)];
+    return true;
+  }
+
+  function reset() {
+    clearInterval(timer);
+    timer = null;
+    body = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+    dir = "right";
+    pendingDir = null;
+    score = 0;
+    running = false;
+    gameOver = false;
+    scoreElement.textContent = "Score: 0";
+    placeRandomFood();
+    draw();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, 480, 480);
+
+    ctx.strokeStyle = "#263348";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i <= SIZE; i++) {
+      ctx.moveTo(i * CELL, 0);
+      ctx.lineTo(i * CELL, 480);
+      ctx.moveTo(0, i * CELL);
+      ctx.lineTo(480, i * CELL);
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = "#fb7185";
+    ctx.beginPath();
+    ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2,
+            CELL * 0.34, 0, Math.PI * 2);
+    ctx.fill();
+
+    body.forEach((part, index) => {
+      ctx.fillStyle = index === 0 ? "#a3e635" : "#22c55e";
+      ctx.fillRect(part.x * CELL + 2, part.y * CELL + 2,
+                   CELL - 4, CELL - 4);
+    });
+  }
+
+  function finish() {
+    running = false;
+    gameOver = true;
+    clearInterval(timer);
+    timer = null;
+    message.textContent = "Game Over";
+    hint.textContent = "Press Space to restart";
+    overlay.hidden = false;
+  }
+
+  function tick() {
+    if (!running) return;
+
+    if (pendingDir !== null) dir = pendingDir;
+    pendingDir = null;
+
+    const vector = vectors[dir];
+    const head = {
+      x: body[0].x + vector.x,
+      y: body[0].y + vector.y
+    };
+    const eating = head.x === food.x && head.y === food.y;
+
+    // The tail vacates its cell on a move that does not grow the snake.
+    const occupied = eating ? body : body.slice(0, -1);
+    if (
+      head.x < 0 || head.x >= SIZE ||
+      head.y < 0 || head.y >= SIZE ||
+      occupied.some(part => part.x === head.x && part.y === head.y)
+    ) {
+      finish();
+      return;
+    }
+
+    body.unshift(head);
+    if (eating) {
+      score += 10;
+      scoreElement.textContent = `Score: ${score}`;
+      if (!placeRandomFood()) {
+        draw();
+        finish();
+        return;
+      }
+    } else {
+      body.pop();
+    }
+    draw();
+  }
+
+  document.addEventListener("keydown", event => {
+    if (event.code === "Space" || event.key === " ") {
+      event.preventDefault();
+      if (!running && !event.repeat) {
+        reset();
+        running = true;
+        overlay.hidden = true;
+        timer = setInterval(tick, STEP_MS);
+      }
+      return;
+    }
+
+    const requested = keys[event.key];
+    if (!requested) return;
+    event.preventDefault();
+
+    // Accept at most one turn per movement step.
+    if (
+      running &&
+      pendingDir === null &&
+      requested !== dir &&
+      requested !== opposite[dir]
+    ) {
+      pendingDir = requested;
+    }
+  });
+
+  window.snake = {
+    state() {
+      return {
+        running,
+        gameOver,
+        score,
+        length: body.length,
+        head: { ...body[0] },
+        food: { ...food },
+        dir
+      };
+    },
+    setFood(x, y) {
+      if (
+        !Number.isInteger(x) || !Number.isInteger(y) ||
+        x < 0 || x >= SIZE || y < 0 || y >= SIZE
+      ) {
+        throw new RangeError("Food coordinates must be integers from 0 to 19.");
+      }
+      food = { x, y };
+      draw();
+    }
+  };
+
+  reset();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stormwatch</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #030810;
+  }
+  body { display: grid; place-items: center; }
+  canvas {
+    display: block;
+    width: min(100vw, 177.7778vh);
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+</style>
+</head>
+<body>
+<canvas id="scene" width="960" height="540"
+  role="img" aria-label="A lighthouse on a rocky cliff at night. Its beacon sweeps through continuous rain as waves crash and lightning illuminates the storm."></canvas>
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("scene");
+  const ctx = canvas.getContext("2d");
+  const W = 960, H = 540, TAU = Math.PI * 2;
+  const LOOP = 12;
+  let seed = 74913;
+
+  function random() {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+  const mod = (x, n) => ((x % n) + n) % n;
+  const clamp = x => Math.max(0, Math.min(1, x));
+
+  function polygon(points, fill, stroke, width = 1) {
+    ctx.beginPath();
+    points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    }
+  }
+
+  const rain = Array.from({ length: 630 }, () => ({
+    x: random() * 1300,
+    y: random(),
+    cycles: 7 + Math.floor(random() * 7),
+    length: 9 + random() * 20,
+    alpha: 0.06 + random() * 0.21,
+    width: random() < 0.8 ? 0.7 : 1.3
+  }));
+
+  const clouds = Array.from({ length: 26 }, () => ({
+    x: random() * 1200,
+    y: 10 + random() * 172,
+    rx: 90 + random() * 155,
+    ry: 23 + random() * 50,
+    shade: Math.floor(13 + random() * 11)
+  }));
+
+  const spray = Array.from({ length: 160 }, () => ({
+    delay: random() * 0.36,
+    vx: -100 + random() * 155,
+    vy: -100 - random() * 155,
+    size: 0.7 + random() * 1.7,
+    life: 0.65 + random() * 0.6
+  }));
+
+  const foam = Array.from({ length: 100 }, () => ({
+    x: random() * W,
+    y: 395 + random() * 145,
+    length: 6 + random() * 30,
+    phase: random() * TAU
+  }));
+
+  function makeBolt(x, y, length, segments) {
+    const points = [[x, y]];
+    for (let i = 1; i <= segments; i++) {
+      x += (random() - 0.5) * 48;
+      y += length / segments;
+      points.push([x, y]);
+    }
+    return points;
+  }
+
+  const bolts = [makeBolt(259, 20, 274, 13), makeBolt(460, 0, 260, 12)];
+  const branches = bolts.map(b => [
+    makeBolt(b[4][0], b[4][1], 91, 6),
+    makeBolt(b[7][0], b[7][1], 74, 5)
+  ]);
+
+  function flashAt(t, start) {
+    const d = mod(t - start, LOOP);
+    return Math.exp(-d * 30) +
+      (d >= 0.16 ? 0.65 * Math.exp(-(d - 0.16) * 40) : 0) +
+      (d >= 0.34 ? 0.26 * Math.exp(-(d - 0.34) * 22) : 0);
+  }
+
+  function sky(t, flash) {
+    const g = ctx.createLinearGradient(0, 0, 0, 390);
+    g.addColorStop(0, "#060b18");
+    g.addColorStop(0.6, "#132334");
+    g.addColorStop(1, "#334858");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    for (const c of clouds) {
+      const x = mod(c.x + t / LOOP * 1200, 1200) - 120;
+      for (const offset of [-1200, 0, 1200]) {
+        const cg = ctx.createRadialGradient(
+          x + offset, c.y, 0, x + offset, c.y, c.rx
+        );
+        cg.addColorStop(0, `rgba(${c.shade},${c.shade + 7},${c.shade + 16},.8)`);
+        cg.addColorStop(1, "rgba(8,15,27,0)");
+        ctx.save();
+        ctx.translate(x + offset, c.y);
+        ctx.scale(1, c.ry / c.rx);
+        ctx.translate(-x - offset, -c.y);
+        ctx.fillStyle = cg;
+        ctx.fillRect(x + offset - c.rx, c.y - c.rx, c.rx * 2, c.rx * 2);
+        ctx.restore();
+      }
+    }
+
+    if (flash > 0.015) {
+      ctx.fillStyle = `rgba(177,202,245,${flash * 0.48})`;
+      ctx.fillRect(0, 0, W, 375);
+      const index = t > 6 && t < 9 ? 1 : 0;
+      ctx.save();
+      ctx.globalAlpha = clamp(flash);
+      ctx.shadowColor = "#bbcfff";
+      ctx.shadowBlur = 22;
+      function strokeBolt(points, width) {
+        ctx.beginPath();
+        points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+        ctx.strokeStyle = "#e9f1ff";
+        ctx.lineWidth = width;
+        ctx.stroke();
+      }
+      branches[index].forEach(b => strokeBolt(b, 0.85));
+      strokeBolt(bolts[index], 2);
+      ctx.restore();
+    }
+
+    polygon([[0,352],[73,338],[126,349],[201,332],[260,347],
+      [332,340],[401,357],[475,348],[546,369],[0,386]], "#142632");
+  }
+
+  function sea(t) {
+    const p = t / LOOP * TAU;
+    const g = ctx.createLinearGradient(0, 350, 0, H);
+    g.addColorStop(0, "#233f4d");
+    g.addColorStop(0.4, "#102b3a");
+    g.addColorStop(1, "#071521");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 356, W, H - 356);
+
+    for (let layer = 0; layer < 10; layer++) {
+      const base = 361 + layer * layer * 2.1;
+      const amplitude = 1.5 + layer * 1.1;
+      ctx.beginPath();
+      for (let x = -10; x <= W + 10; x += 5) {
+        const y = base +
+          Math.sin(x * (0.025 - layer * 0.0013) - p * (2 + layer % 3) + layer) * amplitude +
+          Math.sin(x * 0.058 + p * 3 + layer * 2) * amplitude * 0.27;
+        x === -10 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = `rgba(107,158,170,${0.09 + layer * 0.012})`;
+      ctx.lineWidth = 0.8 + layer * 0.16;
+      ctx.stroke();
+      ctx.lineTo(W + 10, H);
+      ctx.lineTo(-10, H);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(3,15,27,${0.035 + layer * 0.006})`;
+      ctx.fill();
+    }
+
+    for (const f of foam) {
+      const x = mod(f.x + 24 * Math.sin(p * 3 + f.phase), W);
+      const y = f.y + Math.sin(p * 4 + f.phase) * 5;
+      ctx.strokeStyle = `rgba(144,184,188,${0.05 + 0.12 * (0.5 + 0.5 * Math.sin(p * 3 + f.phase))})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(x + f.length / 2, y - 2, x + f.length, y);
+      ctx.stroke();
+    }
+  }
+
+  function cliff() {
+    polygon([[508,540],[533,483],[557,459],[575,414],[597,389],
+      [609,361],[650,344],[709,343],[747,333],[798,350],[838,346],
+      [881,363],[960,358],[960,540]], "#101b24", "#293840");
+
+    polygon([[609,361],[650,344],[709,343],[747,333],[798,350],
+      [838,346],[881,363],[960,358],[960,377],[846,370],
+      [771,366],[708,355],[647,360],[594,391]], "#263537");
+
+    polygon([[647,363],[623,403],[635,432],[601,476],[584,540],
+      [533,540],[557,459],[575,414],[609,376]], "#253039");
+    polygon([[660,366],[687,375],[678,421],[695,449],[667,495],
+      [665,540],[611,540],[632,475],[654,433],[641,411]], "#17212b");
+    polygon([[728,361],[753,380],[733,430],[770,475],[753,540],
+      [689,540],[700,470],[687,422]], "#30373b");
+    polygon([[790,374],[824,390],[804,442],[851,497],[837,540],
+      [772,540],[787,474],[756,428]], "#1a242e");
+    polygon([[871,376],[904,393],[883,449],[924,469],[960,540],
+      [858,540],[874,479],[847,437]], "#242e35");
+
+    polygon([[503,514],[526,483],[549,473],[571,486],[598,521],[584,540],[495,540]], "#0c1721");
+    polygon([[448,538],[465,515],[486,508],[513,523],[520,540]], "#14232c");
+    polygon([[548,449],[564,432],[583,438],[600,460],[576,478],[539,477]], "#111f2a");
+  }
+
+  function beacon(t) {
+    const a = Math.PI + Math.sin(t / LOOP * TAU) * 1.06;
+    ctx.save();
+    ctx.translate(704, 178);
+    ctx.rotate(a);
+    const g = ctx.createLinearGradient(0, 0, 1020, 0);
+    g.addColorStop(0, "rgba(255,234,167,.52)");
+    g.addColorStop(0.22, "rgba(231,230,189,.19)");
+    g.addColorStop(0.72, "rgba(197,216,203,.07)");
+    g.addColorStop(1, "rgba(197,216,203,0)");
+    ctx.globalCompositeOperation = "screen";
+    polygon([[0,-3],[1020,-122],[1020,122],[0,3]], g);
+    ctx.restore();
+  }
+
+  function lighthouse(t) {
+    polygon([[669,348],[682,211],[725,211],[740,348]], "#c0c0ad");
+    const g = ctx.createLinearGradient(672, 0, 739, 0);
+    g.addColorStop(0, "#394954");
+    g.addColorStop(0.4, "#94a4a3");
+    g.addColorStop(0.65, "#b8bdb0");
+    g.addColorStop(1, "#39434a");
+    polygon([[669,348],[682,211],[725,211],[740,348]], g);
+
+    polygon([[678,254],[729,254],[731,275],[676,275]], "#663b3c");
+    polygon([[673,308],[736,308],[738,329],[671,329]], "#623738");
+
+    ctx.fillStyle = "#12232b";
+    ctx.fillRect(698,232,9,16);
+    ctx.fillRect(696,285,10,16);
+    ctx.fillRect(699,326,13,22);
+    ctx.fillStyle = "#c6ad70";
+    ctx.fillRect(700,286,3,12);
+
+    polygon([[675,213],[732,213],[732,220],[675,220]], "#17212a");
+    polygon([[678,160],[729,160],[727,197],[680,197]], "#253a42");
+
+    const glow = ctx.createRadialGradient(704,178,0,704,178,59);
+    glow.addColorStop(0,"rgba(255,225,140,.75)");
+    glow.addColorStop(0.2,"rgba(255,216,132,.22)");
+    glow.addColorStop(1,"rgba(255,216,132,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(645,119,118,118);
+    ctx.fillStyle = "#e9d599";
+    ctx.fillRect(684,165,39,27);
+
+    ctx.fillStyle = "#26313a";
+    for (const x of [682,694,712,723]) ctx.fillRect(x,160,3,36);
+    polygon([[675,160],[704,143],[734,160]], "#17212a", "#46515b");
+    ctx.fillRect(703,129,2,16);
+    ctx.fillRect(669,198,70,6);
+    ctx.fillRect(674,207,60,4);
+
+    ctx.strokeStyle = "#121d27";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(668,185); ctx.lineTo(668,199);
+    ctx.moveTo(740,185); ctx.lineTo(740,199);
+    ctx.moveTo(668,187); ctx.lineTo(740,187);
+    for (let x=677; x<740; x+=9) {
+      ctx.moveTo(x,187); ctx.lineTo(x,199);
+    }
+    ctx.stroke();
+
+    polygon([[753,345],[753,321],[795,321],[795,350]], "#4a5453");
+    polygon([[748,322],[772,307],[801,322]], "#1a242b");
+    ctx.fillStyle = "#d2ad66";
+    ctx.fillRect(765,330,9,10);
+
+    const lamp = ctx.createRadialGradient(704,178,0,704,178,13);
+    lamp.addColorStop(0,"#fff9d7");
+    lamp.addColorStop(0.2,"rgba(255,241,185,.95)");
+    lamp.addColorStop(1,"rgba(255,221,146,0)");
+    ctx.fillStyle = lamp;
+    ctx.fillRect(691,165,26,26);
+  }
+
+  function crashingWaves(t) {
+    for (let group = 0; group < 3; group++) {
+      const age = mod(t + group * 1.07, 3);
+      const originX = 559 - group * 31;
+      const originY = 459 + group * 30;
+      const swell = Math.pow(Math.max(0, Math.sin(age / 3 * Math.PI)), 4);
+
+      ctx.beginPath();
+      ctx.moveTo(originX - 180, originY + 26);
+      ctx.bezierCurveTo(originX - 100, originY + 36,
+        originX - 56, originY - 19 * swell,
+        originX + 8, originY - 25 * swell);
+      ctx.strokeStyle = `rgba(136,186,197,${0.13 + swell * 0.32})`;
+      ctx.lineWidth = 2 + swell * 5;
+      ctx.stroke();
+
+      const mist = ctx.createRadialGradient(originX,originY,2,originX,originY,65);
+      mist.addColorStop(0, `rgba(179,207,212,${swell * 0.14})`);
+      mist.addColorStop(1, "rgba(179,207,212,0)");
+      ctx.fillStyle = mist;
+      ctx.fillRect(originX-65,originY-65,130,130);
+
+      for (const s of spray) {
+        const a = age - 0.7 - s.delay;
+        if (a <= 0 || a >= s.life) continue;
+        const x = originX + s.vx * a;
+        const y = originY + s.vy * a + 160 * a * a;
+        const alpha = Math.sin(a / s.life * Math.PI) * 0.7;
+        ctx.fillStyle = `rgba(192,222,228,${alpha})`;
+        ctx.beginPath();
+        ctx.ellipse(x, y, s.size, s.size * 1.4, -0.4, 0, TAU);
+        ctx.fill();
+      }
+    }
+  }
+
+  function rainfall(t, flash) {
+    for (const r of rain) {
+      const progress = mod(r.y + t / LOOP * r.cycles, 1);
+      const y = progress * 660 - 60;
+      const x = mod(r.x - progress * 260, 1300) - 120;
+      ctx.strokeStyle = `rgba(177,204,222,${r.alpha + flash * 0.17})`;
+      ctx.lineWidth = r.width;
+      ctx.beginPath();
+      ctx.moveTo(x,y);
+      ctx.lineTo(x - r.length * 0.43,y + r.length);
+      ctx.stroke();
+    }
+  }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  const start = performance.now();
+  function frame(now) {
+    // Every motion is periodic within this shared twelve-second cycle.
+    const t = mod((now - start) / 1000, LOOP);
+    const flash = clamp(flashAt(t,2.2) + flashAt(t,6.6) + flashAt(t,10.3));
+
+    sky(t,flash);
+    sea(t);
+    beacon(t);
+    cliff();
+    lighthouse(t);
+    crashingWaves(t);
+
+    if (flash > 0.005) {
+      ctx.fillStyle = `rgba(191,214,255,${flash * 0.23})`;
+      ctx.fillRect(0,0,W,H);
+    }
+    rainfall(t,flash);
+
+    const vignette = ctx.createRadialGradient(480,250,160,480,270,570);
+    vignette.addColorStop(0,"rgba(0,4,12,0)");
+    vignette.addColorStop(1,"rgba(0,4,12,.57)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0,0,W,H);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

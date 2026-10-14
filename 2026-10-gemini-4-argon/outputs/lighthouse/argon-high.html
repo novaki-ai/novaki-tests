@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stormy Night Lighthouse</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #020408;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #viewport {
+      width: 960px;
+      height: 540px;
+      position: relative;
+      overflow: hidden;
+      background: #050a14;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
+    }
+    canvas {
+      display: block;
+      width: 960px;
+      height: 540px;
+    }
+  </style>
+</head>
+<body>
+  <div id="viewport">
+    <canvas id="scene" width="960" height="540"></canvas>
+  </div>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById('scene');
+      const ctx = canvas.getContext('2d');
+      const W = 960;
+      const H = 540;
+      const TAU = Math.PI * 2;
+
+      // Seamless loop duration in seconds (all frequencies are integer harmonics of 12s)
+      const LOOP_DURATION = 12.0;
+
+      // Lighthouse lantern coordinates
+      const LH_X = 710;
+      const LH_Y = 128;
+      const HORIZON_Y = 336;
+
+      // Deterministic PRNG for procedural geometry & particles
+      let seed = 421337;
+      function rand() {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return seed / 4294967296;
+      }
+      function randRange(min, max) {
+        return min + rand() * (max - min);
+      }
+
+      // Pre-generate cloud puffs across 4 depth layers
+      const cloudLayers = [];
+      const layerConfigs = [
+        { yBase: 48, ySpread: 28, count: 28, rMin: 55, rMax: 105, speed: 1, dark: '#08101e', mid: '#122038', light: '#6e8cb8' },
+        { yBase: 95, ySpread: 34, count: 26, rMin: 50, rMax: 95,  speed: 1, dark: '#0a1324', mid: '#162742', light: '#82a3cf' },
+        { yBase: 145, ySpread: 35, count: 24, rMin: 45, rMax: 85, speed: 2, dark: '#070e1b', mid: '#101d33', light: '#607da8' },
+        { yBase: 198, ySpread: 30, count: 22, rMin: 40, rMax: 75, speed: 2, dark: '#060c17', mid: '#0d182b', light: '#4d678e' }
+      ];
+
+      layerConfigs.forEach((cfg, layerIdx) => {
+        const puffs = [];
+        for (let i = 0; i < cfg.count; i++) {
+          puffs.push({
+            xOffset: (i / cfg.count) * W + randRange(-25, 25),
+            y: cfg.yBase + Math.sin((i / cfg.count) * TAU * 2) * 12 + randRange(-cfg.ySpread * 0.5, cfg.ySpread * 0.5),
+            rx: randRange(cfg.rMin, cfg.rMax) * 1.35,
+            ry: randRange(cfg.rMin, cfg.rMax) * 0.68,
+            phase: randRange(0, TAU)
+          });
+        }
+        cloudLayers.push({ ...cfg, puffs, layerIdx });
+      });
+
+      // Pre-generate seamless rain streaks (3 depth layers)
+      const rainDrops = [];
+      const rainConfigs = [
+        { count: 180, speed: 3.0, len: 18, alpha: 0.22, width: 0.8, windOffset: 160 },
+        { count: 140, speed: 4.0, len: 26, alpha: 0.34, width: 1.1, windOffset: 200 },
+        { count: 90,  speed: 6.0, len: 36, alpha: 0.48, width: 1.4, windOffset: 250 }
+      ];
+      rainConfigs.forEach((cfg, depth) => {
+        for (let i = 0; i < cfg.count; i++) {
+          rainDrops.push({
+            x0: randRange(0, W),
+            y0: randRange(0, H),
+            speed: cfg.speed,
+            len: cfg.len * randRange(0.85, 1.15),
+            alpha: cfg.alpha * randRange(0.8, 1.2),
+            width: cfg.width,
+            windOffset: cfg.windOffset,
+            depth
+          });
+        }
+      });
+
+      // Pre-generate atmospheric mist particles in the beam
+      const beamMotes = [];
+      for (let i = 0; i < 85; i++) {
+        beamMotes.push({
+          x0: randRange(40, W - 40),
+          y0: randRange(40, 380),
+          r: randRange(1.0, 2.6),
+          phase: randRange(0, TAU),
+          ampX: randRange(8, 26),
+          ampY: randRange(4, 14),
+          freq: rand() > 0.5 ? 1 : 2
+        });
+      }
+
+      // Pre-generate wave crash spray particles for the rocky cliff & sea stacks
+      const crashSites = [
+        { x: 482, y: 392, scale: 0.85, timeOffset: 0.12 },
+        { x: 545, y: 405, scale: 1.25, timeOffset: 0.45 },
+        { x: 608, y: 424, scale: 1.40, timeOffset: 0.78 },
+        { x: 668, y: 448, scale: 1.10, timeOffset: 0.28 },
+        { x: 742, y: 468, scale: 0.95, timeOffset: 0.62 }
+      ];
+
+      const sprayParticles = [];
+      crashSites.forEach((site, sIdx) => {
+        for (let i = 0; i < 42; i++) {
+          const angle = randRange(-Math.PI * 0.78, -Math.PI * 0.18);
+          const speed = randRange(45, 155) * site.scale;
+          sprayParticles.push({
+            siteIdx: sIdx,
+            x0: site.x + randRange(-18, 18),
+            y0: site.y + randRange(-6, 6),
+            vx: Math.cos(angle) * speed + randRange(15, 45),
+            vy: Math.sin(angle) * speed,
+            gravity: randRange(150, 230),
+            size: randRange(1.5, 4.8) * site.scale,
+            isMist: i < 12,
+            subDelay: randRange(0, 0.22),
+            lifeSpan: randRange(0.55, 0.92)
+          });
+        }
+      });
+
+      // Pre-generate jagged rocky cliff polygons with faceted lighting planes
+      const seaStackPolys = [
+        // Distant left sea stack
+        {
+          pts: [[445, 405], [462, 358], [478, 352], [495, 372], [512, 408]],
+          facets: [
+            { pts: [[445, 405], [462, 358], [478, 352], [472, 405]], normX: -0.8, normY: -0.4, shade: 0.9 },
+            { pts: [[478, 352], [495, 372], [512, 408], [472, 405]], normX: 0.6, normY: -0.3, shade: 0.55 }
+          ]
+        },
+        // Midground jagged reef rock
+        {
+          pts: [[505, 422], [526, 366], [546, 355], [568, 375], [588, 425]],
+          facets: [
+            { pts: [[505, 422], [526, 366], [546, 355], [542, 422]], normX: -0.85, normY: -0.4, shade: 1.0 },
+            { pts: [[546, 355], [568, 375], [588, 425], [542, 422]], normX: 0.5, normY: -0.2, shade: 0.5 }
+          ]
+        }
+      ];
+
+      // Main cliff facets (left-facing storm-battered facets catch lightning & beam; right-facing are deep shadow)
+      const mainCliffOutline = [
+        [555, 540], [568, 455], [588, 412], [612, 375], [634, 336],
+        [655, 294], [678, 266], [712, 262], [755, 265], [818, 272],
+        [865, 286], [912, 305], [960, 318], [960, 540]
+      ];
+
+      const cliffFacets = [
+        // Upper promontory under lighthouse
+        { pts: [[655, 294], [678, 266], [712, 262], [702, 308], [668, 318]], normX: -0.75, normY: -0.5, shade: 1.05 },
+        { pts: [[712, 262], [755, 265], [768, 312], [702, 308]], normX: -0.15, normY: -0.4, shade: 0.68 },
+        { pts: [[755, 265], [818, 272], [835, 325], [768, 312]], normX: 0.35, normY: -0.3, shade: 0.48 },
+        { pts: [[818, 272], [865, 286], [912, 305], [960, 318], [960, 385], [835, 325]], normX: 0.6, normY: -0.2, shade: 0.38 },
+        // Mid cliff crags
+        { pts: [[612, 375], [634, 336], [655, 294], [668, 318], [652, 368], [625, 388]], normX: -0.9, normY: -0.35, shade: 1.15 },
+        { pts: [[668, 318], [702, 308], [728, 365], [685, 385], [652, 368]], normX: -0.45, normY: -0.25, shade: 0.8 },
+        { pts: [[702, 308], [768, 312], [792, 382], [728, 365]], normX: 0.25, normY: -0.2, shade: 0.52 },
+        { pts: [[768, 312], [835, 325], [875, 410], [792, 382]], normX: 0.55, normY: -0.15, shade: 0.4 },
+        // Lower cliff base battered by waves
+        { pts: [[568, 455], [588, 412], [612, 375], [625, 388], [615, 442], [585, 472]], normX: -0.95, normY: -0.3, shade: 1.2 },
+        { pts: [[625, 388], [652, 368], [685, 385], [672, 452], [615, 442]], normX: -0.65, normY: -0.25, shade: 0.9 },
+        { pts: [[685, 385], [728, 365], [762, 445], [710, 468], [672, 452]], normX: -0.2, normY: -0.2, shade: 0.65 },
+        { pts: [[728, 365], [792, 382], [835, 478], [762, 445]], normX: 0.35, normY: -0.15, shade: 0.45 },
+        { pts: [[555, 540], [568, 455], [585, 472], [615, 442], [672, 452], [710, 468], [740, 540]], normX: -0.7, normY: -0.2, shade: 0.85 },
+        { pts: [[740, 540], [710, 468], [762, 445], [835, 478], [960, 460], [960, 540]], normX: 0.4, normY: -0.1, shade: 0.35 }
+      ];
+
+      // Pre-build two dramatic branching lightning bolts for the 12-second loop
+      function buildBolt(startX, startY, endX, endY, seedOffset) {
+        seed = seedOffset;
+        const segments = [];
+        function subdivide(x1, y1, x2, y2, disp, branchDepth, width) {
+          if (disp < 6) {
+            segments.push({ x1, y1, x2, y2, width, branchDepth });
+            return;
+          }
+          const mx = (x1 + x2) * 0.5 + (rand() - 0.5) * disp;
+          const my = (y1 + y2) * 0.5 + (rand() - 0.5) * disp * 0.35;
+          subdivide(x1, y1, mx, my, disp * 0.52, branchDepth, width);
+          subdivide(mx, my, x2, y2, disp * 0.52, branchDepth, width * 0.92);
+
+          if (branchDepth < 2 && rand() > 0.38) {
+            const angle = Math.atan2(y2 - y1, x2 - x1) + (rand() > 0.5 ? 1 : -1) * randRange(0.35, 0.75);
+            const len = Math.hypot(x2 - x1, y2 - y1) * randRange(0.45, 0.75);
+            const bx = mx + Math.cos(angle) * len;
+            const by = my + Math.sin(angle) * len;
+            subdivide(mx, my, bx, by, disp * 0.45, branchDepth + 1, width * 0.55);
+          }
+        }
+        subdivide(startX, startY, endX, endY, 72, 0, 3.2);
+        return { startX, startY, endX, endY, segments };
+      }
+
+      const bolts = [
+        buildBolt(235, 18, 195, 336, 918273),
+        buildBolt(415, 12, 455, 336, 554321)
+      ];
+
+      // Evaluate lightning state at loop time t (0..12s)
+      function getLightningState(t) {
+        // Strike 1 around t = 2.3s, Strike 2 around t = 8.1s
+        const events = [
+          { start: 2.20, dur: 0.65, boltIdx: 0 },
+          { start: 8.05, dur: 0.75, boltIdx: 1 }
+        ];
+        for (const ev of events) {
+          const dt = t - ev.start;
+          if (dt >= 0 && dt <= ev.dur) {
+            const u = dt / ev.dur;
+            // Multi-pulse flicker envelope
+            const pulse1 = Math.exp(-Math.pow((u - 0.08) / 0.045, 2));
+            const pulse2 = 0.85 * Math.exp(-Math.pow((u - 0.24) / 0.06, 2));
+            const pulse3 = 0.45 * Math.exp(-Math.pow((u - 0.46) / 0.12, 2));
+            const afterglow = 0.25 * Math.max(0, 1 - u / 0.95) * Math.exp(-u * 2.5);
+            const intensity = Math.min(1, pulse1 + pulse2 + pulse3 + afterglow);
+            const boltAlpha = Math.min(1, pulse1 * 1.15 + pulse2 * 1.05 + pulse3 * 0.6);
+            return {
+              intensity,
+              boltAlpha,
+              bolt: bolts[ev.boltIdx],
+              progress: Math.min(1, u * 14)
+            };
+          }
+        }
+        return { intensity: 0, boltAlpha: 0, bolt: bolts[0], progress: 0 };
+      }
+
+      // Color interpolation helper
+      function lerpColor(rgb1, rgb2, k) {
+        const r = Math.round(rgb1[0] + (rgb2[0] - rgb1[0]) * k);
+        const g = Math.round(rgb1[1] + (rgb2[1] - rgb1[1]) * k);
+        const b = Math.round(rgb1[2] + (rgb2[2] - rgb1[2]) * k);
+        return `rgb(${r},${g},${b})`;
+      }
+
+      // Evaluate wave height at x and time t for a given layer
+      function getWaveY(x, t, layer) {
+        const phase = (t / LOOP_DURATION) * TAU;
+        const base = layer.yBase;
+        const k1 = layer.k1;
+        const k2 = layer.k2;
+        const amp = layer.amp;
+        // Travelling waves moving left-to-right toward the cliff
+        const w1 = Math.sin(x * k1 - phase * layer.speed1 + layer.offset);
+        const w2 = 0.45 * Math.sin(x * k2 - phase * layer.speed2 + layer.offset * 1.7);
+        const w3 = 0.22 * Math.cos(x * (k1 * 2.1) - phase * (layer.speed1 + 1) - layer.offset);
+        // Steepness shaping (trochoidal sharpening at crests)
+        const crestSharp = -0.25 * Math.pow(0.5 + 0.5 * w1, 2);
+        return base + (w1 + w2 + w3 + crestSharp) * amp;
+      }
+
+      const waveLayers = [
+        { yBase: 340, amp: 4.5,  k1: 0.018, k2: 0.038, speed1: 2, speed2: 3, offset: 0.4, dark: [7, 15, 28],   crest: [24, 45, 72],  foam: 0.12 },
+        { yBase: 360, amp: 7.5,  k1: 0.015, k2: 0.031, speed1: 2, speed2: 4, offset: 1.5, dark: [8, 18, 33],   crest: [28, 54, 84],  foam: 0.22 },
+        { yBase: 390, amp: 11.5, k1: 0.012, k2: 0.025, speed1: 3, speed2: 5, offset: 2.8, dark: [6, 16, 30],   crest: [32, 62, 95],  foam: 0.35 },
+        { yBase: 432, amp: 16.0, k1: 0.010, k2: 0.021, speed1: 3, speed2: 6, offset: 4.1, dark: [5, 13, 25],   crest: [35, 68, 102], foam: 0.50 },
+        { yBase: 486, amp: 21.0, k1: 0.0085, k2: 0.018, speed1: 4, speed2: 6, offset: 5.3, dark: [4, 10, 20],  crest: [28, 58, 88],  foam: 0.65 }
+      ];
+
+      // Draw sky & storm clouds
+      function drawSkyAndClouds(t, lightning) {
+        const L = lightning.intensity;
+        const skyTop = lerpColor([4, 7, 15], [75, 102, 145], L * 0.85);
+        const skyMid = lerpColor([9, 17, 32], [135, 168, 215], L * 0.9);
+        const skyBot = lerpColor([16, 28, 48], [170, 200, 240], L * 0.75);
+
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, HORIZON_Y);
+        skyGrad.addColorStop(0, skyTop);
+        skyGrad.addColorStop(0.55, skyMid);
+        skyGrad.addColorStop(1, skyBot);
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, W, HORIZON_Y + 10);
+
+        // Veiled moon glow through upper-left clouds
+        const moonX = 165;
+        const moonY = 78;
+        const moonGlow = ctx.createRadialGradient(moonX, moonY, 6, moonX, moonY, 130);
+        moonGlow.addColorStop(0, `rgba(175, 205, 245, ${0.22 + L * 0.25})`);
+        moonGlow.addColorStop(0.35, `rgba(110, 145, 195, ${0.10 + L * 0.15})`);
+        moonGlow.addColorStop(1, 'rgba(15, 28, 48, 0)');
+        ctx.fillStyle = moonGlow;
+        ctx.fillRect(0, 0, 360, 240);
+
+        // In-cloud sheet lightning glow near active bolt origin
+        if (L > 0.01) {
+          const bx = lightning.bolt.startX;
+          const by = lightning.bolt.startY + 45;
+          const flashGrad = ctx.createRadialGradient(bx, by, 10, bx, by, 380);
+          flashGrad.addColorStop(0, `rgba(235, 246, 255, ${L * 0.95})`);
+          flashGrad.addColorStop(0.35, `rgba(160, 200, 255, ${L * 0.65})`);
+          flashGrad.addColorStop(0.7, `rgba(85, 125, 185, ${L * 0.3})`);
+          flashGrad.addColorStop(1, 'rgba(20, 35, 60, 0)');
+          ctx.fillStyle = flashGrad;
+          ctx.fillRect(0, 0, W, HORIZON_Y);
+        }
+
+        // Lighthouse beam angle for subtle cloud illumination
+        const rotAngle = (t / 6.0) * TAU;
+        const beamDirX = Math.cos(rotAngle);
+
+        // Render 4 cloud layers withseamless horizontal drift
+        const loopFrac = t / LOOP_DURATION;
+        cloudLayers.forEach((layer, idx) => {
+          // Draw Lightning Bolt between layer 1 and layer 2 so it emerges from within the storm clouds
+          if (idx === 2 && lightning.boltAlpha > 0.01) {
+            drawLightningBolt(lightning);
+          }
+
+          ctx.save();
+          layer.puffs.forEach((p) => {
+            const driftX = (p.xOffset + loopFrac * layer.speed * W) % W;
+            const bobY = p.y + Math.sin(loopFrac * TAU + p.phase) * 3.5;
+
+            // Wrap-around drawing at screen edges for seamless horizontal tiling
+            const positions = [driftX];
+            if (driftX - p.rx < 0) positions.push(driftX + W);
+            if (driftX + p.rx > W) positions.push(driftX - W);
+
+            positions.forEach((px) => {
+              const distToBolt = Math.hypot(px - lightning.bolt.startX, bobY - 90);
+              const localFlash = L * Math.max(0.15, 1 - distToBolt / 460);
+
+              // Subtle warm illumination when lighthouse beam points toward this side of sky
+              const distToLH = px - LH_X;
+              const beamMatch = (distToLH * beamDirX > 0) ? Math.max(0, 1 - Math.abs( bobY - 125 ) / 140) * Math.abs(beamDirX) * 0.16 : 0;
+
+              const grad = ctx.createRadialGradient(
+                px - p.rx * 0.15,
+                bobY - p.ry * 0.28,
+                p.ry * 0.1,
+                px,
+                bobY,
+                Math.max(p.rx, p.ry)
+              );
+
+              const rTop = Math.min(255, Math.round(18 + localFlash * 195 + beamMatch * 180));
+              const gTop = Math.min(255, Math.round(32 + localFlash * 210 + beamMatch * 145));
+              const bTop = Math.min(255, Math.round(56 + localFlash * 235 + beamMatch * 80));
+
+              grad.addColorStop(0, `rgba(${rTop}, ${gTop}, ${bTop}, 0.88)`);
+              grad.addColorStop(0.55, layer.dark);
+              grad.addColorStop(1, 'rgba(6, 11, 22, 0)');
+
+              ctx.fillStyle = grad;
+              ctx.beginPath();
+              ctx.ellipse(px, bobY, p.rx, p.ry, 0, 0, TAU);
+              ctx.fill();
+            });
+          });
+          ctx.restore();
+        });
+
+        // Distant horizon storm haze
+        const hazeGrad = ctx.createLinearGradient(0, HORIZON_Y - 55, 0, HORIZON_Y + 12);
+        hazeGrad.addColorStop(0, 'rgba(10, 19, 34, 0)');
+        hazeGrad.addColorStop(0.75, `rgba(${Math.round(14 + L * 70)}, ${Math.round(26 + L * 90)}, ${Math.round(44 + L * 115)}, 0.72)`);
+        hazeGrad.addColorStop(1, 'rgba(8, 16, 28, 0.95)');
+        ctx.fillStyle = hazeGrad;
+        ctx.fillRect(0, HORIZON_Y - 55, W, 68);
+      }
+
+      // Draw branching lightning bolt
+      function drawLightningBolt(lightning) {
+        const { bolt, boltAlpha, progress } = lightning;
+        const maxSegs = Math.floor(bolt.segments.length * progress);
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Outer electric blue glow
+        ctx.shadowColor = 'rgba(155, 205, 255, 0.95)';
+        ctx.shadowBlur = 24;
+        for (let i = 0; i < maxSegs; i++) {
+          const s = bolt.segments[i];
+          const alpha = boltAlpha * (s.branchDepth === 0 ? 0.95 : s.branchDepth === 1 ? 0.65 : 0.4);
+          ctx.strokeStyle = `rgba(175, 218, 255, ${alpha * 0.55})`;
+          ctx.lineWidth = s.width * 3.2;
+          ctx.beginPath();
+          ctx.moveTo(s.x1, s.y1);
+          ctx.lineTo(s.x2, s.y2);
+          ctx.stroke();
+        }
+
+        // Crisp white-hot core
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#ffffff';
+        for (let i = 0; i < maxSegs; i++) {
+          const s = bolt.segments[i];
+          const alpha = boltAlpha * (s.branchDepth === 0 ? 1.0 : s.branchDepth === 1 ? 0.78 : 0.5);
+          ctx.strokeStyle = `rgba(245, 250, 255, ${alpha})`;
+          ctx.lineWidth = s.width;
+          ctx.beginPath();
+          ctx.moveTo(s.x1, s.y1);
+          ctx.lineTo(s.x2, s.y2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // Helper to render a single volumetric lighthouse cone for a given 3D rotation angle
+      function renderSingleCone(angle3D, isPrimary, t) {
+        const dirX = Math.cos(angle3D);
+        const dirY = Math.sin(angle3D); // +1 = pointing at viewer, -1 = pointing away
+        const sideFactor = Math.abs(dirX);
+        const frontFactor = Math.max(0, dirY);
+        const backFactor = Math.max(0, -dirY);
+
+        const reach = 920 * (0.22 + 0.78 * sideFactor);
+        const spreadHalf = 0.085 + 0.34 * (1 - sideFactor);
+        // Slightly tilted downward toward the sea and horizon
+        const basePitch = 0.11 * dirX + 0.05 * frontFactor;
+        const centerAngle = (dirX >= 0 ? 0 : Math.PI) - basePitch;
+
+        const intensity = (isPrimary ? 1.0 : 0.42) * (0.35 + 0.65 * (1 - 0.55 * backFactor));
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+
+        // Soft outer volumetric cone
+        const endX = LH_X + Math.cos(centerAngle) * reach;
+        const endY = LH_Y + Math.sin(centerAngle) * reach;
+        const grad = ctx.createRadialGradient(LH_X, LH_Y, 4, LH_X, LH_Y, reach);
+        grad.addColorStop(0, `rgba(255, 248, 210, ${0.72 * intensity})`);
+        grad.addColorStop(0.12, `rgba(255, 232, 165, ${0.42 * intensity})`);
+        grad.addColorStop(0.45, `rgba(245, 208, 125, ${0.18 * intensity})`);
+        grad.addColorStop(1, 'rgba(235, 190, 100, 0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(LH_X, LH_Y);
+        ctx.arc(LH_X, LH_Y, reach, centerAngle - spreadHalf, centerAngle + spreadHalf);
+        ctx.closePath();
+        ctx.fill();
+
+        // Bright inner core beam when sweeping laterally
+        const coreSpread = spreadHalf * 0.38;
+        const coreGrad = ctx.createRadialGradient(LH_X, LH_Y, 2, LH_X, LH_Y, reach * 0.85);
+        coreGrad.addColorStop(0, `rgba(255, 252, 235, ${0.85 * intensity})`);
+        coreGrad.addColorStop(0.22, `rgba(255, 238, 180, ${0.38 * intensity})`);
+        coreGrad.addColorStop(0.65, `rgba(250, 215, 130, ${0.11 * intensity})`);
+        coreGrad.addColorStop(1, 'rgba(240, 200, 110, 0)');
+
+        ctx.fillStyle = coreGrad;
+        ctx.beginPath();
+        ctx.moveTo(LH_X, LH_Y);
+        ctx.arc(LH_X, LH_Y, reach * 0.85, centerAngle - coreSpread, centerAngle + coreSpread);
+        ctx.closePath();
+        ctx.fill();
+
+        // Volumetric dust/mist motes illuminated inside the cone
+        if (isPrimary) {
+          const loopPhase = (t / LOOP_DURATION) * TAU;
+          beamMotes.forEach((m) => {
+            const mx = m.x0 + Math.sin(loopPhase * m.freq + m.phase) * m.ampX;
+            const my = m.y0 + Math.cos(loopPhase * m.freq + m.phase) * m.ampY;
+            const dx = mx - LH_X;
+            const dy = my - LH_Y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 15 && dist < reach * 0.78) {
+              let angDiff = Math.atan2(dy, dx) - centerAngle;
+              while (angDiff > Math.PI) angDiff -= TAU;
+              while (angDiff < -Math.PI) angDiff += TAU;
+              if (Math.abs(angDiff) < spreadHalf * 0.85) {
+                const falloff = (1 - dist / (reach * 0.78)) * (1 - Math.abs(angDiff) / (spreadHalf * 0.85));
+                ctx.fillStyle = `rgba(255, 242, 195, ${falloff * 0.55 * intensity})`;
+                ctx.beginPath();
+                ctx.arc(mx, my, m.r, 0, TAU);
+                ctx.fill();
+              }
+            }
+          });
+        }
+
+        // Direct lens flare bloom when primary beam sweeps directly across the camera (dirY > 0.35)
+        if (isPrimary && frontFactor > 0.25) {
+          const glare = Math.pow((frontFactor - 0.25) / 0.75, 1.6);
+          const glareGrad = ctx.createRadialGradient(LH_X, LH_Y, 2, LH_X, LH_Y, 290);
+          glareGrad.addColorStop(0, `rgba(255, 253, 240, ${0.95 * glare})`);
+          glareGrad.addColorStop(0.18, `rgba(255, 236, 175, ${0.55 * glare})`);
+          glareGrad.addColorStop(0.5, `rgba(250, 205, 115, ${0.18 * glare})`);
+          glareGrad.addColorStop(1, 'rgba(245, 190, 95, 0)');
+          ctx.fillStyle = glareGrad;
+          ctx.beginPath();
+          ctx.arc(LH_X, LH_Y, 290, 0, TAU);
+          ctx.fill();
+
+          // Horizontal anamorphic streak
+          const streakW = 240 * glare;
+          const streakGrad = ctx.createLinearGradient(LH_X - streakW, LH_Y, LH_X + streakW, LH_Y);
+          streakGrad.addColorStop(0, 'rgba(255, 240, 185, 0)');
+          streakGrad.addColorStop(0.5, `rgba(255, 250, 220, ${0.75 * glare})`);
+          streakGrad.addColorStop(1, 'rgba(255, 240, 185, 0)');
+          ctx.fillStyle = streakGrad;
+          ctx.fillRect(LH_X - streakW, LH_Y - 2.5, streakW * 2, 5);
+        }
+
+        ctx.restore();
+        return { centerAngle, spreadHalf, reach, dirX, dirY, intensity };
+      }
+
+      // Draw sea stacks and main rocky cliff
+      function drawRockyPolys(polys, t, lightning, beamAngle) {
+        const L = lightning.intensity;
+        const beamDirX = Math.cos(beamAngle);
+        const beamFront = Math.sin(beamAngle);
+        // Warm light hits left-facing rocks when beam points left or forward-left
+        const warmFactor = Math.max(0, -beamDirX * 0.65 + Math.max(0, beamFront) * 0.45);
+
+        polys.forEach((facet) => {
+          const lightDot = Math.max(0, -facet.normX * 0.75 - facet.normY * 0.35);
+          const flashBoost = L * lightDot * 1.15 * facet.shade;
+          const beamBoost = warmFactor * lightDot * 0.45 * facet.shade;
+
+          const baseR = 13 * facet.shade;
+          const baseG = 21 * facet.shade;
+          const baseB = 34 * facet.shade;
+
+          const r = Math.min(255, Math.round(baseR + flashBoost * 115 + beamBoost * 110));
+          const g = Math.min(255, Math.round(baseG + flashBoost * 145 + beamBoost * 85));
+          const b = Math.min(255, Math.round(baseB + flashBoost * 185 + beamBoost * 45));
+
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+          ctx.beginPath();
+          facet.pts.forEach((pt, idx) => {
+            if (idx === 0) ctx.moveTo(pt[0], pt[1]);
+            else ctx.lineTo(pt[0], pt[1]);
+          });
+          ctx.closePath();
+          ctx.fill();
+
+          // Wet rock specular rim highlight on top-left edges
+          if (facet.normX < 0) {
+            const rimAlpha = 0.14 + L * 0.55 + warmFactor * 0.25;
+            const rimColor = L > 0.2 ? `rgba(185, 220, 255, ${rimAlpha})` : `rgba(145, 168, 195, ${rimAlpha})`;
+            ctx.strokeStyle = rimColor;
+            ctx.lineWidth = 1.3;
+            ctx.beginPath();
+            ctx.moveTo(facet.pts[0][0], facet.pts[0][1]);
+            ctx.lineTo(facet.pts[1][0], facet.pts[1][1]);
+            if (facet.pts.length > 2) ctx.lineTo(facet.pts[2][0], facet.pts[2][1]);
+            ctx.stroke();
+          }
+        });
+      }
+
+      // Draw the Lighthouse and Keeper's Cottage on the cliff
+      function drawLighthouseAndCottage(t, lightning, beamAngle) {
+        const L = lightning.intensity;
+        const beamFront = Math.sin(beamAngle);
+
+        ctx.save();
+
+        // --- 1. Keeper's Cottage (nestled to the right of the tower at x=734..815, y=224..272) ---
+        // Stone walls
+        const wallLit = Math.round(28 + L * 85);
+        ctx.fillStyle = `rgb(${wallLit}, ${wallLit + 6}, ${wallLit + 16})`;
+        ctx.beginPath();
+        ctx.moveTo(732, 268);
+        ctx.lineTo(732, 238);
+        ctx.lineTo(808, 242);
+        ctx.lineTo(808, 274);
+        ctx.closePath();
+        ctx.fill();
+
+        // Gable side wall
+        ctx.fillStyle = `rgb(${Math.round(18 + L * 45)}, ${Math.round(24 + L * 55)}, ${Math.round(36 + L * 70)})`;
+        ctx.beginPath();
+        ctx.moveTo(782, 240);
+        ctx.lineTo(796, 224);
+        ctx.lineTo(810, 242);
+        ctx.lineTo(810, 274);
+        ctx.lineTo(782, 272);
+        ctx.closePath();
+        ctx.fill();
+
+        // Chimney
+        ctx.fillStyle = `rgb(${Math.round(24 + L * 50)}, ${Math.round(22 + L * 45)}, ${Math.round(30 + L * 55)})`;
+        ctx.fillRect(791, 213, 8, 16);
+
+        // Pitched slate roof catching wet storm sheen
+        const roofR = Math.round(22 + L * 95);
+        const roofG = Math.round(32 + L * 120);
+        const roofB = Math.round(48 + L * 155);
+        ctx.fillStyle = `rgb(${roofR}, ${roofG}, ${roofB})`;
+        ctx.beginPath();
+        ctx.moveTo(726, 240);
+        ctx.lineTo(744, 221);
+        ctx.lineTo(798, 224);
+        ctx.lineTo(782, 242);
+        ctx.closePath();
+        ctx.fill();
+
+        // Warm glowing cottage windows
+        const winFlicker = 0.92 + 0.08 * Math.sin((t / LOOP_DURATION) * TAU * 5);
+        [
+          { x: 745, y: 247, w: 9, h: 11 },
+          { x: 763, y: 248, w: 9, h: 11 }
+        ].forEach((w) => {
+          const wGlow = ctx.createRadialGradient(w.x + w.w / 2, w.y + w.h / 2, 1, w.x + w.w / 2, w.y + w.h / 2, 22);
+          wGlow.addColorStop(0, `rgba(255, 195, 95, ${0.65 * winFlicker})`);
+          wGlow.addColorStop(1, 'rgba(255, 150, 50, 0)');
+          ctx.fillStyle = wGlow;
+          ctx.fillRect(w.x - 16, w.y - 16, w.w + 32, w.h + 32);
+
+          ctx.fillStyle = `rgba(255, 215, 125, ${winFlicker})`;
+          ctx.fillRect(w.x, w.y, w.w, w.h);
+          // Window panes
+          ctx.strokeStyle = '#181410';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(w.x, w.y, w.w, w.h);
+          ctx.beginPath();
+          ctx.moveTo(w.x + w.w / 2, w.y);
+          ctx.lineTo(w.x + w.w / 2, w.y + w.h);
+          ctx.moveTo(w.x, w.y + w.h / 2);
+          ctx.lineTo(w.x + w.w, w.y + w.h / 2);
+          ctx.stroke();
+        });
+
+        // --- 2. Lighthouse Tower ---
+        // Stone masonry base plinth (y=248..268)
+        const baseGrad = ctx.createLinearGradient(LH_X - 26, 0, LH_X + 26, 0);
+        baseGrad.addColorStop(0, `rgb(${Math.round(42 + L * 90)}, ${Math.round(52 + L * 105)}, ${Math.round(68 + L * 125)})`);
+        baseGrad.addColorStop(0.5, `rgb(${Math.round(28 + L * 55)}, ${Math.round(35 + L * 65)}, ${Math.round(48 + L * 80)})`);
+        baseGrad.addColorStop(1, '#0d131f');
+        ctx.fillStyle = baseGrad;
+        ctx.beginPath();
+        ctx.moveTo(LH_X - 25, 268);
+        ctx.lineTo(LH_X - 22, 246);
+        ctx.lineTo(LH_X + 22, 246);
+        ctx.lineTo(LH_X + 25, 268);
+        ctx.closePath();
+        ctx.fill();
+
+        // Main tapered cylindrical tower (y=148..248) with classic white & crimson bands
+        const bands = [
+          { yBot: 246, yTop: 220, isRed: false },
+          { yBot: 220, yTop: 194, isRed: true },
+          { yBot: 194, yTop: 168, isRed: false },
+          { yBot: 168, yTop: 148, isRed: true }
+        ];
+
+        bands.forEach((b) => {
+          const fracBot = (268 - b.yBot) / 120;
+          const fracTop = (268 - b.yTop) / 120;
+          const halfWBot = 22 - fracBot * 6.5;
+          const halfWTop = 22 - fracTop * 6.5;
+
+          const bandGrad = ctx.createLinearGradient(LH_X - halfWBot, 0, LH_X + halfWBot, 0);
+          if (b.isRed) {
+            bandGrad.addColorStop(0, `rgb(${Math.round(135 + L * 95)}, ${Math.round(38 + L * 65)}, ${Math.round(44 + L * 75)})`);
+            bandGrad.addColorStop(0.38, `rgb(${Math.round(92 + L * 55)}, ${Math.round(22 + L * 35)}, ${Math.round(28 + L * 45)})`);
+            bandGrad.addColorStop(1, `rgb(${Math.round(32 + L * 18)}, 10, 16)`);
+          } else {
+            bandGrad.addColorStop(0, `rgb(${Math.round(145 + L * 105)}, ${Math.round(162 + L * 90)}, ${Math.round(182 + L * 72)})`);
+            bandGrad.addColorStop(0.42, `rgb(${Math.round(88 + L * 65)}, ${Math.round(102 + L * 65)}, ${Math.round(122 + L * 65)})`);
+            bandGrad.addColorStop(1, `rgb(${Math.round(26 + L * 25)}, ${Math.round(34 + L * 30)}, ${Math.round(48 + L * 38)})`);
+          }
+
+          ctx.fillStyle = bandGrad;
+          ctx.beginPath();
+          ctx.moveTo(LH_X - halfWBot, b.yBot);
+          ctx.lineTo(LH_X - halfWTop, b.yTop);
+          ctx.lineTo(LH_X + halfWTop, b.yTop);
+          ctx.lineTo(LH_X + halfWBot, b.yBot);
+          ctx.closePath();
+          ctx.fill();
+        });
+
+        // Warm vertical staircase slit windows on tower
+        [230, 204, 178].forEach((wy, idx) => {
+          const wx = LH_X - 4 + (idx % 2) * 5;
+          ctx.fillStyle = 'rgba(255, 205, 110, 0.88)';
+          ctx.fillRect(wx, wy, 4, 8);
+          ctx.strokeStyle = '#101622';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(wx, wy, 4, 8);
+        });
+
+        // Gallery deck & corbels (y=142..149)
+        ctx.fillStyle = `rgb(${Math.round(30 + L * 70)}, ${Math.round(38 + L * 80)}, ${Math.round(52 + L * 95)})`;
+        ctx.beginPath();
+        ctx.moveTo(LH_X - 16, 149);
+        ctx.lineTo(LH_X - 21, 144);
+        ctx.lineTo(LH_X + 21, 144);
+        ctx.lineTo(LH_X + 16, 149);
+        ctx.closePath();
+        ctx.fill();
+
+        // Gallery iron railing
+        ctx.strokeStyle = `rgb(${Math.round(24 + L * 80)}, ${Math.round(32 + L * 90)}, ${Math.round(44 + L * 105)})`;
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(LH_X - 20, 139, 40, 5);
+        for (let rx = LH_X - 16; rx <= LH_X + 16; rx += 4) {
+          ctx.beginPath();
+          ctx.moveTo(rx, 139);
+          ctx.lineTo(rx, 144);
+          ctx.stroke();
+        }
+
+        // Glass Lantern Room housing (y=118..144)
+        const lanternGlow = ctx.createRadialGradient(LH_X, LH_Y, 2, LH_X, LH_Y, 34);
+        lanternGlow.addColorStop(0, 'rgba(255, 252, 225, 1)');
+        lanternGlow.addColorStop(0.35, 'rgba(255, 228, 145, 0.85)');
+        lanternGlow.addColorStop(0.7, 'rgba(255, 185, 75, 0.32)');
+        lanternGlow.addColorStop(1, 'rgba(255, 160, 50, 0)');
+        ctx.fillStyle = lanternGlow;
+        ctx.beginPath();
+        ctx.arc(LH_X, LH_Y, 34, 0, TAU);
+        ctx.fill();
+
+        // Lantern glass cylinder
+        ctx.fillStyle = 'rgba(255, 236, 170, 0.82)';
+        ctx.fillRect(LH_X - 13, 118, 26, 24);
+
+        // Rotating Fresnel lens bright core inside lantern
+        const lensOffsetX = Math.cos(beamAngle) * 5.5;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.ellipse(LH_X + lensOffsetX, LH_Y, 5.5 - Math.abs(lensOffsetX) * 0.35, 7.5, 0, 0, TAU);
+        ctx.fill();
+
+        // Lantern room vertical mullions / lattice bars
+        ctx.strokeStyle = '#151c28';
+        ctx.lineWidth = 1.4;
+        ctx.strokeRect(LH_X - 13, 118, 26, 24);
+        [-7, 0, 7].forEach((dx) => {
+          ctx.beginPath();
+          ctx.moveTo(LH_X + dx, 118);
+          ctx.lineTo(LH_X + dx, 142);
+          ctx.stroke();
+        });
+        ctx.beginPath();
+        ctx.moveTo(LH_X - 13, 130);
+        ctx.lineTo(LH_X + 13, 130);
+        ctx.stroke();
+
+        // Domed cupola roof (y=106..118) & lightning finial
+        ctx.fillStyle = `rgb(${Math.round(25 + L * 75)}, ${Math.round(42 + L * 95)}, ${Math.round(52 + L * 110)})`;
+        ctx.beginPath();
+        ctx.arc(LH_X, 118, 15, Math.PI, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cupola finial & lightning rod
+        ctx.beginPath();
+        ctx.arc(LH_X, 102, 2.8, 0, TAU);
+        ctx.fill();
+        ctx.strokeStyle = `rgb(${Math.round(45 + L * 130)}, ${Math.round(58 + L * 145)}, ${Math.round(75 + L * 165)})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(LH_X, 102);
+        ctx.lineTo(LH_X, 90);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      // Draw crashing wave surges & spray bursts at the base of the cliff & sea stacks
+      function drawWaveSpray(t, lightning, beamAngle) {
+        const L = lightning.intensity;
+        const beamDirX = Math.cos(beamAngle);
+        const beamWarm = Math.max(0, -beamDirX * 0.5 + Math.max(0, Math.sin(beamAngle)) * 0.5);
+
+        // 4 surge cycles per 12-second loop (every 3.0 seconds)
+        const cycleFreq = 4;
+        const rawPhase = (t / LOOP_DURATION) * cycleFreq;
+
+        ctx.save();
+        crashSites.forEach((site, sIdx) => {
+          const localCycle = (rawPhase + site.timeOffset) % 1.0;
+
+          // Upward surge sheet of whitewater on impact (localCycle 0.0 -> 0.65)
+          if (localCycle < 0.72) {
+            const p = localCycle / 0.72;
+            const surgeHeight = Math.sin(p * Math.PI) * 44 * site.scale;
+            const surgeWidth = (28 + p * 36) * site.scale;
+            const alpha = (1 - p) * 0.72;
+
+            const r = Math.min(255, Math.round(170 + L * 75 + beamWarm * 45));
+            const g = Math.min(255, Math.round(198 + L * 52 + beamWarm * 32));
+            const b = Math.min(255, Math.round(222 + L * 33));
+
+            const surgeGrad = ctx.createRadialGradient(
+              site.x, site.y - surgeHeight * 0.35, 2,
+              site.x, site.y - surgeHeight * 0.35, surgeWidth
+            );
+            surgeGrad.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+            surgeGrad.addColorStop(0.55, `rgba(${r - 20}, ${g - 15}, ${b - 10}, ${alpha * 0.5})`);
+            surgeGrad.addColorStop(1, `rgba(${r - 35}, ${g - 25}, ${b - 15}, 0)`);
+
+            ctx.fillStyle = surgeGrad;
+            ctx.beginPath();
+            ctx.ellipse(site.x, site.y - surgeHeight * 0.4, surgeWidth * 0.85, surgeHeight + 10, -0.18, 0, TAU);
+            ctx.fill();
+          }
+        });
+
+        // Individual airborne spray droplets & mist plumes
+        sprayParticles.forEach((sp) => {
+          const site = crashSites[sp.siteIdx];
+          const localCycle = (rawPhase + site.timeOffset) % 1.0;
+          const dt = localCycle - sp.subDelay;
+
+          if (dt > 0 && dt < sp.lifeSpan) {
+            const u = dt / sp.lifeSpan;
+            const px = sp.x0 + sp.vx * dt + 28 * dt * dt; // Wind pushes spray rightward up the cliff
+            const py = sp.y0 + sp.vy * dt + 0.5 * sp.gravity * dt * dt;
+            const fade = Math.sin(u * Math.PI);
+
+            const r = Math.min(255, Math.round(185 + L * 65 + beamWarm * 45));
+            const g = Math.min(255, Math.round(210 + L * 42 + beamWarm * 30));
+            const b = Math.min(255, Math.round(232 + L * 23));
+
+            if (sp.isMist) {
+              const rad = sp.size * (3.2 + u * 4.5);
+              const mGrad = ctx.createRadialGradient(px, py, 1, px, py, rad);
+              mGrad.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${fade * 0.28})`);
+              mGrad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+              ctx.fillStyle = mGrad;
+              ctx.beginPath();
+              ctx.arc(px, py, rad, 0, TAU);
+              ctx.fill();
+            } else {
+              ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${fade * 0.82})`;
+              ctx.beginPath();
+              ctx.arc(px, py, sp.size * (1 - u * 0.4), 0, TAU);
+              ctx.fill();
+            }
+          }
+        });
+        ctx.restore();
+      }
+
+      // Draw a single ocean wave layer with foam crests, lightning reflections, and lighthouse beam reflections
+      function drawWaveLayer(layerIdx, t, lightning, beamAngle) {
+        const layer = waveLayers[layerIdx];
+        const L = lightning.intensity;
+        const step = 10;
+
+        const beamDirX = Math.cos(beamAngle);
+        const beamDirY = Math.sin(beamAngle);
+        // Center X where the lighthouse beam sweeps across the water
+        const beamWaterCenterX = LH_X + beamDirX * 360;
+        const beamOnWater = beamDirX < 0.25 ? Math.max(0, -beamDirX * 0.8 + Math.max(0, beamDirY) * 0.45) : Math.max(0, beamDirY * 0.35);
+
+        const pts = [];
+        for (let x = -10; x <= W + 10; x += step) {
+          pts.push({ x, y: getWaveY(x, t, layer) });
+        }
+
+        // Fill body of the wave layer
+        const grad = ctx.createLinearGradient(0, layer.yBase - layer.amp, 0, H);
+        const topColor = lerpColor(layer.crest, [120, 165, 215], L * 0.65);
+        const botColor = lerpColor(layer.dark, [25, 48, 78], L * 0.45);
+        grad.addColorStop(0, topColor);
+        grad.addColorStop(0.55, botColor);
+        grad.addColorStop(1, '#030812');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) {
+          const prev = pts[i - 1];
+          const curr = pts[i];
+          const mx = (prev.x + curr.x) * 0.5;
+          const my = (prev.y + curr.y) * 0.5;
+          ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
+        }
+        ctx.lineTo(W + 10, H + 10);
+        ctx.lineTo(-10, H + 10);
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw dynamic foam crests, lightning specular highlights & warm lighthouse reflection along wave ridges
+        for (let i = 1; i < pts.length - 1; i++) {
+          const p = pts[i];
+          const slope = pts[i + 1].y - pts[i - 1].y;
+          const isCrest = p.y < layer.yBase - layer.amp * 0.15;
+
+          // Distance to lightning bolt X for water reflection
+          const distBolt = Math.abs(p.x - lightning.bolt.endX);
+          const boltReflect = L * Math.max(0, 1 - distBolt / 220);
+
+          // Distance to sweeping lighthouse beam on water
+          const distBeam = Math.abs(p.x - beamWaterCenterX);
+          const beamReflect = beamOnWater * Math.max(0, 1 - distBeam / 260);
+
+          if (isCrest || boltReflect > 0.15 || beamReflect > 0.15) {
+            const crestStrength = Math.max(0, (layer.yBase - p.y) / (layer.amp * 1.4));
+            const alpha = Math.min(0.92, crestStrength * layer.foam + boltReflect * 0.65 + beamReflect * 0.45);
+
+            const r = Math.min(255, Math.round(135 + boltReflect * 115 + beamReflect * 120));
+            const g = Math.min(255, Math.round(172 + boltReflect * 78 + beamReflect * 65));
+            const b = Math.min(255, Math.round(205 + boltReflect * 50 - beamReflect * 30));
+
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            ctx.lineWidth = 1.5 + crestStrength * 2.4 * (layerIdx * 0.3 + 0.5);
+            ctx.beginPath();
+            ctx.moveTo(pts[i - 1].x, pts[i - 1].y + 1);
+            ctx.lineTo(p.x, p.y + 1);
+            ctx.stroke();
+
+            // Subtle foam webbing trailing down back of large foreground waves
+            if (layerIdx >= 2 && crestStrength > 0.52 && slope > 0) {
+              ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.35})`;
+              ctx.lineWidth = 1.0;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y + 2);
+              ctx.lineTo(p.x - 16, p.y + 9 + layerIdx * 2);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      // Draw continuous slanted storm rain with dynamic illumination inside the lighthouse beam & lightning flash
+      function drawRain(t, lightning, primaryBeam) {
+        const L = lightning.intensity;
+        const loopFrac = t / LOOP_DURATION;
+
+        ctx.save();
+        ctx.lineCap = 'round';
+
+        rainDrops.forEach((d) => {
+          const prog = (loopFrac * d.speed) % 1.0;
+          // Slanted wind trajectory from top-left to bottom-right, wrapping seamlessly
+          const x = ((d.x0 + prog * d.windOffset) % W + W) % W;
+          const y = ((d.y0 + prog * H) % H + H) % H;
+
+          const vx = (d.windOffset / H) * d.len;
+          const vy = d.len;
+
+          // Check if raindrop is inside the primary lighthouse beam cone
+          const dx = x - LH_X;
+          const dy = y - LH_Y;
+          const dist = Math.hypot(dx, dy);
+          let inBeam = 0;
+
+          if (dist < primaryBeam.reach * 0.92) {
+            let angDiff = Math.atan2(dy, dx) - primaryBeam.centerAngle;
+            while (angDiff > Math.PI) angDiff -= TAU;
+            while (angDiff < -Math.PI) angDiff += TAU;
+            if (Math.abs(angDiff) < primaryBeam.spreadHalf) {
+              inBeam = (1 - Math.abs(angDiff) / primaryBeam.spreadHalf) * (1 - dist / primaryBeam.reach) * primaryBeam.intensity;
+            }
+          }
+
+          const alpha = Math.min(0.95, d.alpha + inBeam * 0.65 + L * 0.42);
+          let strokeColor;
+          if (inBeam > 0.12) {
+            strokeColor = `rgba(255, 240, 185, ${alpha})`;
+          } else if (L > 0.15) {
+            strokeColor = `rgba(200, 228, 255, ${alpha})`;
+          } else {
+            strokeColor = `rgba(140, 175, 215, ${alpha})`;
+          }
+
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = d.width + inBeam * 0.6;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + vx, y + vy);
+          ctx.stroke();
+        });
+
+        ctx.restore();
+      }
+
+      // Subtle cinematic storm vignette & atmospheric grading
+      function drawPostVignette(lightning) {
+        const vig = ctx.createRadialGradient(W * 0.5, H * 0.48, H * 0.35, W * 0.5, H * 0.5, W * 0.68);
+        vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vig.addColorStop(0.75, 'rgba(2, 5, 12, 0.25)');
+        vig.addColorStop(1, 'rgba(1, 3, 8, 0.68)');
+        ctx.fillStyle = vig;
+        ctx.fillRect(0, 0, W, H);
+
+        // Subtle full-screen atmospheric bloom during peak lightning strike
+        if (lightning.intensity > 0.2) {
+          ctx.fillStyle = `rgba(185, 220, 255, ${(lightning.intensity - 0.2) * 0.16})`;
+          ctx.fillRect(0, 0, W, H);
+        }
+      }
+
+      // Main animation loop
+      function render(nowMs) {
+        // Seamless modulo time in seconds [0, 12.0)
+        const t = ((nowMs * 0.001) % LOOP_DURATION + LOOP_DURATION) % LOOP_DURATION;
+        const lightning = getLightningState(t);
+
+        // Lighthouse makes 2 full slow rotations per 12s loop (1 rotation every 6.0 seconds)
+        const beamAngle = (t / 6.0) * TAU;
+
+        // 1. Sky, veiled moon, storm clouds & lightning bolts
+        drawSkyAndClouds(t, lightning);
+
+        // 2. Back-facing beam (if secondary or main beam points away from camera, render behind tower/cliff)
+        const mainInFront = Math.sin(beamAngle) >= 0;
+        const backAngle = mainInFront ? beamAngle + Math.PI : beamAngle;
+        const frontAngle = mainInFront ? beamAngle : beamAngle + Math.PI;
+
+        renderSingleCone(backAngle, !mainInFront, t);
+
+        // 3. Distant ocean wave layers (layers 0 & 1)
+        drawWaveLayer(0, t, lightning, beamAngle);
+        drawWaveLayer(1, t, lightning, beamAngle);
+
+        // 4. Jagged sea stacks in mid-ocean
+        seaStackPolys.forEach((stack) => {
+          drawRockyPolys(stack.facets, t, lightning, beamAngle);
+        });
+
+        // 5. Midground ocean wave layer (layer 2)
+        drawWaveLayer(2, t, lightning, beamAngle);
+
+        // 6. Main rocky cliff, keeper's cottage, and lighthouse tower
+        drawRockyPolys(cliffFacets, t, lightning, beamAngle);
+        drawLighthouseAndCottage(t, lightning, beamAngle);
+
+        // 7. Foreground crashing waves (layer 3), dynamic whitewater surges & spray against the rocks, then closest wave (layer 4)
+        drawWaveLayer(3, t, lightning, beamAngle);
+        drawWaveSpray(t, lightning, beamAngle);
+        drawWaveLayer(4, t, lightning, beamAngle);
+
+        // 8. Front-facing volumetric lighthouse beam sweeping over the scene
+        const frontBeamInfo = renderSingleCone(frontAngle, mainInFront, t);
+
+        // 9. Continuous slanted storm rain catching the lighthouse beam & lightning flashes
+        drawRain(t, lightning, frontBeamInfo);
+
+        // 10. Atmospheric vignette
+        drawPostVignette(lightning);
+
+        requestAnimationFrame(render);
+      }
+
+      requestAnimationFrame(render);
+    })();
+  </script>
+</body>
+</html>

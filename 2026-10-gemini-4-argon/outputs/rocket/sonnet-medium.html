@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rocket Launch</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; }
+  canvas { width: 960px; height: 540px; max-width: 100vw; max-height: 100vh; background: #05071a; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="960" height="540"></canvas>
+<script>
+(function () {
+  var cv = document.getElementById('c');
+  var ctx = cv.getContext('2d');
+  var W = 960, H = 540;
+  var LOOP = 10;            // seconds
+  var T_IGNITE = 3.0;       // engine ignites after countdown
+  var T_LIFT = 4.0;         // liftoff begins
+  var GROUND = 450;
+  var PAD_X = 480;
+
+  // deterministic RNG so each loop is identical
+  function rng(seed) {
+    var s = seed;
+    return function () {
+      s = (s * 1664525 + 1013904223) % 4294967296;
+      return s / 4294967296;
+    };
+  }
+
+  var r = rng(42);
+  var stars = [];
+  for (var i = 0; i < 140; i++) {
+    stars.push({ x: r() * W, y: r() * (GROUND - 20), s: r() * 1.6 + 0.4, p: r() * 6.28, f: 1 + r() * 2 });
+  }
+
+  // rocket height offset above pad as function of time
+  function rocketY(t) {
+    if (t < T_LIFT) return 0;
+    var d = t - T_LIFT;
+    return 0.5 * 55 * d * d + 6 * d * d * d * 0.6; // accelerating
+  }
+
+  // smoke particles are simulated deterministically from time
+  function smokeParticles(t) {
+    var list = [];
+    if (t < T_IGNITE) return list;
+    var rr = rng(7);
+    var rate = 90;
+    var n = Math.floor((t - T_IGNITE) * rate);
+    for (var i = 0; i < n; i++) {
+      var born = T_IGNITE + i / rate;
+      var age = t - born;
+      var life = 3.2 + rr() * 1.5;
+      var a = rr(), b = rr(), c = rr();
+      if (age > life) continue;
+      var k = age / life;
+      var side = (a < 0.5 ? -1 : 1);
+      var spread = 30 + b * 260;
+      var x = PAD_X + side * spread * (1 - Math.exp(-age * 1.6)) * (0.4 + c * 0.6);
+      var y = GROUND - 6 - c * 14 * Math.min(1, age) - 30 * k * (0.3 + b) + Math.sin(age * 2 + a * 9) * 3;
+      // later in flight, smoke trail left behind the rocket
+      var rad = 14 + 55 * Math.sqrt(k) * (0.6 + b * 0.6);
+      var alpha = 0.55 * (1 - k) * Math.min(1, age * 3);
+      list.push({ x: x, y: y, r: rad, a: alpha, tone: 150 + Math.floor(c * 80) });
+    }
+    return list;
+  }
+
+  // trail puffs dropped by the rising rocket
+  function trailParticles(t) {
+    var list = [];
+    if (t < T_LIFT) return list;
+    var rr = rng(99);
+    var rate = 60;
+    var n = Math.floor((t - T_LIFT) * rate);
+    for (var i = 0; i < n; i++) {
+      var born = T_LIFT + i / rate;
+      var age = t - born;
+      var a = rr(), b = rr();
+      var life = 1.6 + a * 1.2;
+      if (age > life) continue;
+      var k = age / life;
+      var y = GROUND - 90 - rocketY(born);
+      var x = PAD_X + (a - 0.5) * 20 + (b - 0.5) * 40 * k;
+      list.push({ x: x, y: y + age * 20, r: 8 + 30 * k, a: 0.4 * (1 - k), tone: 170 + Math.floor(b * 60) });
+    }
+    return list;
+  }
+
+  function drawBackground(t, shake) {
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#02030c');
+    g.addColorStop(0.7, '#0b1233');
+    g.addColorStop(1, '#1a2347');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    for (var i = 0; i < stars.length; i++) {
+      var s = stars[i];
+      var tw = 0.55 + 0.45 * Math.sin(t * s.f + s.p);
+      ctx.globalAlpha = tw;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(s.x, s.y, s.s, s.s);
+    }
+    ctx.globalAlpha = 1;
+
+    // moon
+    ctx.fillStyle = '#e8ecf7';
+    ctx.beginPath(); ctx.arc(150, 110, 26, 0, 6.283); ctx.fill();
+    ctx.fillStyle = '#05071a';
+    ctx.beginPath(); ctx.arc(160, 104, 23, 0, 6.283); ctx.fill();
+
+    // distant hills
+    ctx.fillStyle = '#0a0f26';
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND);
+    for (var x = 0; x <= W; x += 20) {
+      ctx.lineTo(x, GROUND - 30 - 18 * Math.sin(x * 0.011) - 10 * Math.sin(x * 0.031 + 1));
+    }
+    ctx.lineTo(W, GROUND); ctx.closePath(); ctx.fill();
+  }
+
+  function drawGround(glow) {
+    // glow from engine on ground
+    if (glow > 0) {
+      var rg = ctx.createRadialGradient(PAD_X, GROUND, 5, PAD_X, GROUND, 260);
+      rg.addColorStop(0, 'rgba(255,160,60,' + (0.55 * glow) + ')');
+      rg.addColorStop(1, 'rgba(255,120,30,0)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(0, GROUND - 200, W, 300);
+    }
+    ctx.fillStyle = '#10142a';
+    ctx.fillRect(0, GROUND, W, H - GROUND);
+    ctx.fillStyle = '#1b2140';
+    ctx.fillRect(0, GROUND, W, 3);
+
+    // pad
+    ctx.fillStyle = '#3a4060';
+    ctx.fillRect(PAD_X - 70, GROUND - 10, 140, 12);
+    ctx.fillStyle = '#272c48';
+    ctx.fillRect(PAD_X - 50, GROUND - 22, 100, 12);
+
+    // tower
+    ctx.fillStyle = '#4a5072';
+    ctx.fillRect(PAD_X - 130, GROUND - 190, 12, 190);
+    ctx.strokeStyle = '#4a5072'; ctx.lineWidth = 2;
+    for (var y = GROUND; y > GROUND - 190; y -= 24) {
+      ctx.beginPath();
+      ctx.moveTo(PAD_X - 130, y); ctx.lineTo(PAD_X - 118, y - 24);
+      ctx.stroke();
+    }
+    ctx.fillRect(PAD_X - 118, GROUND - 150, 50, 5);
+    ctx.fillRect(PAD_X - 118, GROUND - 100, 50, 5);
+    ctx.fillStyle = (Math.floor(performance.now() / 500) % 2) ? '#ff3b3b' : '#661a1a';
+    ctx.beginPath(); ctx.arc(PAD_X - 124, GROUND - 196, 4, 0, 6.283); ctx.fill();
+  }
+
+  function drawRocket(cx, baseY, shake) {
+    ctx.save();
+    ctx.translate(cx + shake, baseY);
+    // fins
+    ctx.fillStyle = '#c0392b';
+    ctx.beginPath();
+    ctx.moveTo(-12, -20); ctx.lineTo(-26, 0); ctx.lineTo(-12, 0); ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(12, -20); ctx.lineTo(26, 0); ctx.lineTo(12, 0); ctx.closePath(); ctx.fill();
+    // body
+    var bg = ctx.createLinearGradient(-14, 0, 14, 0);
+    bg.addColorStop(0, '#aeb6cc'); bg.addColorStop(0.45, '#ffffff'); bg.addColorStop(1, '#8a92ac');
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.moveTo(-14, 0);
+    ctx.lineTo(-14, -60);
+    ctx.quadraticCurveTo(-14, -92, 0, -104);
+    ctx.quadraticCurveTo(14, -92, 14, -60);
+    ctx.lineTo(14, 0);
+    ctx.closePath(); ctx.fill();
+    // nose tint
+    ctx.fillStyle = '#c0392b';
+    ctx.beginPath();
+    ctx.moveTo(-12, -78);
+    ctx.quadraticCurveTo(-8, -96, 0, -104);
+    ctx.quadraticCurveTo(8, -96, 12, -78);
+    ctx.closePath(); ctx.fill();
+    // window
+    ctx.fillStyle = '#2b6cb0';
+    ctx.beginPath(); ctx.arc(0, -52, 7, 0, 6.283); ctx.fill();
+    ctx.strokeStyle = '#dfe6f5'; ctx.lineWidth = 2; ctx.stroke();
+    // stripe
+    ctx.fillStyle = '#c0392b';
+    ctx.fillRect(-14, -28, 28, 5);
+    // nozzle
+    ctx.fillStyle = '#555b78';
+    ctx.fillRect(-7, 0, 14, 5);
+    ctx.restore();
+  }
+
+  function drawFlame(cx, baseY, t, power) {
+    var flick = 0.85 + 0.15 * Math.sin(t * 55) + 0.08 * Math.sin(t * 91);
+    var len = (30 + 90 * power) * flick;
+    var wid = 9 + 7 * power;
+    ctx.save();
+    ctx.translate(cx, baseY + 5);
+    ctx.globalCompositeOperation = 'lighter';
+    // outer
+    var g = ctx.createLinearGradient(0, 0, 0, len);
+    g.addColorStop(0, 'rgba(255,220,120,0.95)');
+    g.addColorStop(0.5, 'rgba(255,120,30,0.7)');
+    g.addColorStop(1, 'rgba(255,60,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(-wid, 0);
+    ctx.quadraticCurveTo(-wid * 0.9, len * 0.5, 0, len);
+    ctx.quadraticCurveTo(wid * 0.9, len * 0.5, wid, 0);
+    ctx.closePath(); ctx.fill();
+    // inner
+    var g2 = ctx.createLinearGradient(0, 0, 0, len * 0.6);
+    g2.addColorStop(0, 'rgba(255,255,255,0.95)');
+    g2.addColorStop(1, 'rgba(120,180,255,0)');
+    ctx.fillStyle = g2;
+    ctx.beginPath();
+    ctx.moveTo(-wid * 0.5, 0);
+    ctx.quadraticCurveTo(-wid * 0.4, len * 0.3, 0, len * 0.6);
+    ctx.quadraticCurveTo(wid * 0.4, len * 0.3, wid * 0.5, 0);
+    ctx.closePath(); ctx.fill();
+    // halo
+    var hg = ctx.createRadialGradient(0, 10, 2, 0, 10, 70 + 50 * power);
+    hg.addColorStop(0, 'rgba(255,170,70,0.5)');
+    hg.addColorStop(1, 'rgba(255,100,20,0)');
+    ctx.fillStyle = hg;
+    ctx.fillRect(-150, -120, 300, 300);
+    ctx.restore();
+  }
+
+  function drawSmoke(list) {
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i];
+      var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+      g.addColorStop(0, 'rgba(' + p.tone + ',' + p.tone + ',' + (p.tone + 10) + ',' + p.a + ')');
+      g.addColorStop(1, 'rgba(' + p.tone + ',' + p.tone + ',' + (p.tone + 10) + ',0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill();
+    }
+  }
+
+  function drawCountdown(t) {
+    if (t >= T_IGNITE) {
+      // brief "LIFTOFF" text
+      if (t < T_IGNITE + 2.2) {
+        var k = (t - T_IGNITE) / 2.2;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, 1 - k);
+        ctx.fillStyle = '#ffd37a';
+        ctx.font = 'bold 44px Arial, Helvetica, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(t < T_LIFT ? 'IGNITION' : 'LIFTOFF', W / 2, 90);
+        ctx.restore();
+      }
+      return;
+    }
+    var n = 3 - Math.floor(t);
+    var f = t - Math.floor(t);
+    var scale = 1.25 - 0.25 * Math.min(1, f * 4);
+    var alpha = f < 0.8 ? 1 : 1 - (f - 0.8) / 0.2;
+    ctx.save();
+    ctx.translate(W / 2, 200);
+    ctx.scale(scale, scale);
+    ctx.globalAlpha = Math.max(0, alpha);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 190px Arial, Helvetica, sans-serif';
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = 'rgba(255,140,40,0.9)';
+    ctx.strokeText(String(n), 0, 0);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(String(n), 0, 0);
+    ctx.restore();
+  }
+
+  var start = performance.now();
+  function frame(now) {
+    var t = ((now - start) / 1000) % LOOP;
+
+    var lift = rocketY(t);
+    var power = 0;
+    if (t >= T_IGNITE) power = Math.min(1, (t - T_IGNITE) / 1.0);
+    var shake = 0;
+    if (t >= T_IGNITE && t < T_LIFT + 1.5) {
+      shake = (Math.random() - 0.5) * 3.5 * (t < T_LIFT ? power : Math.max(0, 1 - (t - T_LIFT) / 1.5));
+    }
+
+    // camera: slight pan down as rocket climbs high
+    var camY = Math.max(0, lift - 260) * 0.0; // static camera, rocket exits the top
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(0, camY);
+    drawBackground(t, shake);
+
+    // sky glow from engine while lit
+    drawGround(t >= T_IGNITE ? Math.max(0, 1 - Math.max(0, lift - 100) / 300) * power : 0);
+
+    var baseY = GROUND - 22 - lift;
+
+    drawSmoke(smokeParticles(t));
+    drawSmoke(trailParticles(t));
+
+    if (t >= T_IGNITE && baseY < H + 150) drawFlame(PAD_X + shake, baseY, t, power);
+    if (baseY > -150) drawRocket(PAD_X, baseY, shake);
+
+    ctx.restore();
+
+    // end-of-loop fade for a clean reset
+    var fade = 0;
+    if (t > LOOP - 0.5) fade = (t - (LOOP - 0.5)) / 0.5;
+    else if (t < 0.4) fade = 1 - t / 0.4;
+    if (fade > 0) {
+      ctx.fillStyle = 'rgba(0,0,0,' + fade + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    drawCountdown(t);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

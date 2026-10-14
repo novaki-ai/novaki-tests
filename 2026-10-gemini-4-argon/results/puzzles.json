@@ -1,0 +1,156 @@
+{
+ "logic-puzzle": {
+  "argon-low": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "sol-low": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "argon-medium": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "sol-medium": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "astra-medium": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "argon-high": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "sol-high": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "astra-low": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "astra-high": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "opus-low": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "sonnet-low": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "opus-medium": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "sonnet-medium": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "opus-high": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  },
+  "sonnet-high": {
+   "answer": "Ben, 3",
+   "correct": true,
+   "format_ok": true
+  }
+ },
+ "hard-logic-puzzle": {
+  "argon-low": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "sol-low": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "astra-low": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "argon-medium": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "sol-medium": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "astra-medium": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "argon-high": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "astra-high": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "sol-high": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "opus-low": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "sonnet-low": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "opus-medium": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "sonnet-medium": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "opus-high": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  },
+  "sonnet-high": {
+   "answer": "Ada, 5",
+   "correct": true,
+   "format_ok": true
+  }
+ }
+}

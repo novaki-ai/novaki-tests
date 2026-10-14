@@ -1,0 +1,856 @@
+{
+ "questions": [
+  {
+   "no": 1,
+   "question": "How many times does the letter e (upper or lower case) appear in this sentence: \"Seventeen elephants never needed seven extra evenings\"?",
+   "answer": "16"
+  },
+  {
+   "no": 2,
+   "question": "What day of the week is 14 March 2031?",
+   "answer": "Friday"
+  },
+  {
+   "no": 3,
+   "question": "A train leaves at 22:47 and the journey takes 3 hours 38 minutes. What time does it arrive, in 24-hour HH:MM format?",
+   "answer": "02:25"
+  },
+  {
+   "no": 4,
+   "question": "Write the word strawberry backwards, then give only its 3rd, 4th, 5th and 6th letters.",
+   "answer": "rebw"
+  },
+  {
+   "no": 5,
+   "question": "What is 2^20 minus 3^12?",
+   "answer": "517135"
+  },
+  {
+   "no": 6,
+   "question": "An analog clock shows exactly 3:15. What is the smaller angle between the hour hand and the minute hand, in degrees?",
+   "answer": "7.5"
+  },
+  {
+   "no": 7,
+   "question": "How many prime numbers are there strictly between 100 and 150?",
+   "answer": "10"
+  },
+  {
+   "no": 8,
+   "question": "How many Sundays are there in February 2032?",
+   "answer": "5"
+  }
+ ],
+ "runs": {
+  "argon-low": {
+   "right": 7,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "15",
+     "pass": false
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "sol-low": {
+   "right": 8,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5°",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "astra-low": {
+   "right": 8,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5°",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "argon-medium": {
+   "right": 7,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "ebwa",
+     "pass": false
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "sol-medium": {
+   "right": 8,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5°",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "astra-medium": {
+   "right": 8,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5°",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "argon-high": {
+   "right": 7,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rreb",
+     "pass": false
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "sol-high": {
+   "right": 8,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5°",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "astra-high": {
+   "right": 8,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5°",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "opus-low": {
+   "right": 8,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "sonnet-low": {
+   "right": 7,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "4",
+     "pass": false
+    }
+   ]
+  },
+  "opus-medium": {
+   "right": 8,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "sonnet-medium": {
+   "right": 8,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "opus-high": {
+   "right": 8,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  },
+  "sonnet-high": {
+   "right": 8,
+   "total": 8,
+   "answers": [
+    {
+     "no": 1,
+     "expected": "16",
+     "given": "16",
+     "pass": true
+    },
+    {
+     "no": 2,
+     "expected": "Friday",
+     "given": "Friday",
+     "pass": true
+    },
+    {
+     "no": 3,
+     "expected": "02:25",
+     "given": "02:25",
+     "pass": true
+    },
+    {
+     "no": 4,
+     "expected": "rebw",
+     "given": "rebw",
+     "pass": true
+    },
+    {
+     "no": 5,
+     "expected": "517135",
+     "given": "517135",
+     "pass": true
+    },
+    {
+     "no": 6,
+     "expected": "7.5",
+     "given": "7.5",
+     "pass": true
+    },
+    {
+     "no": 7,
+     "expected": "10",
+     "given": "10",
+     "pass": true
+    },
+    {
+     "no": 8,
+     "expected": "5",
+     "given": "5",
+     "pass": true
+    }
+   ]
+  }
+ }
+}

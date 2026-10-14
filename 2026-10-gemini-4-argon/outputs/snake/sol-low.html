@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snake</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #101720;
+    color: #edf5ff;
+    font-family: system-ui, sans-serif;
+  }
+  main {
+    width: 960px;
+    height: 540px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+  }
+  canvas {
+    width: 480px;
+    height: 480px;
+    background: #182330;
+    border: 2px solid #364658;
+  }
+  aside { width: 280px; }
+  h1 { font-size: 44px; margin: 0 0 20px; }
+  #score { font-size: 28px; font-weight: bold; }
+  #status { min-height: 60px; font-size: 22px; color: #9debb3; }
+  .help { color: #aab9cb; line-height: 1.7; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="board" width="480" height="480" aria-label="Snake game board"></canvas>
+  <aside>
+    <h1>Snake</h1>
+    <div id="score" aria-live="polite">Score: 0</div>
+    <p id="status" aria-live="polite">Press Space to start</p>
+    <p class="help">Arrow keys to steer.<br>Eat food to earn 10 points.<br>Avoid walls and your own tail.</p>
+  </aside>
+</main>
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("board");
+  const ctx = canvas.getContext("2d");
+  const scoreElement = document.getElementById("score");
+  const statusElement = document.getElementById("status");
+  const size = 20;
+  const cell = canvas.width / size;
+  const vectors = {
+    up: { x: 0, y: -1 },
+    down: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+    right: { x: 1, y: 0 }
+  };
+  const opposite = { up: "down", down: "up", left: "right", right: "left" };
+  const keys = {
+    ArrowUp: "up", ArrowDown: "down",
+    ArrowLeft: "left", ArrowRight: "right"
+  };
+
+  let body, food, dir, pendingDir;
+  let running = false;
+  let gameOver = false;
+  let score = 0;
+  let timer = null;
+
+  function placeFood() {
+    const empty = [];
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        if (!body.some(part => part.x === x && part.y === y)) {
+          empty.push({ x, y });
+        }
+      }
+    }
+    food = empty.length
+      ? empty[Math.floor(Math.random() * empty.length)]
+      : { x: -1, y: -1 };
+  }
+
+  function reset() {
+    clearInterval(timer);
+    timer = null;
+    body = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+    dir = pendingDir = "right";
+    score = 0;
+    running = false;
+    gameOver = false;
+    scoreElement.textContent = "Score: 0";
+    statusElement.textContent = "Press Space to start";
+    placeFood();
+    draw();
+  }
+
+  function start() {
+    if (running) return;
+    if (gameOver) reset();
+    running = true;
+    statusElement.textContent = "Keep going!";
+    timer = setInterval(tick, 150);
+    draw();
+  }
+
+  function end() {
+    running = false;
+    gameOver = true;
+    clearInterval(timer);
+    timer = null;
+    statusElement.textContent = "Game Over — Press Space to restart";
+    draw();
+  }
+
+  function tick() {
+    if (!running) return;
+
+    dir = pendingDir;
+    const vector = vectors[dir];
+    const head = {
+      x: body[0].x + vector.x,
+      y: body[0].y + vector.y
+    };
+    const eating = head.x === food.x && head.y === food.y;
+    // The tail vacates its cell unless the snake is growing.
+    const occupied = eating ? body : body.slice(0, -1);
+
+    if (
+      head.x < 0 || head.x >= size ||
+      head.y < 0 || head.y >= size ||
+      occupied.some(part => part.x === head.x && part.y === head.y)
+    ) {
+      end();
+      return;
+    }
+
+    body.unshift(head);
+    if (eating) {
+      score += 10;
+      scoreElement.textContent = "Score: " + score;
+      placeFood();
+    } else {
+      body.pop();
+    }
+    draw();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = "#243343";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i <= size; i++) {
+      ctx.moveTo(i * cell, 0);
+      ctx.lineTo(i * cell, canvas.height);
+      ctx.moveTo(0, i * cell);
+      ctx.lineTo(canvas.width, i * cell);
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = "#ff6b78";
+    ctx.fillRect(food.x * cell + 4, food.y * cell + 4, cell - 8, cell - 8);
+
+    body.forEach((part, index) => {
+      ctx.fillStyle = index === 0 ? "#b1ffc3" : "#56d985";
+      ctx.fillRect(part.x * cell + 2, part.y * cell + 2, cell - 4, cell - 4);
+    });
+
+    if (!running) {
+      ctx.fillStyle = "rgba(8, 14, 22, 0.72)";
+      ctx.fillRect(0, 190, canvas.width, 100);
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 32px system-ui";
+      ctx.fillText(gameOver ? "Game Over" : "Press Space", canvas.width / 2, 235);
+      ctx.font = "16px system-ui";
+      ctx.fillText(
+        gameOver ? "Press Space to restart" : "to start playing",
+        canvas.width / 2, 267
+      );
+    }
+  }
+
+  document.addEventListener("keydown", event => {
+    if (event.code === "Space" || event.key === " ") {
+      event.preventDefault();
+      if (!event.repeat) start();
+      return;
+    }
+
+    const next = keys[event.key];
+    if (!next) return;
+    event.preventDefault();
+    if (!running) return;
+
+    // Compare with the actual movement direction, preventing rapid
+    // key presses from producing a reversal before the next tick.
+    if (next !== opposite[dir]) pendingDir = next;
+  });
+
+  window.snake = {
+    state() {
+      return {
+        running,
+        gameOver,
+        score,
+        length: body.length,
+        head: { ...body[0] },
+        food: { ...food },
+        dir
+      };
+    },
+    setFood(x, y) {
+      if (!Number.isInteger(x) || !Number.isInteger(y) ||
+          x < 0 || x >= size || y < 0 || y >= size) {
+        throw new RangeError("Food coordinates must be integers from 0 to 19.");
+      }
+      food = { x, y };
+      draw();
+    }
+  };
+
+  reset();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+{
+ "argon-low": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "sol-low": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "astra-low": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "argon-medium": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "sol-medium": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "astra-medium": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "argon-high": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "sol-high": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "astra-high": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "opus-low": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "sonnet-low": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "opus-medium": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "sonnet-medium": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "opus-high": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ },
+ "sonnet-high": {
+  "passed": 10,
+  "checks": {
+   "canvas_and_score_element": true,
+   "space_starts_game": true,
+   "starts_moving_right": true,
+   "arrow_keys_steer": true,
+   "cannot_reverse_into_itself": true,
+   "food_grows_snake": true,
+   "score_visible": true,
+   "wall_ends_game": true,
+   "shows_game_over": true,
+   "space_restarts_with_score_0": true
+  }
+ }
+}

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night Launch</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: #030712;
+    display: grid;
+    place-items: center;
+  }
+  canvas {
+    display: block;
+    width: min(960px, 100vw);
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+</style>
+</head>
+<body>
+<canvas id="scene" width="960" height="540"
+        role="img" aria-label="Looping rocket launch at night with a three-second countdown, flames, and billowing smoke."></canvas>
+<script>
+"use strict";
+const canvas = document.getElementById("scene");
+const ctx = canvas.getContext("2d");
+const W = 960, H = 540, LOOP = 10;
+const TAU = Math.PI * 2;
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const smooth = v => { v = clamp(v); return v * v * (3 - 2 * v); };
+
+let seed = 7341;
+function random() {
+  seed = (seed * 1664525 + 1013904223) >>> 0;
+  return seed / 4294967296;
+}
+const stars = Array.from({length: 145}, () => ({
+  x: random() * W, y: random() * 440,
+  radius: .45 + random() * 1.2,
+  phase: random() * TAU
+}));
+const smoke = Array.from({length: 120}, (_, i) => ({
+  birth: 3 + i / 120 * 2.25,
+  side: i % 2 ? 1 : -1,
+  speed: 30 + random() * 70,
+  rise: 8 + random() * 30,
+  size: 10 + random() * 17,
+  drift: random() * 22,
+  life: 2 + random() * 1.7
+}));
+
+function ellipse(x, y, rx, ry, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, TAU);
+  ctx.fill();
+}
+function rocketBottom(t) {
+  const flight = Math.max(0, t - 4);
+  return 433 - 36 * flight - 85 * flight * flight;
+}
+function sky(t) {
+  const gradient = ctx.createLinearGradient(0, 0, 0, H);
+  gradient.addColorStop(0, "#04091d");
+  gradient.addColorStop(.65, "#111e3b");
+  gradient.addColorStop(1, "#303652");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, W, H);
+
+  for (const s of stars) {
+    const alpha = .45 + .35 * Math.sin(t * 1.7 + s.phase);
+    ellipse(s.x, s.y, s.radius, s.radius, `rgba(217,233,255,${alpha})`);
+  }
+
+  const halo = ctx.createRadialGradient(789, 90, 5, 789, 90, 68);
+  halo.addColorStop(0, "rgba(183,215,255,.14)");
+  halo.addColorStop(1, "rgba(183,215,255,0)");
+  ctx.fillStyle = halo;
+  ctx.fillRect(720, 20, 140, 140);
+  ellipse(789, 90, 24, 24, "#d3e0ee");
+  ellipse(797, 83, 21, 21, "#101b34");
+
+  ctx.fillStyle = "#0c1629";
+  ctx.beginPath();
+  ctx.moveTo(0, 470);
+  for (let x = 0; x <= W; x += 40)
+    ctx.lineTo(x, 454 + Math.sin(x * .016) * 13 + Math.cos(x * .031) * 9);
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
+
+  ctx.fillStyle = "#08101d";
+  ctx.fillRect(0, 476, W, 64);
+}
+function pad(t) {
+  ctx.strokeStyle = "#33425a";
+  ctx.lineWidth = 5;
+  ctx.strokeRect(380, 324, 30, 144);
+  ctx.lineWidth = 2;
+  for (let y = 326; y < 460; y += 28) {
+    ctx.beginPath();
+    ctx.moveTo(380, y); ctx.lineTo(410, y + 28);
+    ctx.moveTo(410, y); ctx.lineTo(380, y + 28);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#3e4c63";
+  ctx.fillRect(406, 366, 43 * (1 - smooth((t - 3.1) / .65)), 6);
+
+  ellipse(395, 321, 3, 3, Math.sin(t * 6) > 0 ? "#ff666b" : "#823a49");
+  ctx.fillStyle = "#28354b";
+  ctx.beginPath();
+  ctx.moveTo(401, 449); ctx.lineTo(557, 449);
+  ctx.lineTo(577, 476); ctx.lineTo(381, 476);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = "#536075";
+  ctx.fillRect(405, 443, 148, 8);
+  ctx.fillStyle = "#111a29";
+  ctx.fillRect(454, 451, 51, 25);
+
+  for (let x = 417; x < 551; x += 22) {
+    ctx.fillStyle = "#d4a858";
+    ctx.fillRect(x, 452, 10, 4);
+  }
+  for (const x of [320, 640]) {
+    ctx.fillStyle = "#455169";
+    ctx.fillRect(x - 2, 467, 4, 12);
+    ellipse(x, 467, 3, 2, "#ffd590");
+  }
+}
+function engineGlow(t, bottom) {
+  const power = smooth((t - 3) / .35) * (1 - smooth((t - 6.3) / .5));
+  if (!power) return;
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  const g = ctx.createRadialGradient(480, bottom + 24, 0, 480, bottom + 24, 105);
+  g.addColorStop(0, `rgba(255,165,61,${.5 * power})`);
+  g.addColorStop(1, "rgba(255,120,30,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(360, bottom - 95, 240, 240);
+  const floorGlow = ctx.createRadialGradient(480, 454, 0, 480, 454, 130);
+  floorGlow.addColorStop(0, `rgba(255,140,48,${power * Math.exp(-Math.max(0, 433 - bottom) / 110) * .5})`);
+  floorGlow.addColorStop(1, "rgba(255,100,20,0)");
+  ctx.fillStyle = floorGlow;
+  ctx.fillRect(350, 410, 260, 95);
+  ctx.restore();
+}
+function clouds(t, foreground) {
+  for (let i = 0; i < smoke.length; i++) {
+    if ((i % 3 === 0) !== foreground) continue;
+    const p = smoke[i], age = t - p.birth;
+    if (age < 0 || age > p.life) continue;
+    const fade = smooth(age / .18) * (1 - smooth(age / p.life));
+    const radius = p.size + age * 24;
+    const x = 480 + p.side * (12 + p.speed * age);
+    const y = 456 - p.rise * age - age * age * 3;
+    const g = ctx.createRadialGradient(x - radius * .2, y - radius * .3, 0, x, y, radius);
+    g.addColorStop(0, `rgba(163,171,190,${fade * .52})`);
+    g.addColorStop(.65, `rgba(94,108,137,${fade * .43})`);
+    g.addColorStop(1, "rgba(60,76,106,0)");
+    ellipse(x, y, radius, radius * .73, g);
+  }
+}
+function flame(t, bottom) {
+  if (t < 3 || bottom < -220) return;
+  const strength = smooth((t - 3) / .35);
+  const flutter = Math.sin(t * 73) * 8 + Math.sin(t * 117) * 5;
+  const length = (63 + Math.max(0, t - 4) * 27 + flutter) * strength;
+  ctx.save();
+  ctx.translate(480, bottom - 2);
+  ctx.globalCompositeOperation = "screen";
+  const g = ctx.createLinearGradient(0, 0, 0, length);
+  g.addColorStop(0, "#fff5c0");
+  g.addColorStop(.28, "#ffcf52");
+  g.addColorStop(.65, "#ff7c26");
+  g.addColorStop(1, "rgba(255,64,24,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(-10, 0);
+  ctx.bezierCurveTo(-21, length * .3, -7, length * .62, Math.sin(t * 51) * 7, length);
+  ctx.bezierCurveTo(9, length * .64, 20, length * .25, 10, 0);
+  ctx.fill();
+  ctx.fillStyle = "#fffce7";
+  ctx.beginPath();
+  ctx.moveTo(-5, 0);
+  ctx.quadraticCurveTo(-9, length * .25, 0, length * .65);
+  ctx.quadraticCurveTo(9, length * .25, 5, 0);
+  ctx.fill();
+  ctx.restore();
+}
+function rocket(t, bottom) {
+  if (bottom < -40) return;
+  const shake = t >= 3 && t < 4 ? Math.sin(t * 95) * 1.15 : 0;
+  ctx.save();
+  ctx.translate(480 + shake, bottom);
+
+  ctx.fillStyle = "#d54d61";
+  ctx.beginPath();
+  ctx.moveTo(-15, -38); ctx.lineTo(-29, -10);
+  ctx.lineTo(-29, 2); ctx.lineTo(-12, -8);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(15, -38); ctx.lineTo(29, -10);
+  ctx.lineTo(29, 2); ctx.lineTo(12, -8);
+  ctx.closePath(); ctx.fill();
+
+  const metal = ctx.createLinearGradient(-17, 0, 17, 0);
+  metal.addColorStop(0, "#8eacc7");
+  metal.addColorStop(.38, "#f5f4ea");
+  metal.addColorStop(.65, "#e0e6ed");
+  metal.addColorStop(1, "#7590ae");
+  ctx.fillStyle = metal;
+  ctx.beginPath();
+  ctx.moveTo(0, -108);
+  ctx.bezierCurveTo(-15, -94, -18, -77, -17, -55);
+  ctx.lineTo(-14, -12); ctx.lineTo(14, -12);
+  ctx.lineTo(17, -55);
+  ctx.bezierCurveTo(18, -77, 15, -94, 0, -108);
+  ctx.fill();
+
+  ctx.fillStyle = "#e45969";
+  ctx.beginPath();
+  ctx.moveTo(0, -108);
+  ctx.quadraticCurveTo(-12, -96, -15, -82);
+  ctx.lineTo(15, -82);
+  ctx.quadraticCurveTo(12, -96, 0, -108);
+  ctx.fill();
+
+  ellipse(0, -66, 9, 10, "#465b78");
+  ellipse(0, -66, 6.5, 7.5, "#6fd4f5");
+  ellipse(-2, -69, 2.2, 2.8, "#ddfaff");
+  ctx.fillStyle = "#c24a60";
+  ctx.fillRect(-15, -27, 30, 5);
+  ctx.fillStyle = "#52617a";
+  ctx.beginPath();
+  ctx.moveTo(-9, -12); ctx.lineTo(9, -12);
+  ctx.lineTo(12, 0); ctx.lineTo(-12, 0);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function typography(t) {
+  ctx.textAlign = "left";
+  ctx.font = "12px monospace";
+  ctx.fillStyle = "#8da2c4";
+  ctx.fillText("NIGHTFLIGHT / 01", 35, 39);
+
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#b4c8de";
+  const status = t < 3 ? "SEQUENCE STARTED" :
+                 t < 4 ? "ENGINE IGNITION" :
+                 t < 7 ? "LIFTOFF" : "FLIGHT IN PROGRESS";
+  ctx.fillText(status, 925, 39);
+
+  if (t < 3) {
+    const phase = t % 1;
+    const opacity = smooth(phase / .1) * (1 - smooth((phase - .68) / .32));
+    ctx.save();
+    ctx.translate(480, 166);
+    const scale = 1 + .16 * (1 - smooth(phase / .4));
+    ctx.scale(scale, scale);
+    ctx.textAlign = "center";
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = "#eef6ff";
+    ctx.shadowColor = "#86bfff";
+    ctx.shadowBlur = 25;
+    ctx.font = "bold 96px system-ui, sans-serif";
+    ctx.fillText(String(3 - Math.floor(t)), 0, 0);
+    ctx.shadowBlur = 0;
+    ctx.font = "11px monospace";
+    ctx.fillStyle = "#a3bfdd";
+    ctx.fillText("PREPARE FOR LAUNCH", 0, 30);
+    ctx.restore();
+  }
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#778aa6";
+  ctx.font = "10px monospace";
+  ctx.fillText("AUTOMATED LAUNCH SEQUENCE", 35, 512);
+  ctx.fillStyle = "#26354d";
+  ctx.fillRect(750, 506, 175, 2);
+  ctx.fillStyle = "#9cbddc";
+  ctx.fillRect(750, 506, 175 * t / LOOP, 2);
+}
+
+const start = performance.now();
+function frame(now) {
+  const t = ((now - start) / 1000) % LOOP;
+  const bottom = rocketBottom(t);
+  ctx.clearRect(0, 0, W, H);
+  sky(t);
+  pad(t);
+  engineGlow(t, bottom);
+  clouds(t, false);
+  flame(t, bottom);
+  rocket(t, bottom);
+  clouds(t, true);
+  typography(t);
+
+  // Fade to black before the reset, then reveal the next countdown.
+  const fade = t > 9 ? smooth((t - 9) / 1) :
+               t < .3 ? 1 - smooth(t / .3) : 0;
+  if (fade > 0) {
+    ctx.fillStyle = `rgba(3,7,18,${fade})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

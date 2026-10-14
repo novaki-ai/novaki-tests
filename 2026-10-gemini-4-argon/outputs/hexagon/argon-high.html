@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12 Numbered Balls in a Spinning Hexagon</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #0b0f19;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+  }
+  #stage {
+    width: 960px;
+    height: 540px;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 45%, #182238 0%, #0d1322 65%, #080c16 100%);
+  }
+  canvas {
+    display: block;
+    width: 960px;
+    height: 540px;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="sim" width="960" height="540"></canvas>
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('sim');
+  const ctx = canvas.getContext('2d');
+
+  const W = 960;
+  const H = 540;
+  const CX = W * 0.5;
+  const CY = H * 0.5;
+
+  // Physics constants
+  const GRAVITY = 680;            // px / s^2
+  const HEX_RADIUS = 232;         // circumradius of the hexagon (fits inside 540px height)
+  const HEX_OMEGA = 0.52;         // rad / s (slow steady clockwise rotation)
+  const SUBSTEPS = 16;            // physics substeps per frame for tunnel-free stability
+  const SOLVER_ITERS = 3;         // constraint iterations per substep
+  const RESTITUTION_BALL = 0.84;  // ball-to-ball bounciness
+  const RESTITUTION_WALL = 0.80;  // ball-to-wall bounciness
+  const FRICTION_WALL = 0.38;     // Coulomb surface friction against rotating walls
+  const FRICTION_BALL = 0.22;     // Coulomb surface friction between balls
+  const AIR_DRAG = 0.12;          // linear air resistance (1/s)
+  const ANGULAR_DRAG = 0.15;      // rotational damping (1/s)
+
+  // Pool-inspired vibrant palette for the 12 balls
+  const PALETTE = [
+    '#f5b700', // 1  Yellow
+    '#1e6ffb', // 2  Blue
+    '#ff3b30', // 3  Red
+    '#8e44ad', // 4  Purple
+    '#ff7a00', // 5  Orange
+    '#10b981', // 6  Emerald
+    '#b83227', // 7  Crimson
+    '#2dd4bf', // 8  Teal
+    '#eab308', // 9  Gold
+    '#3b82f6', // 10 Cobalt
+    '#f43f5e', // 11 Rose
+    '#a855f7'  // 12 Violet
+  ];
+
+  const BALL_RADIUS = 20;
+  const balls = [];
+
+  // Initialize 12 balls in a compact honeycomb cluster near the center
+  function initBalls() {
+    balls.length = 0;
+    const cols = 4;
+    const spacing = BALL_RADIUS * 2.35;
+    for (let i = 0; i < 12; i++) {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const offsetX = (col - (cols - 1) / 2 + (row % 2) * 0.35) * spacing;
+      const offsetY = (row - 1) * spacing * 0.9 - 30;
+      const mass = 1;
+      const inertia = 0.5 * mass * BALL_RADIUS * BALL_RADIUS;
+
+      balls.push({
+        id: i + 1,
+        x: CX + offsetX + (Math.random() - 0.5) * 4,
+        y: CY + offsetY + (Math.random() - 0.5) * 4,
+        vx: (Math.random() - 0.5) * 260,
+        vy: (Math.random() - 0.5) * 220 - 80,
+        r: BALL_RADIUS,
+        mass,
+        invMass: 1 / mass,
+        inertia,
+        invInertia: 1 / inertia,
+        angle: (Math.random() - 0.5) * 1.2,
+        omega: (Math.random() - 0.5) * 4,
+        color: PALETTE[i],
+        striped: i >= 8
+      });
+    }
+  }
+
+  let hexAngle = 0;
+
+  // Compute the 6 vertices and 6 inward-facing edges of the hexagon
+  function getHexGeometry(angle) {
+    const verts = [];
+    for (let i = 0; i < 6; i++) {
+      const a = angle + (i * Math.PI) / 3;
+      verts.push({
+        x: CX + Math.cos(a) * HEX_RADIUS,
+        y: CY + Math.sin(a) * HEX_RADIUS
+      });
+    }
+    const edges = [];
+    for (let i = 0; i < 6; i++) {
+      const a = verts[i];
+      const b = verts[(i + 1) % 6];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const len = Math.hypot(dx, dy);
+      const tx = dx / len;
+      const ty = dy / len;
+      // Inward normal for clockwise-ordered vertices in screen coordinates (y down)
+      const nx = -ty;
+      const ny = tx;
+      edges.push({ a, b, tx, ty, nx, ny, len });
+    }
+    return { verts, edges };
+  }
+
+  // Clamp a ball strictly inside all 6 half-planes of the convex hexagon
+  function enforceHexContainment(ball, edges) {
+    for (let i = 0; i < 6; i++) {
+      const e = edges[i];
+      const dist = (ball.x - e.a.x) * e.nx + (ball.y - e.a.y) * e.ny;
+      if (dist < ball.r) {
+        const pen = ball.r - dist;
+        ball.x += e.nx * pen;
+        ball.y += e.ny * pen;
+      }
+    }
+  }
+
+  // Resolve collision between a ball and a rotating hexagon edge
+  function collideBallWithEdge(ball, edge) {
+    const abx = edge.b.x - edge.a.x;
+    const aby = edge.b.y - edge.a.y;
+    const apx = ball.x - edge.a.x;
+    const apy = ball.y - edge.a.y;
+    const abLenSq = abx * abx + aby * aby;
+    let t = (apx * abx + apy * aby) / abLenSq;
+    if (t < 0) t = 0;
+    else if (t > 1) t = 1;
+
+    // Closest point C on the edge segment
+    const cx = edge.a.x + abx * t;
+    const cy = edge.a.y + aby * t;
+
+    let dx = ball.x - cx;
+    let dy = ball.y - cy;
+    let dist = Math.hypot(dx, dy);
+
+    // Check signed distance to the edge line to detect if the center crossed outside
+    const signedDist = apx * edge.nx + apy * edge.ny;
+
+    if (signedDist < 0) {
+      // Ball center is outside the edge plane: use the inward edge normal directly
+      const pen = ball.r - signedDist;
+      ball.x += edge.nx * pen;
+      ball.y += edge.ny * pen;
+      dx = edge.nx;
+      dy = edge.ny;
+      dist = 1;
+    } else if (dist < ball.r) {
+      // Standard circle-segment overlap
+      const nx = dist > 1e-6 ? dx / dist : edge.nx;
+      const ny = dist > 1e-6 ? dy / dist : edge.ny;
+      const pen = ball.r - dist;
+      ball.x += nx * pen;
+      ball.y += ny * pen;
+      dx = nx;
+      dy = ny;
+    } else {
+      return;
+    }
+
+    const nx = dx;
+    const ny = dy;
+    const tx = -ny;
+    const ty = nx;
+
+    // Velocity of the rotating hexagon wall at contact point C: v_wall = omega x (C - center)
+    const wallVx = -HEX_OMEGA * (cy - CY);
+    const wallVy =  HEX_OMEGA * (cx - CX);
+
+    // Velocity of the ball surface at the contact point (center - r * n)
+    const surfVx = ball.vx - ball.omega * ball.r * tx;
+    const surfVy = ball.vy - ball.omega * ball.r * ty;
+
+    const relVx = surfVx - wallVx;
+    const relVy = surfVy - wallVy;
+
+    const vn = relVx * nx + relVy * ny;
+    if (vn >= 0) return;
+
+    // Restitution scales down smoothly only for micro-impacts so resting contacts don't jitter
+    const e = Math.abs(vn) < 28 ? RESTITUTION_WALL * (Math.abs(vn) / 28) : RESTITUTION_WALL;
+    const jn = -(1 + e) * vn * ball.mass;
+
+    // Tangential relative velocity at the contact patch
+    const vt = relVx * tx + relVy * ty;
+    // For a solid disk (I = 0.5 m r^2), effective tangential mass is m / 3
+    let jt = -(ball.mass / 3) * vt;
+    const maxJt = FRICTION_WALL * jn;
+    if (jt > maxJt) jt = maxJt;
+    else if (jt < -maxJt) jt = -maxJt;
+
+    const jx = jn * nx + jt * tx;
+    const jy = jn * ny + jt * ty;
+
+    ball.vx += jx * ball.invMass;
+    ball.vy += jy * ball.invMass;
+    ball.omega -= ball.r * jt * ball.invInertia;
+  }
+
+  // Resolve collision between two balls with rotation & surface friction
+  function collideBalls(a, b) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const minDist = a.r + b.r;
+    const distSq = dx * dx + dy * dy;
+    if (distSq >= minDist * minDist) return;
+
+    const dist = Math.sqrt(distSq);
+    const nx = dist > 1e-6 ? dx / dist : 1;
+    const ny = dist > 1e-6 ? dy / dist : 0;
+    const tx = -ny;
+    const ty = nx;
+
+    // Positional separation
+    const overlap = minDist - dist;
+    const totalInvMass = a.invMass + b.invMass;
+    const corr = overlap / totalInvMass;
+    a.x -= nx * corr * a.invMass;
+    a.y -= ny * corr * a.invMass;
+    b.x += nx * corr * b.invMass;
+    b.y += ny * corr * b.invMass;
+
+    // Surface velocities at the contact point
+    const surfAx = a.vx + a.omega * a.r * tx;
+    const surfAy = a.vy + a.omega * a.r * ty;
+    const surfBx = b.vx - b.omega * b.r * tx;
+    const surfBy = b.vy - b.omega * b.r * ty;
+
+    const relVx = surfBx - surfAx;
+    const relVy = surfBy - surfAy;
+
+    const vn = relVx * nx + relVy * ny;
+    if (vn >= 0) return;
+
+    const mRed = 1 / totalInvMass;
+    const e = Math.abs(vn) < 22 ? RESTITUTION_BALL * (Math.abs(vn) / 22) : RESTITUTION_BALL;
+    const jn = -(1 + e) * vn * mRed;
+
+    const vt = relVx * tx + relVy * ty;
+    let jt = -(mRed / 3) * vt;
+    const maxJt = FRICTION_BALL * jn;
+    if (jt > maxJt) jt = maxJt;
+    else if (jt < -maxJt) jt = -maxJt;
+
+    const jx = jn * nx + jt * tx;
+    const jy = jn * ny + jt * ty;
+
+    a.vx -= jx * a.invMass;
+    a.vy -= jy * a.invMass;
+    b.vx += jx * b.invMass;
+    b.vy += jy * b.invMass;
+
+    a.omega -= a.r * jt * a.invInertia;
+    b.omega -= b.r * jt * b.invInertia;
+  }
+
+  function stepPhysics(dt) {
+    const subDt = dt / SUBSTEPS;
+    const linDamp = Math.exp(-AIR_DRAG * subDt);
+    const angDamp = Math.exp(-ANGULAR_DRAG * subDt);
+
+    for (let s = 0; s < SUBSTEPS; s++) {
+      hexAngle += HEX_OMEGA * subDt;
+      const { edges } = getHexGeometry(hexAngle);
+
+      // Integrate forces and velocities
+      for (let i = 0; i < balls.length; i++) {
+        const b = balls[i];
+        b.vy += GRAVITY * subDt;
+        b.vx *= linDamp;
+        b.vy *= linDamp;
+        b.omega *= angDamp;
+
+        b.x += b.vx * subDt;
+        b.y += b.vy * subDt;
+        b.angle += b.omega * subDt;
+      }
+
+      // Iterative collision & constraint solving
+      for (let iter = 0; iter < SOLVER_ITERS; iter++) {
+        // Ball-to-ball collisions
+        for (let i = 0; i < balls.length; i++) {
+          for (let j = i + 1; j < balls.length; j++) {
+            collideBalls(balls[i], balls[j]);
+          }
+        }
+        // Ball-to-wall collisions
+        for (let i = 0; i < balls.length; i++) {
+          const b = balls[i];
+          for (let e = 0; e < 6; e++) {
+            collideBallWithEdge(b, edges[e]);
+          }
+          enforceHexContainment(b, edges);
+        }
+      }
+    }
+  }
+
+  function drawHexagon(verts) {
+    ctx.save();
+
+    // Subtle interior fill
+    ctx.beginPath();
+    ctx.moveTo(verts[0].x, verts[0].y);
+    for (let i = 1; i < 6; i++) ctx.lineTo(verts[i].x, verts[i].y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+    ctx.fill();
+
+    // Faint spokes & concentric guide rings so rotation is visually unmistakable
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.07)';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath();
+      ctx.moveTo(CX, CY);
+      ctx.lineTo(verts[i].x, verts[i].y);
+      ctx.stroke();
+    }
+
+    // Center pivot axle
+    ctx.beginPath();
+    ctx.arc(CX, CY, 5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(148, 163, 184, 0.25)';
+    ctx.fill();
+
+    // Outer glowing border
+    ctx.beginPath();
+    ctx.moveTo(verts[0].x, verts[0].y);
+    for (let i = 1; i < 6; i++) ctx.lineTo(verts[i].x, verts[i].y);
+    ctx.closePath();
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.18)';
+    ctx.stroke();
+
+    ctx.lineWidth = 4.5;
+    ctx.strokeStyle = '#38bdf8';
+    ctx.stroke();
+
+    // Corner rivets
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath();
+      ctx.arc(verts[i].x, verts[i].y, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#e0f2fe';
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawBall(b) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+
+    // Drop shadow
+    ctx.beginPath();
+    ctx.arc(2, 4, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.fill();
+
+    // Rotate for ball texture & number orientation
+    ctx.save();
+    ctx.rotate(b.angle);
+
+    // Clip to sphere
+    ctx.beginPath();
+    ctx.arc(0, 0, b.r, 0, Math.PI * 2);
+    ctx.clip();
+
+    if (b.striped) {
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(-b.r, -b.r, b.r * 2, b.r * 2);
+      ctx.fillStyle = b.color;
+      ctx.fillRect(-b.r, -b.r * 0.58, b.r * 2, b.r * 1.16);
+    } else {
+      ctx.fillStyle = b.color;
+      ctx.fillRect(-b.r, -b.r, b.r * 2, b.r * 2);
+    }
+
+    // Inner white number badge
+    ctx.beginPath();
+    ctx.arc(0, 0, b.r * 0.52, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+    ctx.fill();
+
+    // Number label
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '700 13px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(b.id), 0, 0.5);
+
+    ctx.restore();
+
+    // 3D specular highlight and rim shading (stays aligned with light source)
+    const grad = ctx.createRadialGradient(-b.r * 0.35, -b.r * 0.35, b.r * 0.1, 0, 0, b.r);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 0.38)');
+    grad.addColorStop(0.35, 'rgba(255, 255, 255, 0.05)');
+    grad.addColorStop(0.75, 'rgba(0, 0, 0, 0.0)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0.42)');
+
+    ctx.beginPath();
+    ctx.arc(0, 0, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // Click anywhere on the canvas to give the balls an upward impulse burst
+  canvas.addEventListener('pointerdown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (W / rect.width);
+    const my = (e.clientY - rect.top) * (H / rect.height);
+    for (const b of balls) {
+      const dx = b.x - mx;
+      const dy = b.y - my;
+      const d = Math.hypot(dx, dy) + 30;
+      const strength = Math.min(520, 45000 / d);
+      b.vx += (dx / d) * strength + (Math.random() - 0.5) * 120;
+      b.vy += (dy / d) * strength - 220;
+      b.omega += (Math.random() - 0.5) * 10;
+    }
+  });
+
+  initBalls();
+
+  let lastTime = performance.now();
+  function animate(now) {
+    const rawDt = (now - lastTime) / 1000;
+    lastTime = now;
+    const dt = Math.min(rawDt, 1 / 30);
+
+    stepPhysics(dt);
+
+    ctx.clearRect(0, 0, W, H);
+    const { verts } = getHexGeometry(hexAngle);
+    drawHexagon(verts);
+    for (let i = 0; i < balls.length; i++) {
+      drawBall(balls[i]);
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>

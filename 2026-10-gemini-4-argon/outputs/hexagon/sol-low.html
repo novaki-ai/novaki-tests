@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rotating Hexagon Physics</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #0b1020; }
+  body { display: grid; place-items: center; }
+  canvas { display: block; width: min(100vw, 177.7778vh); height: min(100vh, 56.25vw); }
+</style>
+</head>
+<body>
+<canvas id="canvas" width="960" height="540"></canvas>
+<script>
+"use strict";
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const W = 960, H = 540;
+const center = { x: W / 2, y: H / 2 };
+const hexRadius = 238;
+const ballRadius = 14;
+const omega = 0.15;                  // Radians per second.
+const gravity = 480;
+const airDrag = 0.075;
+const restitution = 0.78;
+const wallFriction = 0.22;
+const ballFriction = 0.12;
+const step = 1 / 240;
+let angle = Math.PI / 6;
+let accumulator = 0;
+let previousTime = null;
+
+const balls = Array.from({ length: 12 }, (_, i) => ({
+  x: center.x + (i % 4 - 1.5) * 43,
+  y: center.y - 105 + Math.floor(i / 4) * 43,
+  vx: Math.sin(i * 2.37) * 75,
+  vy: Math.cos(i * 1.73) * 35,
+  spin: 0,
+  rotation: 0,
+  color: `hsl(${i * 30}, 78%, 62%)`,
+  number: i + 1
+}));
+
+function geometry() {
+  const vertices = Array.from({ length: 6 }, (_, i) => {
+    const a = angle + i * Math.PI / 3;
+    return {
+      x: center.x + Math.cos(a) * hexRadius,
+      y: center.y + Math.sin(a) * hexRadius
+    };
+  });
+  const walls = vertices.map((a, i) => {
+    const b = vertices[(i + 1) % 6];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const length = Math.hypot(dx, dy);
+    return { a, nx: -dy / length, ny: dx / length };
+  });
+  return { vertices, walls };
+}
+
+function constrainBall(ball, walls, respond) {
+  for (const wall of walls) {
+    const nx = wall.nx, ny = wall.ny;
+    const distance = (ball.x - wall.a.x) * nx +
+                     (ball.y - wall.a.y) * ny;
+    if (distance >= ballRadius) continue;
+
+    const penetration = ballRadius - distance;
+    ball.x += nx * penetration;
+    ball.y += ny * penetration;
+
+    if (!respond) continue;
+
+    // The wall's contact point moves with the rotating rigid hexagon.
+    const px = ball.x - nx * ballRadius;
+    const py = ball.y - ny * ballRadius;
+    const wallVX = -omega * (py - center.y);
+    const wallVY =  omega * (px - center.x);
+    const rvx = ball.vx - wallVX;
+    const rvy = ball.vy - wallVY;
+    const normalSpeed = rvx * nx + rvy * ny;
+    if (normalSpeed >= 0) continue;
+
+    // Suppress tiny rebounds so resting contact remains stable.
+    const bounce = normalSpeed < -25 ? restitution : 0;
+    const normalImpulse = -(1 + bounce) * normalSpeed;
+    ball.vx += normalImpulse * nx;
+    ball.vy += normalImpulse * ny;
+
+    const tx = -ny, ty = nx;
+    const tangentSpeed = rvx * tx + rvy * ty -
+                         ball.spin * ballRadius;
+    // Solid disk inertia: I = 0.5 m r², with unit mass.
+    const tangentImpulse = Math.max(
+      -wallFriction * normalImpulse,
+      Math.min(wallFriction * normalImpulse, -tangentSpeed / 3)
+    );
+    ball.vx += tangentImpulse * tx;
+    ball.vy += tangentImpulse * ty;
+    ball.spin -= 2 * tangentImpulse / ballRadius;
+  }
+}
+
+function collideBalls(a, b) {
+  let dx = b.x - a.x, dy = b.y - a.y;
+  const diameter = 2 * ballRadius;
+  const distanceSquared = dx * dx + dy * dy;
+  if (distanceSquared >= diameter * diameter) return;
+
+  let distance = Math.sqrt(distanceSquared);
+  let nx, ny;
+  if (distance < 1e-9) {
+    nx = 1; ny = 0; distance = 0;
+  } else {
+    nx = dx / distance; ny = dy / distance;
+  }
+
+  const correction = (diameter - distance) * 0.5;
+  a.x -= nx * correction; a.y -= ny * correction;
+  b.x += nx * correction; b.y += ny * correction;
+
+  const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+  const normalSpeed = rvx * nx + rvy * ny;
+  if (normalSpeed >= 0) return;
+
+  const bounce = normalSpeed < -25 ? restitution : 0;
+  const normalImpulse = -(1 + bounce) * normalSpeed / 2;
+  a.vx -= normalImpulse * nx; a.vy -= normalImpulse * ny;
+  b.vx += normalImpulse * nx; b.vy += normalImpulse * ny;
+
+  const tx = -ny, ty = nx;
+  const tangentSpeed = rvx * tx + rvy * ty -
+                       (a.spin + b.spin) * ballRadius;
+  const tangentImpulse = Math.max(
+    -ballFriction * normalImpulse,
+    Math.min(ballFriction * normalImpulse, -tangentSpeed / 6)
+  );
+  a.vx -= tangentImpulse * tx; a.vy -= tangentImpulse * ty;
+  b.vx += tangentImpulse * tx; b.vy += tangentImpulse * ty;
+  a.spin -= 2 * tangentImpulse / ballRadius;
+  b.spin -= 2 * tangentImpulse / ballRadius;
+}
+
+function simulate(dt) {
+  angle = (angle + omega * dt) % (2 * Math.PI);
+  const { walls } = geometry();
+  const damping = Math.exp(-airDrag * dt);
+
+  for (const ball of balls) {
+    ball.vy += gravity * dt;
+    ball.vx *= damping;
+    ball.vy *= damping;
+    ball.spin *= Math.exp(-0.12 * dt);
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+    ball.rotation += ball.spin * dt;
+  }
+
+  // Resolve coupled contacts repeatedly, including balls against corners.
+  for (let iteration = 0; iteration < 10; iteration++) {
+    for (let i = 0; i < balls.length; i++) {
+      for (let j = i + 1; j < balls.length; j++) {
+        collideBalls(balls[i], balls[j]);
+      }
+    }
+    for (const ball of balls) constrainBall(ball, walls, true);
+  }
+
+  // Final containment projection: every circle stays inside every half-plane.
+  for (const ball of balls) {
+    for (let pass = 0; pass < 16; pass++) {
+      constrainBall(ball, walls, false);
+    }
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  const background = ctx.createRadialGradient(
+    center.x, center.y, 20, center.x, center.y, 480
+  );
+  background.addColorStop(0, "#19243b");
+  background.addColorStop(1, "#090e1b");
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, W, H);
+
+  const { vertices } = geometry();
+  ctx.beginPath();
+  vertices.forEach((v, i) => {
+    if (i === 0) ctx.moveTo(v.x, v.y);
+    else ctx.lineTo(v.x, v.y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = "rgba(24, 37, 58, 0.65)";
+  ctx.fill();
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = "#8ee6ef";
+  ctx.shadowColor = "#46c9df";
+  ctx.shadowBlur = 15;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  for (const ball of balls) {
+    ctx.save();
+    ctx.translate(ball.x, ball.y);
+
+    const gradient = ctx.createRadialGradient(-5, -6, 1, 0, 0, ballRadius);
+    gradient.addColorStop(0, "#ffffff");
+    gradient.addColorStop(0.23, ball.color);
+    gradient.addColorStop(1, "#253249");
+
+    ctx.beginPath();
+    ctx.arc(0, 0, ballRadius, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.shadowColor = "rgba(0,0,0,0.45)";
+    ctx.shadowBlur = 5;
+    ctx.shadowOffsetY = 2;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.rotate(ball.rotation);
+    ctx.beginPath();
+    ctx.arc(0, 0, 9, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.fill();
+    ctx.fillStyle = "#152238";
+    ctx.font = "bold 11px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(ball.number, 0, 0.5);
+    ctx.restore();
+  }
+
+  ctx.fillStyle = "#d6e8f4";
+  ctx.font = "600 16px system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("ROTATING HEXAGON", 28, 35);
+  ctx.fillStyle = "#7e95ac";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText("12 balls · gravity · friction · moving-wall collisions", 28, 56);
+}
+
+function frame(time) {
+  if (previousTime === null) previousTime = time;
+  accumulator += Math.min((time - previousTime) / 1000, 0.05);
+  previousTime = time;
+
+  while (accumulator >= step) {
+    simulate(step);
+    accumulator -= step;
+  }
+  draw();
+  requestAnimationFrame(frame);
+}
+
+document.addEventListener("visibilitychange", () => {
+  previousTime = null;
+  accumulator = 0;
+});
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

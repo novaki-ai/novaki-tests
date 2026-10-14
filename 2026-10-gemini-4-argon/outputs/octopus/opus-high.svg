@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fd3ff"/>
+      <stop offset="1" stop-color="#e6f7ff"/>
+    </linearGradient>
+    <radialGradient id="body" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#ff8fc8"/>
+      <stop offset="1" stop-color="#c2338a"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="600" fill="url(#sky)"/>
+  <circle cx="690" cy="90" r="45" fill="#ffe066"/>
+  <g fill="#ffffff" opacity="0.9">
+    <ellipse cx="150" cy="90" rx="60" ry="22"/>
+    <ellipse cx="195" cy="75" rx="45" ry="25"/>
+    <ellipse cx="520" cy="120" rx="50" ry="18"/>
+    <ellipse cx="555" cy="108" rx="35" ry="20"/>
+  </g>
+  <rect y="555" width="800" height="45" fill="#7cc46a"/>
+  <rect y="555" width="800" height="6" fill="#5ea84d"/>
+
+  <!-- Motion lines -->
+  <g stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.8">
+    <line x1="40" y1="400" x2="110" y2="400"/>
+    <line x1="20" y1="440" x2="100" y2="440"/>
+    <line x1="50" y1="480" x2="115" y2="480"/>
+  </g>
+
+  <!-- Wheels -->
+  <g fill="none" stroke="#333" stroke-width="10">
+    <circle cx="230" cy="460" r="95"/>
+    <circle cx="570" cy="460" r="95"/>
+  </g>
+  <g stroke="#888" stroke-width="2">
+    <line x1="230" y1="365" x2="230" y2="555"/>
+    <line x1="135" y1="460" x2="325" y2="460"/>
+    <line x1="163" y1="393" x2="297" y2="527"/>
+    <line x1="163" y1="527" x2="297" y2="393"/>
+    <line x1="570" y1="365" x2="570" y2="555"/>
+    <line x1="475" y1="460" x2="665" y2="460"/>
+    <line x1="503" y1="393" x2="637" y2="527"/>
+    <line x1="503" y1="527" x2="637" y2="393"/>
+  </g>
+  <circle cx="230" cy="460" r="9" fill="#555"/>
+  <circle cx="570" cy="460" r="9" fill="#555"/>
+
+  <!-- Frame -->
+  <g stroke="#e63946" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <polyline points="230,460 400,460 360,335 230,460"/>
+    <line x1="365" y1="350" x2="520" y2="345"/>
+    <line x1="400" y1="460" x2="520" y2="345"/>
+    <line x1="520" y1="330" x2="570" y2="460"/>
+  </g>
+  <!-- Stem and handlebar -->
+  <g stroke="#333" stroke-width="8" stroke-linecap="round" fill="none">
+    <line x1="520" y1="345" x2="512" y2="300"/>
+    <path d="M490 300 Q512 290 545 305 Q560 312 552 325"/>
+  </g>
+  <!-- Seat -->
+  <line x1="360" y1="335" x2="355" y2="315" stroke="#333" stroke-width="8"/>
+  <path d="M320 312 Q355 300 385 310 Q370 320 325 320 Z" fill="#222"/>
+
+  <!-- Chainring and cranks -->
+  <circle cx="400" cy="460" r="22" fill="none" stroke="#555" stroke-width="6"/>
+  <line x1="400" y1="460" x2="440" y2="505" stroke="#333" stroke-width="8" stroke-linecap="round"/>
+  <line x1="400" y1="460" x2="360" y2="415" stroke="#333" stroke-width="8" stroke-linecap="round"/>
+  <rect x="425" y="500" width="32" height="10" rx="3" fill="#222"/>
+  <rect x="343" y="410" width="32" height="10" rx="3" fill="#222"/>
+  <path d="M230 460 L400 438" stroke="#777" stroke-width="3" fill="none"/>
+  <path d="M230 460 L400 482" stroke="#777" stroke-width="3" fill="none"/>
+
+  <!-- Octopus tentacles -->
+  <g fill="none" stroke="#d94a9b" stroke-width="18" stroke-linecap="round">
+    <!-- to handlebar -->
+    <path d="M410 270 Q470 240 500 300"/>
+    <path d="M420 285 Q500 280 548 315"/>
+    <!-- to pedals -->
+    <path d="M380 305 Q330 360 358 412"/>
+    <path d="M400 300 Q470 400 440 500"/>
+    <!-- waving -->
+    <path d="M330 290 Q270 300 260 250 Q255 215 285 215"/>
+    <path d="M345 305 Q290 360 240 340 Q215 330 225 305"/>
+    <path d="M360 310 Q330 380 300 380"/>
+    <path d="M425 260 Q480 200 520 210 Q545 218 535 240"/>
+  </g>
+  <!-- Suckers -->
+  <g fill="#ffc2e2">
+    <circle cx="470" cy="262" r="4"/>
+    <circle cx="500" cy="285" r="4"/>
+    <circle cx="335" cy="370" r="4"/>
+    <circle cx="455" cy="420" r="4"/>
+    <circle cx="452" cy="455" r="4"/>
+    <circle cx="265" cy="260" r="4"/>
+    <circle cx="275" cy="335" r="4"/>
+    <circle cx="490" cy="215" r="4"/>
+    <circle cx="315" cy="375" r="4"/>
+  </g>
+
+  <!-- Octopus head -->
+  <ellipse cx="375" cy="215" rx="85" ry="95" fill="url(#body)"/>
+  <ellipse cx="345" cy="160" rx="22" ry="14" fill="#ffffff" opacity="0.35"/>
+  <circle cx="320" cy="200" r="7" fill="#b02a78"/>
+  <circle cx="420" cy="170" r="6" fill="#b02a78"/>
+  <circle cx="400" cy="140" r="5" fill="#b02a78"/>
+
+  <!-- Helmet -->
+  <path d="M295 170 Q375 80 455 170 Q375 140 295 170 Z" fill="#2a9d8f"/>
+  <path d="M330 125 L340 155 M375 112 L375 145 M420 125 L410 155" stroke="#1d6f65" stroke-width="4"/>
+
+  <!-- Face -->
+  <ellipse cx="350" cy="225" rx="18" ry="22" fill="#fff"/>
+  <ellipse cx="405" cy="225" rx="18" ry="22" fill="#fff"/>
+  <circle cx="356" cy="228" r="9" fill="#222"/>
+  <circle cx="411" cy="228" r="9" fill="#222"/>
+  <circle cx="359" cy="224" r="3" fill="#fff"/>
+  <circle cx="414" cy="224" r="3" fill="#fff"/>
+  <ellipse cx="333" cy="258" rx="10" ry="6" fill="#ff6fae" opacity="0.7"/>
+  <ellipse cx="425" cy="258" rx="10" ry="6" fill="#ff6fae" opacity="0.7"/>
+  <path d="M360 262 Q380 280 400 262" stroke="#6b1048" stroke-width="5" fill="none" stroke-linecap="round"/>
+</svg>

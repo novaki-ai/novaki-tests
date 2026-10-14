@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Snake</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #111; color: #eee; font-family: sans-serif; }
+  #wrap { width: 960px; height: 540px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #hud { font-size: 22px; margin-bottom: 8px; }
+  canvas { background: #1d1d1d; border: 2px solid #555; }
+  #msg { font-size: 16px; margin-top: 8px; color: #aaa; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">Score: <span id="score">0</span></div>
+  <canvas id="board" width="460" height="460"></canvas>
+  <div id="msg">Press Space to start</div>
+</div>
+<script>
+(function () {
+  const N = 20, CELL = 23, TICK = 150;
+  const canvas = document.getElementById('board');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const msgEl = document.getElementById('msg');
+  const DIRS = { up: {x:0,y:-1}, down: {x:0,y:1}, left: {x:-1,y:0}, right: {x:1,y:0} };
+  const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+
+  let body, dir, nextDir, food, score, running, gameOver, timer = null;
+
+  function reset() {
+    body = [{x:5,y:10},{x:4,y:10},{x:3,y:10}];
+    dir = 'right'; nextDir = 'right';
+    score = 0; running = false; gameOver = false;
+    scoreEl.textContent = '0';
+    placeFood();
+  }
+
+  function onSnake(x, y) { return body.some(s => s.x === x && s.y === y); }
+
+  function placeFood() {
+    const free = [];
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!onSnake(x, y)) free.push({x, y});
+    food = free.length ? free[Math.floor(Math.random() * free.length)] : null;
+  }
+
+  function start() {
+    if (timer) clearInterval(timer);
+    reset();
+    running = true;
+    msgEl.textContent = '';
+    timer = setInterval(step, TICK);
+    draw();
+  }
+
+  function endGame() {
+    running = false; gameOver = true;
+    clearInterval(timer); timer = null;
+    msgEl.textContent = 'Press Space to restart';
+  }
+
+  function step() {
+    if (!running) return;
+    dir = nextDir;
+    const d = DIRS[dir];
+    const head = { x: body[0].x + d.x, y: body[0].y + d.y };
+    const eating = food && head.x === food.x && head.y === food.y;
+    if (head.x < 0 || head.y < 0 || head.x >= N || head.y >= N) { endGame(); draw(); return; }
+    // tail moves away this tick unless eating
+    const check = eating ? body : body.slice(0, -1);
+    if (check.some(s => s.x === head.x && s.y === head.y)) { endGame(); draw(); return; }
+    body.unshift(head);
+    if (eating) {
+      score += 10;
+      scoreEl.textContent = String(score);
+      placeFood();
+    } else {
+      body.pop();
+    }
+    draw();
+  }
+
+  function draw() {
+    ctx.fillStyle = '#1d1d1d';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#262626';
+    for (let i = 0; i <= N; i++) {
+      ctx.beginPath(); ctx.moveTo(i * CELL + 0.5, 0); ctx.lineTo(i * CELL + 0.5, N * CELL); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i * CELL + 0.5); ctx.lineTo(N * CELL, i * CELL + 0.5); ctx.stroke();
+    }
+    if (food) {
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(food.x * CELL + 3, food.y * CELL + 3, CELL - 6, CELL - 6);
+    }
+    body.forEach((s, i) => {
+      ctx.fillStyle = i === 0 ? '#7bed9f' : '#2ecc71';
+      ctx.fillRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2);
+    });
+    if (gameOver) {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 48px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2);
+    } else if (!running) {
+      ctx.fillStyle = '#fff';
+      ctx.font = '24px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('Press Space to start', canvas.width / 2, canvas.height / 2);
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    const map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+    if (e.code === 'Space' || e.key === ' ') {
+      e.preventDefault();
+      if (!running) start();
+      return;
+    }
+    const nd = map[e.key];
+    if (nd) {
+      e.preventDefault();
+      if (running && nd !== OPP[dir]) nextDir = nd;
+    }
+  });
+
+  window.snake = {
+    state() {
+      return {
+        running, gameOver, score,
+        length: body.length,
+        head: { x: body[0].x, y: body[0].y },
+        food: food ? { x: food.x, y: food.y } : null,
+        dir
+      };
+    },
+    setFood(x, y) {
+      x = Math.floor(x); y = Math.floor(y);
+      if (x < 0 || y < 0 || x >= N || y >= N) return;
+      food = { x, y };
+      draw();
+    }
+  };
+
+  reset();
+  draw();
+})();
+</script>
+</body>
+</html>

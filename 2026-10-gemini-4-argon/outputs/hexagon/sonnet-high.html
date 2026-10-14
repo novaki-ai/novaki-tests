@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Balls in a Spinning Hexagon</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0d14; display: flex; align-items: center; justify-content: center; }
+  canvas { width: 960px; height: 540px; background: radial-gradient(ellipse at center, #1a2033 0%, #0b0d14 100%); display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(() => {
+  const W = 960, H = 540;
+  const cv = document.getElementById('c');
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const CX = W / 2, CY = H / 2;
+  const HEX_R = 255;                         // circumradius
+  const APOTHEM = HEX_R * Math.cos(Math.PI / 6);
+  const OMEGA = 0.35;                        // hexagon angular speed (rad/s)
+  const BALL_R = 21;
+  const N = 12;
+
+  const G = 900;                             // gravity px/s^2
+  const E_WALL = 0.72, E_BALL = 0.88;        // restitution
+  const MU_WALL = 0.35;                      // wall friction coefficient
+  const AIR = 0.05;                          // air drag per second
+  const SUBSTEPS = 8;
+  const DT = 1 / 120;                        // fixed physics step
+
+  let rot = 0;
+
+  // ---- create balls (non-overlapping, inside hexagon) ----
+  const balls = [];
+  let guard = 0;
+  while (balls.length < N && guard++ < 10000) {
+    const a = Math.random() * Math.PI * 2;
+    const d = Math.sqrt(Math.random()) * (APOTHEM - BALL_R - 10);
+    const x = CX + Math.cos(a) * d, y = CY + Math.sin(a) * d;
+    if (balls.every(b => Math.hypot(b.x - x, b.y - y) > BALL_R * 2 + 4)) {
+      const sp = 150 + Math.random() * 250, va = Math.random() * Math.PI * 2;
+      balls.push({
+        x, y, vx: Math.cos(va) * sp, vy: Math.sin(va) * sp,
+        w: (Math.random() - 0.5) * 6, ang: Math.random() * 6.28,
+        n: balls.length + 1, hue: (balls.length * 360 / N + 10) % 360
+      });
+    }
+  }
+
+  function wallCollisions(dt) {
+    for (const b of balls) {
+      for (let i = 0; i < 6; i++) {
+        const na = rot + Math.PI / 6 + i * Math.PI / 3;   // outward normal angle
+        const ux = Math.cos(na), uy = Math.sin(na);
+        const dist = (b.x - CX) * ux + (b.y - CY) * uy;
+        const pen = dist + BALL_R - APOTHEM;
+        if (pen <= 0) continue;
+
+        // push back inside
+        b.x -= ux * pen; b.y -= uy * pen;
+
+        // wall velocity at contact point
+        const px = b.x + ux * BALL_R - CX, py = b.y + uy * BALL_R - CY;
+        const wvx = -OMEGA * py, wvy = OMEGA * px;
+
+        const rvx = b.vx - wvx, rvy = b.vy - wvy;
+        const vn = rvx * ux + rvy * uy;
+        if (vn <= 0) continue;                 // already separating
+
+        const e = vn < 25 ? 0 : E_WALL;        // kill micro-bounces
+        const jn = (1 + e) * vn;               // unit mass
+        b.vx -= jn * ux; b.vy -= jn * uy;
+
+        // tangential (friction with spin, solid disc: I = m r^2 / 2)
+        const tx = -uy, ty = ux;
+        const vt = (b.vx - wvx) * tx + (b.vy - wvy) * ty + b.w * BALL_R;
+        let jt = -vt / 3;
+        const maxJt = MU_WALL * jn;
+        jt = Math.max(-maxJt, Math.min(maxJt, jt));
+        b.vx += jt * tx; b.vy += jt * ty;
+        b.w += 2 * jt / BALL_R;
+      }
+    }
+  }
+
+  function ballCollisions() {
+    for (let i = 0; i < N; i++) {
+      for (let j = i + 1; j < N; j++) {
+        const a = balls[i], b = balls[j];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        const d2 = dx * dx + dy * dy, min = BALL_R * 2;
+        if (d2 >= min * min) continue;
+        let d = Math.sqrt(d2);
+        if (d < 1e-6) { dx = 1; dy = 0; d = 1e-6; }
+        const nx = dx / d, ny = dy / d;
+        const overlap = min - d;
+        a.x -= nx * overlap / 2; a.y -= ny * overlap / 2;
+        b.x += nx * overlap / 2; b.y += ny * overlap / 2;
+
+        const rvx = b.vx - a.vx, rvy = b.vy - a.vy;
+        const vn = rvx * nx + rvy * ny;
+        if (vn >= 0) continue;
+        const e = -vn < 25 ? 0 : E_BALL;
+        const j1 = -(1 + e) * vn / 2;
+        a.vx -= j1 * nx; a.vy -= j1 * ny;
+        b.vx += j1 * nx; b.vy += j1 * ny;
+
+        // light tangential friction -> spin exchange
+        const tx = -ny, ty = nx;
+        const vt = (b.vx - a.vx) * tx + (b.vy - a.vy) * ty + (a.w + b.w) * BALL_R;
+        let jt = -vt / 6;
+        const maxJt = 0.1 * Math.abs(j1) * 2;
+        jt = Math.max(-maxJt, Math.min(maxJt, jt));
+        a.vx -= jt * tx; a.vy -= jt * ty;
+        b.vx += jt * tx; b.vy += jt * ty;
+        a.w += jt / BALL_R * 2; b.w += jt / BALL_R * 2;
+      }
+    }
+  }
+
+  function step(dt) {
+    const h = dt / SUBSTEPS;
+    for (let s = 0; s < SUBSTEPS; s++) {
+      rot += OMEGA * h;
+      const drag = Math.max(0, 1 - AIR * h);
+      for (const b of balls) {
+        b.vy += G * h;
+        b.vx *= drag; b.vy *= drag; b.w *= drag;
+        b.x += b.vx * h; b.y += b.vy * h;
+        b.ang += b.w * h;
+      }
+      for (let k = 0; k < 3; k++) {
+        ballCollisions();
+        wallCollisions(h);
+      }
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // hexagon
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = rot + i * Math.PI / 3;
+      const x = CX + Math.cos(a) * HEX_R, y = CY + Math.sin(a) * HEX_R;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(120,150,220,0.06)';
+    ctx.fill();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#8fb0ff';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = '#4f7dff'; ctx.shadowBlur = 18;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // balls
+    for (const b of balls) {
+      const g = ctx.createRadialGradient(b.x - BALL_R * 0.35, b.y - BALL_R * 0.4, BALL_R * 0.1, b.x, b.y, BALL_R);
+      g.addColorStop(0, `hsl(${b.hue},85%,72%)`);
+      g.addColorStop(1, `hsl(${b.hue},75%,38%)`);
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(b.ang);
+      ctx.beginPath();
+      ctx.arc(0, 0, BALL_R * 0.55, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.fill();
+      ctx.fillStyle = '#111';
+      ctx.font = 'bold 15px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(b.n, 0, 1);
+      ctx.restore();
+    }
+  }
+
+  let last = performance.now(), acc = 0;
+  function frame(now) {
+    acc += Math.min(0.05, (now - last) / 1000);
+    last = now;
+    while (acc >= DT) { step(DT); acc -= DT; }
+    draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

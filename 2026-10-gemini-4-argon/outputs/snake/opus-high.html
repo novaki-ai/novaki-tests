@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Snake</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 960px;
+    height: 540px;
+    overflow: hidden;
+    background: #1b1f24;
+    color: #e6e6e6;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  #app {
+    width: 960px;
+    height: 540px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #hud {
+    width: 480px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+  #hint {
+    font-size: 14px;
+    color: #9aa4ae;
+    align-self: flex-end;
+  }
+  #board-wrap {
+    position: relative;
+    width: 480px;
+    height: 480px;
+  }
+  canvas {
+    display: block;
+    background: #11151a;
+    border: 1px solid #3a424c;
+    box-sizing: border-box;
+  }
+  #message {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    text-align: center;
+  }
+  #message .title {
+    font-size: 44px;
+    font-weight: bold;
+    color: #ff5a5a;
+    text-shadow: 0 2px 6px #000;
+  }
+  #message .sub {
+    font-size: 18px;
+    margin-top: 10px;
+    color: #e6e6e6;
+    text-shadow: 0 1px 4px #000;
+  }
+  #message.start .title {
+    color: #6fdc6f;
+    font-size: 30px;
+  }
+  .hidden {
+    display: none !important;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div>Score: <span id="score">0</span></div>
+    <div id="hint">Space: start/restart &middot; Arrows: steer</div>
+  </div>
+  <div id="board-wrap">
+    <canvas id="board" width="480" height="480"></canvas>
+    <div id="message" class="start">
+      <div class="title" id="message-title">Press Space to Start</div>
+      <div class="sub" id="message-sub"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var GRID = 20;
+  var TICK_MS = 150;
+  var START_LENGTH = 3;
+
+  var canvas = document.getElementById('board');
+  var ctx = canvas.getContext('2d');
+  var CELL = canvas.width / GRID;
+
+  var scoreEl = document.getElementById('score');
+  var messageEl = document.getElementById('message');
+  var messageTitleEl = document.getElementById('message-title');
+  var messageSubEl = document.getElementById('message-sub');
+
+  var OPPOSITE = { up: 'down', down: 'up', left: 'right', right: 'left' };
+  var DELTA = {
+    up: { x: 0, y: -1 },
+    down: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+    right: { x: 1, y: 0 }
+  };
+  var KEY_DIR = {
+    ArrowUp: 'up', Up: 'up',
+    ArrowDown: 'down', Down: 'down',
+    ArrowLeft: 'left', Left: 'left',
+    ArrowRight: 'right', Right: 'right'
+  };
+
+  var snake;       // array of {x, y}, index 0 is the head
+  var dir;         // direction applied on the last move
+  var nextDir;     // direction to apply on the next move
+  var food;
+  var score;
+  var running;
+  var gameOver;
+  var timer = null;
+
+  function reset() {
+    var startY = Math.floor(GRID / 2);
+    var startX = Math.floor(GRID / 4) + START_LENGTH - 1;
+    snake = [];
+    for (var i = 0; i < START_LENGTH; i++) {
+      snake.push({ x: startX - i, y: startY });
+    }
+    dir = 'right';
+    nextDir = 'right';
+    score = 0;
+    running = false;
+    gameOver = false;
+    food = randomFreeCell();
+    updateScore();
+  }
+
+  function occupied(x, y, body) {
+    for (var i = 0; i < body.length; i++) {
+      if (body[i].x === x && body[i].y === y) return true;
+    }
+    return false;
+  }
+
+  function randomFreeCell() {
+    var free = [];
+    for (var y = 0; y < GRID; y++) {
+      for (var x = 0; x < GRID; x++) {
+        if (!occupied(x, y, snake)) free.push({ x: x, y: y });
+      }
+    }
+    if (free.length === 0) return null;
+    return free[Math.floor(Math.random() * free.length)];
+  }
+
+  function updateScore() {
+    scoreEl.textContent = String(score);
+  }
+
+  function showMessage(type) {
+    if (type === 'start') {
+      messageEl.className = 'start';
+      messageTitleEl.textContent = 'Press Space to Start';
+      messageSubEl.textContent = 'Use the arrow keys to steer';
+    } else if (type === 'over') {
+      messageEl.className = 'over';
+      messageTitleEl.textContent = 'Game Over';
+      messageSubEl.textContent = 'Score: ' + score + ' \u2014 Press Space to restart';
+    } else {
+      messageEl.className = 'hidden';
+    }
+  }
+
+  function startLoop() {
+    stopLoop();
+    timer = setInterval(tick, TICK_MS);
+  }
+
+  function stopLoop() {
+    if (timer !== null) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  function start() {
+    if (running) return;
+    if (gameOver) reset();
+    running = true;
+    gameOver = false;
+    showMessage(null);
+    startLoop();
+    draw();
+  }
+
+  function endGame() {
+    running = false;
+    gameOver = true;
+    stopLoop();
+    showMessage('over');
+    draw();
+  }
+
+  function tick() {
+    if (!running) return;
+
+    dir = nextDir;
+    var d = DELTA[dir];
+    var head = snake[0];
+    var newHead = { x: head.x + d.x, y: head.y + d.y };
+
+    // Wall collision
+    if (newHead.x < 0 || newHead.x >= GRID || newHead.y < 0 || newHead.y >= GRID) {
+      endGame();
+      return;
+    }
+
+    var willEat = food !== null && newHead.x === food.x && newHead.y === food.y;
+
+    // Self collision: the tail cell is vacated this tick unless we are growing
+    var body = willEat ? snake : snake.slice(0, snake.length - 1);
+    if (occupied(newHead.x, newHead.y, body)) {
+      endGame();
+      return;
+    }
+
+    snake.unshift(newHead);
+    if (willEat) {
+      score += 10;
+      updateScore();
+      food = randomFreeCell();
+      if (food === null) {
+        // Board completely filled
+        endGame();
+        return;
+      }
+    } else {
+      snake.pop();
+    }
+
+    draw();
+  }
+
+  function setDirection(newDir) {
+    if (!running) return;
+    // Compare against the last applied direction so quick key presses
+    // within one tick can never reverse the snake into itself.
+    if (newDir === OPPOSITE[dir]) return;
+    nextDir = newDir;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Background checkerboard
+    for (var y = 0; y < GRID; y++) {
+      for (var x = 0; x < GRID; x++) {
+        ctx.fillStyle = (x + y) % 2 === 0 ? '#151a20' : '#12161b';
+        ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+      }
+    }
+
+    // Food
+    if (food) {
+      ctx.fillStyle = '#ff4d4d';
+      ctx.beginPath();
+      ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL * 0.38, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Snake
+    for (var i = snake.length - 1; i >= 0; i--) {
+      var s = snake[i];
+      ctx.fillStyle = i === 0 ? '#8cf08c' : '#4cbf4c';
+      ctx.fillRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2);
+    }
+
+    // Eyes on the head
+    if (snake.length) {
+      var h = snake[0];
+      var cx = h.x * CELL + CELL / 2;
+      var cy = h.y * CELL + CELL / 2;
+      var dd = DELTA[dir];
+      var px = -dd.y, py = dd.x;
+      ctx.fillStyle = '#111';
+      for (var k = -1; k <= 1; k += 2) {
+        ctx.beginPath();
+        ctx.arc(cx + dd.x * CELL * 0.2 + px * k * CELL * 0.2,
+                cy + dd.y * CELL * 0.2 + py * k * CELL * 0.2,
+                CELL * 0.08, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    if (gameOver) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  document.addEventListener('keydown', function (e) {
+    var isSpace = e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar';
+    if (isSpace) {
+      e.preventDefault();
+      if (!running) start();
+      return;
+    }
+    var d = KEY_DIR[e.key];
+    if (d) {
+      e.preventDefault();
+      setDirection(d);
+    }
+  });
+
+  // Testing API
+  window.snake = {
+    state: function () {
+      var head = snake[0];
+      return {
+        running: running,
+        gameOver: gameOver,
+        score: score,
+        length: snake.length,
+        head: { x: head.x, y: head.y },
+        food: food ? { x: food.x, y: food.y } : null,
+        dir: nextDir
+      };
+    },
+    setFood: function (x, y) {
+      x = Math.floor(Number(x));
+      y = Math.floor(Number(y));
+      if (!isFinite(x) || !isFinite(y)) return;
+      if (x < 0 || x >= GRID || y < 0 || y >= GRID) return;
+      food = { x: x, y: y };
+      draw();
+    }
+  };
+
+  reset();
+  showMessage('start');
+  draw();
+})();
+</script>
+</body>
+</html>

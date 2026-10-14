@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rocket Launch Night Animation</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #05060b;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #stage {
+      position: relative;
+      width: 960px;
+      height: 540px;
+      background: #070a17;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      user-select: none;
+    }
+
+    canvas {
+      display: block;
+      width: 960px;
+      height: 540px;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="canvas" width="960" height="540"></canvas>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const W = 960;
+    const H = 540;
+    const LOOP_DURATION = 10000; // 10 seconds per loop
+
+    // Generate static background stars
+    const stars = Array.from({ length: 170 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * (H - 80),
+      r: Math.random() * 1.6 + 0.4,
+      baseAlpha: Math.random() * 0.6 + 0.35,
+      twinkleSpeed: Math.random() * 0.005 + 0.0015,
+      phase: Math.random() * Math.PI * 2,
+      hue: Math.random() > 0.8 ? 210 : (Math.random() > 0.5 ? 45 : 0)
+    }));
+
+    // Generate distant mountain ridge points
+    const mountains = [
+      { x: 0, y: 455 },
+      { x: 90, y: 428 },
+      { x: 185, y: 446 },
+      { x: 290, y: 418 },
+      { x: 375, y: 450 },
+      { x: 590, y: 452 },
+      { x: 685, y: 422 },
+      { x: 785, y: 442 },
+      { x: 880, y: 412 },
+      { x: 960, y: 445 }
+    ];
+
+    let smokeParticles = [];
+    let sparkParticles = [];
+    let lastCycle = -1;
+
+    function resetScene() {
+      smokeParticles = [];
+      sparkParticles = [];
+    }
+
+    function spawnSmoke(x, y, vx, vy, size, life, isHot = false) {
+      smokeParticles.push({
+        x,
+        y,
+        vx,
+        vy,
+        size,
+        maxSize: size * (Math.random() * 2.2 + 2.2),
+        age: 0,
+        life,
+        isHot,
+        shade: Math.floor(Math.random() * 45 + 175)
+      });
+    }
+
+    function spawnSpark(x, y, vx, vy, life) {
+      sparkParticles.push({
+        x,
+        y,
+        vx,
+        vy,
+        age: 0,
+        life,
+        size: Math.random() * 2.2 + 1.2
+      });
+    }
+
+    function getRocketState(t) {
+      // Timeline (seconds):
+      // 0.0 - 1.0 : "3"
+      // 1.0 - 2.0 : "2"
+      // 2.0 - 3.0 : "1"
+      // 3.0 - 3.9 : Engine ignition, thrust buildup, clamp hold
+      // 3.9 - 8.5 : Liftoff & rapid acceleration through the sky
+      // 8.5 - 10.0: Sky cools down & scene resets smoothly
+      const basePadY = 424;
+      let y = basePadY;
+      let shakeX = 0;
+      let shakeY = 0;
+      let throttle = 0;
+      let umbilicalAngle = 0;
+
+      if (t >= 3.0 && t < 8.6) {
+        if (t < 3.9) {
+          throttle = (t - 3.0) / 0.9;
+          const vib = throttle * 2.2;
+          shakeX = (Math.random() - 0.5) * vib;
+          shakeY = (Math.random() - 0.5) * vib;
+          umbilicalAngle = Math.max(0, (t - 3.55) / 0.35) * 0.65;
+        } else {
+          throttle = 1.0;
+          umbilicalAngle = 0.65;
+          const dt = t - 3.9;
+          // Smooth initial liftoff followed by strong cubic acceleration
+          y = basePadY - (14 * Math.pow(dt, 1.5) + 42 * Math.pow(dt, 3.05));
+          const vib = Math.max(0, 1.8 - dt * 0.5);
+          shakeX = (Math.random() - 0.5) * vib;
+          shakeY = (Math.random() - 0.5) * vib;
+        }
+      }
+
+      return {
+        x: W / 2 + shakeX,
+        y: y + shakeY,
+        rawY: y,
+        throttle,
+        umbilicalAngle
+      };
+    }
+
+    function updateParticles(dt, t, rocket) {
+      const groundY = 448;
+
+      if (rocket.throttle > 0 && rocket.rawY > -160) {
+        const nozzleY = rocket.y + 8;
+        const count = Math.ceil(rocket.throttle * 7);
+
+        for (let i = 0; i < count; i++) {
+          const spread = (Math.random() - 0.5) * 1.4;
+          const exhaustSpeed = (Math.random() * 3.5 + 4.5) * rocket.throttle;
+          let px = rocket.x + (Math.random() - 0.5) * 10;
+          let py = nozzleY + Math.random() * 6;
+          let vx = spread;
+          let vy = exhaustSpeed;
+
+          // If rocket is near the pad, deflect exhaust sideways through flame trench
+          const distToPad = groundY - py;
+          if (distToPad < 110 && distToPad > -20) {
+            const side = i % 2 === 0 ? 1 : -1;
+            const deflectFactor = Math.max(0, 1 - distToPad / 110);
+            vx += side * (Math.random() * 4.2 + 2.0) * deflectFactor * rocket.throttle;
+            vy *= 1 - deflectFactor * 0.7;
+          }
+
+          spawnSmoke(
+            px,
+            py,
+            vx,
+            vy,
+            Math.random() * 7 + 6,
+            Math.random() * 1.4 + 1.1,
+            Math.random() < 0.45
+          );
+        }
+
+        // Igniter and exhaust sparks
+        const sparkCount = t < 4.3 ? 6 : 3;
+        for (let i = 0; i < sparkCount; i++) {
+          const angle = Math.PI / 2 + (Math.random() - 0.5) * 1.1;
+          const speed = Math.random() * 6 + 3;
+          spawnSpark(
+            rocket.x + (Math.random() - 0.5) * 12,
+            nozzleY + 4,
+            Math.cos(angle) * speed + (Math.random() - 0.5) * 3,
+            Math.sin(angle) * speed,
+            Math.random() * 0.45 + 0.2
+          );
+        }
+      }
+
+      // Update smoke
+      for (let i = smokeParticles.length - 1; i >= 0; i--) {
+        const p = smokeParticles[i];
+        p.age += dt;
+        if (p.age >= p.life) {
+          smokeParticles.splice(i, 1);
+          continue;
+        }
+
+        p.x += p.vx * (dt * 60);
+        p.y += p.vy * (dt * 60);
+
+        // Ground deflection & billowing upward curl
+        if (p.y > groundY - 4) {
+          p.y = groundY - 4;
+          p.vy = -Math.abs(p.vy) * 0.25 - Math.random() * 0.6;
+          p.vx *= 1.04;
+        }
+
+        // Drag and buoyancy
+        p.vx *= 0.985;
+        p.vy = p.vy * 0.96 - 0.04;
+
+        const lifeRatio = p.age / p.life;
+        p.currentSize = p.size + (p.maxSize - p.size) * Math.pow(lifeRatio, 0.65);
+      }
+
+      // Update sparks
+      for (let i = sparkParticles.length - 1; i >= 0; i--) {
+        const s = sparkParticles[i];
+        s.age += dt;
+        if (s.age >= s.life) {
+          sparkParticles.splice(i, 1);
+          continue;
+        }
+        s.x += s.vx * (dt * 60);
+        s.y += s.vy * (dt * 60);
+        s.vy += 0.18 * (dt * 60); // gravity
+        if (s.y > groundY) {
+          s.y = groundY;
+          s.vy = -Math.abs(s.vy) * 0.45;
+          s.vx *= 0.8;
+        }
+      }
+    }
+
+    function drawSkyAndStars(t, now, rocket) {
+      // Night sky gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+      skyGrad.addColorStop(0, "#03050c");
+      skyGrad.addColorStop(0.55, "#081026");
+      skyGrad.addColorStop(0.85, "#111c3d");
+      skyGrad.addColorStop(1, "#192547");
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Ambient pad glow when engine is burning near ground
+      if (rocket.throttle > 0 && rocket.rawY > -80) {
+        const distFactor = Math.max(0, 1 - Math.max(0, 424 - rocket.rawY) / 460);
+        const glowIntensity = rocket.throttle * distFactor * 0.42;
+        if (glowIntensity > 0.01) {
+          const glow = ctx.createRadialGradient(W / 2, 430, 10, W / 2, 430, 380);
+          glow.addColorStop(0, `rgba(255, 150, 55, ${glowIntensity})`);
+          glow.addColorStop(0.45, `rgba(255, 90, 20, ${glowIntensity * 0.45})`);
+          glow.addColorStop(1, "rgba(255, 60, 0, 0)");
+          ctx.fillStyle = glow;
+          ctx.fillRect(0, 0, W, H);
+        }
+      }
+
+      // Crescent Moon
+      ctx.save();
+      const moonX = 815;
+      const moonY = 92;
+      const moonGlow = ctx.createRadialGradient(moonX, moonY, 14, moonX, moonY, 75);
+      moonGlow.addColorStop(0, "rgba(220, 235, 255, 0.22)");
+      moonGlow.addColorStop(1, "rgba(220, 235, 255, 0)");
+      ctx.fillStyle = moonGlow;
+      ctx.beginPath();
+      ctx.arc(moonX, moonY, 75, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#eef4ff";
+      ctx.beginPath();
+      ctx.arc(moonX, moonY, 20, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#060b1b";
+      ctx.beginPath();
+      ctx.arc(moonX - 8, moonY - 5, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Twinkling stars
+      for (const st of stars) {
+        const twinkle = Math.sin(now * st.twinkleSpeed + st.phase) * 0.28;
+        const alpha = Math.max(0.1, Math.min(1, st.baseAlpha + twinkle));
+        if (st.hue === 0) {
+          ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        } else if (st.hue === 210) {
+          ctx.fillStyle = `rgba(185, 215, 255, ${alpha})`;
+        } else {
+          ctx.fillStyle = `rgba(255, 235, 190, ${alpha})`;
+        }
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawEnvironment(t, rocket) {
+      // Distant mountains
+      ctx.fillStyle = "#0a1022";
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      for (const pt of mountains) {
+        ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.lineTo(W, H);
+      ctx.closePath();
+      ctx.fill();
+
+      // Searchlights on the sides of the pad
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      const beamSweep = Math.sin(t * 0.9) * 0.06;
+
+      // Left searchlight beam
+      const leftGrad = ctx.createLinearGradient(250, 455, 480, 140);
+      leftGrad.addColorStop(0, "rgba(170, 210, 255, 0.16)");
+      leftGrad.addColorStop(1, "rgba(170, 210, 255, 0)");
+      ctx.fillStyle = leftGrad;
+      ctx.beginPath();
+      ctx.moveTo(250, 455);
+      ctx.lineTo(465 + beamSweep * 200, 110);
+      ctx.lineTo(545 + beamSweep * 200, 145);
+      ctx.closePath();
+      ctx.fill();
+
+      // Right searchlight beam
+      const rightGrad = ctx.createLinearGradient(710, 455, 480, 140);
+      rightGrad.addColorStop(0, "rgba(170, 210, 255, 0.16)");
+      rightGrad.addColorStop(1, "rgba(170, 210, 255, 0)");
+      ctx.fillStyle = rightGrad;
+      ctx.beginPath();
+      ctx.moveTo(710, 455);
+      ctx.lineTo(495 - beamSweep * 200, 110);
+      ctx.lineTo(415 - beamSweep * 200, 145);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Ground plane
+      const groundGrad = ctx.createLinearGradient(0, 448, 0, H);
+      groundGrad.addColorStop(0, "#121829");
+      groundGrad.addColorStop(0.3, "#0c101c");
+      groundGrad.addColorStop(1, "#05070d");
+      ctx.fillStyle = groundGrad;
+      ctx.fillRect(0, 448, W, H - 448);
+
+      // Launch pad concrete base & flame trench
+      ctx.fillStyle = "#252e42";
+      ctx.beginPath();
+      ctx.moveTo(370, 455);
+      ctx.lineTo(395, 434);
+      ctx.lineTo(565, 434);
+      ctx.lineTo(590, 455);
+      ctx.closePath();
+      ctx.fill();
+
+      // Dark flame trench opening
+      ctx.fillStyle = "#0b0e17";
+      ctx.fillRect(442, 438, 76, 17);
+
+      // Support pedestals
+      ctx.fillStyle = "#394661";
+      ctx.fillRect(450, 424, 14, 14);
+      ctx.fillRect(496, 424, 14, 14);
+
+      // Launch Umbilical Tower (left of rocket)
+      const towerX = 414;
+      const towerTop = 278;
+      const towerBottom = 434;
+      ctx.strokeStyle = "#34415c";
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(towerX, towerTop, 22, towerBottom - towerTop);
+
+      // Tower cross-bracing
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let y = towerTop; y < towerBottom; y += 22) {
+        ctx.moveTo(towerX, y);
+        ctx.lineTo(towerX + 22, y + 22);
+        ctx.moveTo(towerX + 22, y);
+        ctx.lineTo(towerX, y + 22);
+      }
+      ctx.stroke();
+
+      // Lightning mast on tower
+      ctx.beginPath();
+      ctx.moveTo(towerX + 11, towerTop);
+      ctx.lineTo(towerX + 11, towerTop - 26);
+      ctx.stroke();
+
+      // Blinking red aviation warning light on tower
+      const blink = Math.sin(t * Math.PI * 4) > 0;
+      ctx.fillStyle = blink ? "#ff3b30" : "#661510";
+      ctx.beginPath();
+      ctx.arc(towerX + 11, towerTop - 26, 3, 0, Math.PI * 2);
+      ctx.fill();
+      if (blink) {
+        ctx.fillStyle = "rgba(255, 59, 48, 0.35)";
+        ctx.beginPath();
+        ctx.arc(towerX + 11, towerTop - 26, 9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Retractable umbilical arm
+      ctx.save();
+      ctx.translate(towerX + 22, 336);
+      ctx.rotate(-rocket.umbilicalAngle);
+      ctx.strokeStyle = "#4b5c80";
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(34, 0);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawExhaustFlame(rocket) {
+      if (rocket.throttle <= 0 || rocket.rawY < -160) return;
+
+      const x = rocket.x;
+      const y = rocket.y + 8;
+      const flicker = 0.88 + Math.random() * 0.28;
+      const flameLen = (82 + Math.random() * 26) * rocket.throttle * flicker;
+      const flameWidth = (15 + Math.random() * 4) * rocket.throttle;
+
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+
+      // Wide ambient engine bloom
+      const bloom = ctx.createRadialGradient(x, y + 22, 4, x, y + 22, 85 * rocket.throttle);
+      bloom.addColorStop(0, "rgba(255, 220, 140, 0.7)");
+      bloom.addColorStop(0.4, "rgba(255, 110, 20, 0.35)");
+      bloom.addColorStop(1, "rgba(255, 50, 0, 0)");
+      ctx.fillStyle = bloom;
+      ctx.beginPath();
+      ctx.arc(x, y + 22, 85 * rocket.throttle, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Outer orange-red flame cone
+      const outerGrad = ctx.createLinearGradient(x, y, x, y + flameLen);
+      outerGrad.addColorStop(0, "rgba(255, 230, 140, 0.95)");
+      outerGrad.addColorStop(0.35, "rgba(255, 125, 20, 0.85)");
+      outerGrad.addColorStop(0.8, "rgba(235, 45, 10, 0.45)");
+      outerGrad.addColorStop(1, "rgba(180, 20, 0, 0)");
+
+      ctx.fillStyle = outerGrad;
+      ctx.beginPath();
+      ctx.moveTo(x - 7, y);
+      ctx.quadraticCurveTo(x - flameWidth, y + flameLen * 0.45, x, y + flameLen);
+      ctx.quadraticCurveTo(x + flameWidth, y + flameLen * 0.45, x + 7, y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Inner brilliant white-yellow core
+      const coreLen = flameLen * 0.58;
+      const coreWidth = flameWidth * 0.52;
+      ctx.fillStyle = "rgba(255, 252, 230, 0.98)";
+      ctx.beginPath();
+      ctx.moveTo(x - 4.5, y);
+      ctx.quadraticCurveTo(x - coreWidth, y + coreLen * 0.5, x, y + coreLen);
+      ctx.quadraticCurveTo(x + coreWidth, y + coreLen * 0.5, x + 4.5, y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Mach diamonds inside exhaust
+      if (rocket.throttle > 0.7) {
+        for (let i = 1; i <= 3; i++) {
+          const dy = y + i * 16 * flicker;
+          const dw = Math.max(1.5, 5 - i * 1.1);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+          ctx.beginPath();
+          ctx.moveTo(x, dy - 4);
+          ctx.lineTo(x + dw, dy);
+          ctx.lineTo(x, dy + 4);
+          ctx.lineTo(x - dw, dy);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function drawSmokeAndSparks() {
+      // Draw smoke particles
+      for (const p of smokeParticles) {
+        const ratio = p.age / p.life;
+        const alpha = Math.pow(1 - ratio, 1.45) * 0.78;
+        const r = p.currentSize || p.size;
+
+        const grad = ctx.createRadialGradient(p.x, p.y, r * 0.1, p.x, p.y, r);
+        if (p.isHot && ratio < 0.32) {
+          const hotFactor = 1 - ratio / 0.32;
+          const cr = 255;
+          const cg = Math.floor(165 * hotFactor + p.shade * (1 - hotFactor));
+          const cb = Math.floor(70 * hotFactor + p.shade * (1 - hotFactor));
+          grad.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, ${alpha})`);
+        } else {
+          grad.addColorStop(0, `rgba(${p.shade}, ${p.shade + 5}, ${p.shade + 14}, ${alpha})`);
+        }
+        grad.addColorStop(
+          0.6,
+          `rgba(${p.shade - 30}, ${p.shade - 25}, ${p.shade - 15}, ${alpha * 0.65})`
+        );
+        grad.addColorStop(1, `rgba(90, 98, 115, 0)`);
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw bright sparks
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      for (const s of sparkParticles) {
+        const ratio = s.age / s.life;
+        const alpha = 1 - ratio;
+        ctx.fillStyle = `rgba(255, 215, 110, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawRocket(rocket) {
+      if (rocket.rawY < -170) return;
+
+      const x = rocket.x;
+      const y = rocket.y;
+
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Engine bell / nozzle
+      ctx.fillStyle = "#2c3446";
+      ctx.beginPath();
+      ctx.moveTo(-6, 0);
+      ctx.lineTo(6, 0);
+      ctx.lineTo(9, 9);
+      ctx.lineTo(-9, 9);
+      ctx.closePath();
+      ctx.fill();
+
+      // Side booster / aerodynamic fins
+      ctx.fillStyle = "#d92b2b";
+      // Left fin
+      ctx.beginPath();
+      ctx.moveTo(-13, -24);
+      ctx.lineTo(-27, 4);
+      ctx.lineTo(-27, 10);
+      ctx.lineTo(-13, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Right fin
+      ctx.beginPath();
+      ctx.moveTo(13, -24);
+      ctx.lineTo(27, 4);
+      ctx.lineTo(27, 10);
+      ctx.lineTo(13, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Main fuselage body with 3D cylindrical shading
+      const bodyGrad = ctx.createLinearGradient(-13, 0, 13, 0);
+      bodyGrad.addColorStop(0, "#cfd6e6");
+      bodyGrad.addColorStop(0.35, "#ffffff");
+      bodyGrad.addColorStop(0.75, "#dce3f0");
+      bodyGrad.addColorStop(1, "#9aa6bf");
+
+      ctx.fillStyle = bodyGrad;
+      ctx.fillRect(-13, -68, 26, 68);
+
+      // Decorative red roll pattern stripes
+      ctx.fillStyle = "#d92b2b";
+      ctx.fillRect(-13, -64, 26, 7);
+      ctx.fillRect(-13, -14, 26, 6);
+
+      // Dark interstage ring
+      ctx.fillStyle = "#1f2637";
+      ctx.fillRect(-13, -38, 26, 4);
+
+      // Nose cone
+      const noseGrad = ctx.createLinearGradient(-13, -68, 13, -68);
+      noseGrad.addColorStop(0, "#c82323");
+      noseGrad.addColorStop(0.4, "#ff4d4d");
+      noseGrad.addColorStop(1, "#8f1515");
+      ctx.fillStyle = noseGrad;
+      ctx.beginPath();
+      ctx.moveTo(-13, -68);
+      ctx.quadraticCurveTo(-11, -92, 0, -104);
+      ctx.quadraticCurveTo(11, -92, 13, -68);
+      ctx.closePath();
+      ctx.fill();
+
+      // Circular porthole window
+      ctx.fillStyle = "#293347";
+      ctx.beginPath();
+      ctx.arc(0, -49, 6.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      const winGrad = ctx.createRadialGradient(-2, -51, 1, 0, -49, 5);
+      winGrad.addColorStop(0, "#ffffff");
+      winGrad.addColorStop(0.35, "#7ce0ff");
+      winGrad.addColorStop(1, "#1b6ca8");
+      ctx.fillStyle = winGrad;
+      ctx.beginPath();
+      ctx.arc(0, -49, 4.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Center vertical fin
+      ctx.fillStyle = "#981b1b";
+      ctx.beginPath();
+      ctx.moveTo(-2, -22);
+      ctx.lineTo(2, -22);
+      ctx.lineTo(2.5, 6);
+      ctx.lineTo(-2.5, 6);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawCountdown(t) {
+      if (t >= 3.0) return;
+
+      const num = 3 - Math.floor(t); // 3, 2, 1
+      const frac = t % 1; // 0.0 -> 1.0 within each second
+
+      // Pop-in scale and smooth fade-out at the end of each second
+      const scale = 0.78 + 0.38 * Math.sin(Math.min(1, frac * 2.2) * (Math.PI / 2));
+      let alpha = 1.0;
+      if (frac < 0.12) {
+        alpha = frac / 0.12;
+      } else if (frac > 0.72) {
+        alpha = Math.max(0, 1 - (frac - 0.72) / 0.28);
+      }
+
+      const cx = W / 2;
+      const cy = 172;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      // Expanding HUD ring
+      const ringRadius = 64 + frac * 34;
+      ctx.strokeStyle = `rgba(110, 210, 255, ${alpha * (1 - frac * 0.75) * 0.55})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Progress arc around number
+      ctx.strokeStyle = `rgba(255, 190, 80, ${alpha * 0.85})`;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(0, 0, 58, -Math.PI / 2, -Math.PI / 2 + (1 - frac) * Math.PI * 2);
+      ctx.stroke();
+
+      // Big countdown digit
+      ctx.scale(scale, scale);
+      ctx.font = "900 108px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      ctx.shadowColor = "rgba(70, 185, 255, 0.85)";
+      ctx.shadowBlur = 24;
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.fillText(String(num), 0, 6);
+
+      ctx.restore();
+    }
+
+    function drawFadeOverlay(t) {
+      // Subtle fade-in at start of loop and fade-out at end of loop for seamless reset
+      let fade = 0;
+      if (t < 0.35) {
+        fade = 1 - t / 0.35;
+      } else if (t > 9.45) {
+        fade = (t - 9.45) / 0.55;
+      }
+      if (fade > 0) {
+        ctx.fillStyle = `rgba(3, 5, 12, ${Math.min(1, Math.max(0, fade))})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+    }
+
+    let prevTime = performance.now();
+
+    function animate(now) {
+      const dt = Math.min(0.05, (now - prevTime) / 1000);
+      prevTime = now;
+
+      const currentCycle = Math.floor(now / LOOP_DURATION);
+      if (currentCycle !== lastCycle) {
+        lastCycle = currentCycle;
+        resetScene();
+      }
+
+      const t = (now % LOOP_DURATION) / 1000; // 0.0 to 10.0 seconds
+      const rocket = getRocketState(t);
+
+      updateParticles(dt, t, rocket);
+
+      drawSkyAndStars(t, now, rocket);
+      drawEnvironment(t, rocket);
+      drawSmokeAndSparks();
+      drawExhaustFlame(rocket);
+      drawRocket(rocket);
+      drawCountdown(t);
+      drawFadeOverlay(t);
+
+      requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

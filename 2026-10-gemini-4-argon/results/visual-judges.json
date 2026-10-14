@@ -1,0 +1,542 @@
+{
+ "rocket/argon-high": {
+  "anonymous_code_judge1": "R06",
+  "anonymous_code_judge2": "K176",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "Polished night launch with flames, smoke, liftoff, frame exit and reset, but countdown “1” is not visible.",
+  "judge2_note": "Rich scene with ring countdown, mission timer, searchlights, venting, spark ignition and a horizon glow that loops cleanly, though the rocket is tiny and its flame barely reads."
+ },
+ "rocket/argon-low": {
+  "anonymous_code_judge1": "R05",
+  "anonymous_code_judge2": "K819",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "Polished night scene with vivid ignition, smoke, rocket exit and reset; countdown 3 and accelerating climb are not clearly demonstrated.",
+  "judge2_note": "Ring countdown, searchlights, spark-filled ignition with flame and smoke, a quick climb with a sparkling trail and a smooth fade-in reset make it a polished loop."
+ },
+ "rocket/argon-medium": {
+  "anonymous_code_judge1": "R14",
+  "anonymous_code_judge2": "K443",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.5,
+  "score": 8.75,
+  "judge1_note": "Polished night launch with flames, smoke, liftoff, exit and reset, but countdown 2 is not visible in the sampled frames.",
+  "judge2_note": "Countdown, searchlights, venting and a big ignition with sparks and a smoke column all work, but the flame glow is a crude orange ellipse."
+ },
+ "rocket/astra-high": {
+  "anonymous_code_judge1": "R11",
+  "anonymous_code_judge2": "K320",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.5,
+  "score": 8.75,
+  "judge1_note": "The countdown, fiery liftoff, rocket exit and loop are clearly visible, with polished night scenery but somewhat coarse smoke effects.",
+  "judge2_note": "Stylish mission-UI design with ring countdown, GO text, smoke plume, a climb off the top and a loop, but the engine flame is small and the UI dominates the frame."
+ },
+ "rocket/astra-low": {
+  "anonymous_code_judge1": "R01",
+  "anonymous_code_judge2": "K213",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.0,
+  "score": 8.5,
+  "judge1_note": "Polished night scene with flames, smoke, liftoff, frame exit and a visible reset, but countdown 3 is not shown.",
+  "judge2_note": "Clean HUD with countdown, flame, smoke, a fast climb off-screen and a loop, but the ignition and smoke are small and the cycle feels rushed."
+ },
+ "rocket/astra-medium": {
+  "anonymous_code_judge1": "R15",
+  "anonymous_code_judge2": "K490",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.0,
+  "score": 8.5,
+  "judge1_note": "Complete launch and loop with polished night scenery, flames, and smoke, though the countdown’s 2 is faint.",
+  "judge2_note": "Ring countdown, flame, smoke, a climb off the top and a loop all work in a tidy but plain scene with only a small ignition."
+ },
+ "rocket/sol-high": {
+  "anonymous_code_judge1": "R08",
+  "anonymous_code_judge2": "K846",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.5,
+  "score": 8.75,
+  "judge1_note": "Polished night scene with flames, smoke, liftoff, frame exit and a clear reset; countdown 2 is not visible in the sampled frames.",
+  "judge2_note": "Polished HUD with ring countdown, LIFTOFF, flame, smoke trails, an exit off the top and a loop, though the ignition is fairly restrained."
+ },
+ "rocket/sol-low": {
+  "anonymous_code_judge1": "R02",
+  "anonymous_code_judge2": "K149",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.5,
+  "score": 8.75,
+  "judge1_note": "Countdown, ignition, liftoff, rocket exit and reset are visible; the polished night scene is slightly weakened by repetitive, oversized smoke blobs.",
+  "judge2_note": "Countdown, ignition glow, flame, liftoff and loop all work with neat status labels, but the twin parallel smoke columns look odd and the flame is modest."
+ },
+ "rocket/sol-medium": {
+  "anonymous_code_judge1": "R07",
+  "anonymous_code_judge2": "K478",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 8.0,
+  "score": 9.0,
+  "judge1_note": "All required elements are visible, with a clear countdown, fiery smoky launch, rapid climb out of frame, loop reset, and polished night scenery.",
+  "judge2_note": "Clean, correct countdown, flame, smoke trail, climb off the top and loop, but it is fairly minimal and the ignition is modest."
+ },
+ "lighthouse/argon-high": {
+  "anonymous_code_judge1": "F14",
+  "anonymous_code_judge2": "K421",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "The beam sweeps visibly, rain persists, waves produce rock spray, and lightning illuminates the sky; the composition is strong, though clouds and rocks look somewhat blocky.",
+  "judge2_note": "Dramatic storm with a rotating double beam, heavy rain, layered waves spraying against the rocks, a cottage and a lightning flash, though the clouds are blobby and the scene is dark."
+ },
+ "lighthouse/argon-low": {
+  "anonymous_code_judge1": "F17",
+  "anonymous_code_judge2": "K776",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "Clear beam sweeps, continuous rain, crashing waves with spray, and sky-lighting lightning satisfy the brief, though angular rocks and repetitive wave lines limit polish.",
+  "judge2_note": "Best waves, with foamy crests crashing on the rocks, plus a rotating double beam, heavy rain and a sky flash, though the lightning bolts are scribbly squiggles."
+ },
+ "lighthouse/argon-medium": {
+  "anonymous_code_judge1": "F01",
+  "anonymous_code_judge2": "K615",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "The beam sweeps, rain persists, waves produce spray, and lightning illuminates the sky; the composition is strong, though water and rocks look simplified.",
+  "judge2_note": "Atmospheric storm with a rotating double beam, heavy rain, misty spray crashing on the rocks, a cottage and a lightning sky flash, though the spray is a bit smudgy."
+ },
+ "lighthouse/astra-high": {
+  "anonymous_code_judge1": "F27",
+  "anonymous_code_judge2": "K908",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 8.0,
+  "score": 9.0,
+  "judge1_note": "The beam visibly sweeps, rain persists, waves produce spray against the rocks, and lightning brightens the sky in a polished 960×540 composition.",
+  "judge2_note": "Wave crest with spray at the cliff, rain and a visible bolt are present, but the beam sweeps a limited arc and the sky barely brightens."
+ },
+ "lighthouse/astra-low": {
+  "anonymous_code_judge1": "F30",
+  "anonymous_code_judge2": "K740",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 7.5,
+  "score": 8.25,
+  "judge1_note": "The sweeping beam, steady rain, crashing waves with spray, and sky-lighting lightning are visible in a well-composed 960×540 scene, though the water looks simplistic.",
+  "judge2_note": "Wave spray on the cliff and rain are good, but the beam is faint, the lightning flash is weak and the last frame is missing."
+ },
+ "lighthouse/astra-medium": {
+  "anonymous_code_judge1": "F25",
+  "anonymous_code_judge2": "K697",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "The beam sweeps visibly, rain persists, waves produce spray, and lightning illuminates the sky; the 960×540 composition is strong, though the sea and rocks look somewhat simplistic.",
+  "judge2_note": "The beam sweeps the full arc down over the sea, with steady rain, repeated wave spray against the cliff, a cottage and a clear lightning flash."
+ },
+ "lighthouse/sol-high": {
+  "anonymous_code_judge1": "F21",
+  "anonymous_code_judge2": "K904",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.5,
+  "score": 8.75,
+  "judge1_note": "The beam sweeps visibly, rain persists, and lightning illuminates the sky, but crashing waves and spray lack force.",
+  "judge2_note": "The beam rotates through a full sweep over the sea and the lightning flash is clear, but the waves and spray are faint and the rain is light."
+ },
+ "lighthouse/sol-low": {
+  "anonymous_code_judge1": "F13",
+  "anonymous_code_judge2": "K369",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.0,
+  "score": 8.5,
+  "judge1_note": "The beam sweeps, rain persists, and lightning brightens the sky, but the waves show limited crashing motion despite visible rock spray.",
+  "judge2_note": "The beam sweeps clearly over a low-poly rock with rain and a sky flash, but the waves are a single squiggle with little spray and the lightning bolt is crude."
+ },
+ "lighthouse/sol-medium": {
+  "anonymous_code_judge1": "F05",
+  "anonymous_code_judge2": "K874",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 8.5,
+  "score": 9.25,
+  "judge1_note": "The beam visibly sweeps, rain persists, waves produce spray against the rocks, and lightning illuminates the well-composed 960×540 scene.",
+  "judge2_note": "Strong lightning bolt with a full sky flash, cliff spray and a cottage, but the beam sweeps only through the upper arc and the rain is light."
+ },
+ "hexagon/argon-high": {
+  "anonymous_code_judge1": "H10",
+  "anonymous_code_judge2": "K463",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.5,
+  "judge1_note": "The large hexagon visibly rotates, with 12 numbered balls piling and bouncing near the bottom without visible overlaps or escapes.",
+  "judge2_note": "Rotating hexagon with spokes and 12 billiard balls that pile and roll correctly inside the walls, though the styling is simple."
+ },
+ "hexagon/argon-low": {
+  "anonymous_code_judge1": "H01",
+  "anonymous_code_judge2": "K915",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.5,
+  "judge1_note": "The hexagon visibly rotates, all 12 numbered balls remain inside without visible overlap, and they settle along the bottom with polished presentation.",
+  "judge2_note": "Glowing rotating hexagon with 12 numbered glossy balls that pile and roll without escapes or overlaps."
+ },
+ "hexagon/argon-medium": {
+  "anonymous_code_judge1": "H13",
+  "anonymous_code_judge2": "K255",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.5,
+  "score": 9.75,
+  "judge1_note": "The hexagon visibly rotates, and all 12 numbered balls remain contained without visible overlap while settling and shifting along the bottom.",
+  "judge2_note": "Attractive billiard-ball set of 12 numbered balls inside a rotating neon hexagon, piling and rolling convincingly with no escapes or overlaps."
+ },
+ "hexagon/astra-high": {
+  "anonymous_code_judge1": "H30",
+  "anonymous_code_judge2": "K546",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.5,
+  "judge1_note": "The hexagon visibly rotates, all 12 numbered balls remain contained without visible overlap, and gravity produces convincing bottom piles in a clean presentation.",
+  "judge2_note": "Rotating hexagon with 12 legible pastel numbered balls that settle and roll correctly, with no escapes or overlaps."
+ },
+ "hexagon/astra-low": {
+  "anonymous_code_judge1": "H08",
+  "anonymous_code_judge2": "K929",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.5,
+  "judge1_note": "The hexagon visibly rotates, and all 12 numbered balls pile along the bottom without visible overlaps or escapes, with polished presentation.",
+  "judge2_note": "Rotating hexagon with 12 legible numbered balls that settle and roll correctly along the lower walls."
+ },
+ "hexagon/astra-medium": {
+  "anonymous_code_judge1": "H32",
+  "anonymous_code_judge2": "K417",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.5,
+  "judge1_note": "The hexagon visibly rotates, all 12 numbered balls remain inside without clear overlaps, and their bottomward piling convincingly shows gravity.",
+  "judge2_note": "Thin-line rotating hexagon with 12 legible numbered balls that pile at the low vertex and stay inside without overlapping."
+ },
+ "hexagon/sol-high": {
+  "anonymous_code_judge1": "H18",
+  "anonymous_code_judge2": "K342",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.5,
+  "judge1_note": "The hexagon visibly rotates, all 12 numbered balls remain contained without visible overlap, and gravity produces convincing bottom piling and bouncing.",
+  "judge2_note": "Rotating hexagon with 12 clearly numbered gradient balls that settle and roll along the lower walls, with no escapes or overlaps."
+ },
+ "hexagon/sol-low": {
+  "anonymous_code_judge1": "H36",
+  "anonymous_code_judge2": "K161",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 8.5,
+  "score": 9.25,
+  "judge1_note": "The large hexagon visibly rotates, all 12 numbered balls gather at the bottom without visible overlap or escape, and the presentation is polished.",
+  "judge2_note": "Neon hexagon rotates with 12 balls piling realistically at the bottom and staying inside, but the balls are tiny and their numbers are illegible."
+ },
+ "hexagon/sol-medium": {
+  "anonymous_code_judge1": "H43",
+  "anonymous_code_judge2": "K816",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.5,
+  "judge1_note": "The large hexagon visibly rotates, all 12 numbered balls remain inside without visible overlap, and the bottom piles convincingly suggest gravity in a polished presentation.",
+  "judge2_note": "Rotating neon hexagon with 12 clearly numbered pastel balls that pile and roll correctly, plus a tidy HUD."
+ },
+ "octopus/argon-high": {
+  "anonymous_code_judge1": "O42",
+  "anonymous_code_judge2": "K844",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 10.0,
+  "score": 10.0,
+  "judge1_note": "A charming, polished octopus with clear eyes and tentacles plausibly rides a complete bicycle, holding the handlebars and reaching a pedal.",
+  "judge2_note": "Outstanding, delightful illustration with an octopus in straw hat and glasses on the saddle, tentacles on the pedals and belled handlebar, a crab in the basket, a pinwheel, fenders and a chain."
+ },
+ "octopus/argon-low": {
+  "anonymous_code_judge1": "O26",
+  "anonymous_code_judge2": "K658",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.5,
+  "score": 9.25,
+  "judge1_note": "Charming, recognisable octopus sits on a well-drawn bicycle and grips the handlebars, though the pedals are indistinct.",
+  "judge2_note": "Richly detailed, charming octopus with a propeller cap riding a bike with fenders, basket, chain and saddle, with tentacles on the pedals and bars, though the bubbles on land are odd."
+ },
+ "octopus/argon-medium": {
+  "anonymous_code_judge1": "O58",
+  "anonymous_code_judge2": "K279",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.5,
+  "score": 9.75,
+  "judge1_note": "A charming, polished octopus with expressive eyes and curling tentacles plausibly rides a complete bicycle, gripping the handlebars and reaching the pedals.",
+  "judge2_note": "Lively underwater scene with an expressive octopus on a detailed yellow bike (basket, chainring, chain, pedals), tentacles on bars and pedals, though the tentacles are a bit tangled."
+ },
+ "octopus/astra-high": {
+  "anonymous_code_judge1": "O04",
+  "anonymous_code_judge2": "K793",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "A charming, clearly recognisable octopus and well-formed bicycle, though contact with the saddle, handlebars and pedals is somewhat unclear.",
+  "judge2_note": "Expressive octopus on a beach with a well-drawn bike (fenders, brake cable, pedal), with tentacles on the bars and pedal, though the saddle is hidden."
+ },
+ "octopus/astra-low": {
+  "anonymous_code_judge1": "O24",
+  "anonymous_code_judge2": "K886",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "A charming, recognisable octopus rides a well-drawn bicycle, with tentacles reaching the handlebars and pedals, though its seating on the saddle is unclear.",
+  "judge2_note": "Cute scarfed octopus on a correct bike with chainring, pedals and handlebar, with tentacles placed on the bars and pedals in a tidy scene."
+ },
+ "octopus/astra-medium": {
+  "anonymous_code_judge1": "O43",
+  "anonymous_code_judge2": "K253",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "Charming, recognisable octopus on a well-formed bicycle, though its seating on the saddle is unclear.",
+  "judge2_note": "Charming capped octopus with eight spotted tentacles gripping the handlebar and a pedal on a two-wheel bike, though the frame geometry is simplified and no saddle is visible."
+ },
+ "octopus/sol-high": {
+  "anonymous_code_judge1": "O59",
+  "anonymous_code_judge2": "K620",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "A charming, recognisable octopus on a well-drawn bicycle, though its contact with the saddle and pedals is slightly unclear.",
+  "judge2_note": "Polished, charming octopus on a spoked bike with a bell and chainring, with tentacles on the bars and pedals, though the tentacles showing through the wheels look a little odd."
+ },
+ "octopus/sol-low": {
+  "anonymous_code_judge1": "O21",
+  "anonymous_code_judge2": "K438",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.5,
+  "judge1_note": "The octopus is clearly recognisable, the bicycle is complete, and tentacles engaging the handlebars and pedals make the charming scene convincingly readable.",
+  "judge2_note": "Cute scarfed octopus on a coherent bike with saddle, handlebar, chainring and pedals, with tentacles on the bars and pedals in a pleasant scene."
+ },
+ "octopus/sol-medium": {
+  "anonymous_code_judge1": "O54",
+  "anonymous_code_judge2": "K748",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.5,
+  "judge1_note": "A charming, polished octopus with clear eyes and tentacles plausibly rides a complete bicycle, gripping the handlebars and reaching the pedals.",
+  "judge2_note": "Appealing capped octopus seated on a bike with saddle, chainring and handlebar, with tentacles gripping the bars and a pedal."
+ },
+ "rocket/opus-high": {
+  "anonymous_code_judge1": "R13",
+  "anonymous_code_judge2": "K200",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "Clear countdown, fiery ignition, visible ascent and reset, and a polished night scene, though the smoke is overly diffuse.",
+  "judge2_note": "Polished ring countdown, LIFTOFF title, sparks, bright flame, side smoke and searchlights, with the rocket leaving the frame and resetting cleanly."
+ },
+ "rocket/opus-low": {
+  "anonymous_code_judge1": "R45",
+  "anonymous_code_judge2": "K112",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.5,
+  "score": 8.75,
+  "judge1_note": "All required elements are visible, but the dim countdown numeral and oversized blurred smoke reduce visual polish.",
+  "judge2_note": "Full 3-2-1 countdown, LIFTOFF text, flames, climb off-frame and clean loop under a moonlit starry sky, but the smoke is heavy opaque blobs and the rocket is small and plain."
+ },
+ "rocket/opus-medium": {
+  "anonymous_code_judge1": "R09",
+  "anonymous_code_judge2": "K974",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.0,
+  "score": 8.5,
+  "judge1_note": "The frames show the countdown, ignition, climb out of view and loop reset, with attractive night lighting but overly dense, repetitive smoke.",
+  "judge2_note": "Countdown, glowing LIFTOFF, flame, a climb off the top and a loop all work, but the smoke is made of obvious overlapping flat discs that swamp the scene."
+ },
+ "rocket/sonnet-high": {
+  "anonymous_code_judge1": "R04",
+  "anonymous_code_judge2": "K383",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.0,
+  "judge1_note": "Visible countdown, fiery smoky ignition, accelerating ascent out of frame, and loop reset satisfy the brief, though the faint ‘1’ and blurred smoke reduce polish.",
+  "judge2_note": "Strong sequence of T-minus ring, IGNITION/LIFTOFF labels, bright flame and glow, billowing smoke, a climb off-frame and a clean loop under a moonlit sky."
+ },
+ "rocket/sonnet-low": {
+  "anonymous_code_judge1": "R26",
+  "anonymous_code_judge2": "K501",
+  "judge1_gpt61_sol": 7,
+  "judge2_claude_opus55": 7.5,
+  "score": 7.25,
+  "judge1_note": "Visible ignition, ascent, reset, and a detailed night sky earn credit, but countdown 1 and top exit are unconfirmed, while rectangular glow artifacts reduce polish.",
+  "judge2_note": "Countdown, a bright flame and big smoke clouds are present, but a hard-edged rectangular glow box clips around the rocket and the climb is slow, never clearly leaving the frame in the sampled frames."
+ },
+ "rocket/sonnet-medium": {
+  "anonymous_code_judge1": "R40",
+  "anonymous_code_judge2": "K223",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.0,
+  "score": 8.5,
+  "judge1_note": "Visible countdown, strong flames and smoke, accelerating liftoff and loop reset, with attractive night lighting but fairly simple rocket and scenery detail.",
+  "judge2_note": "Countdown, LIFTOFF, flame, smoke, a climb off the top and a loop are all present, but the stick-like tower and sparse scene look basic."
+ },
+ "lighthouse/opus-high": {
+  "anonymous_code_judge1": "F40",
+  "anonymous_code_judge2": "K741",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.0,
+  "score": 8.5,
+  "judge1_note": "Sweeping light, steady rain, wave spray, and bright lightning are visible, but rectangular artifacts during the flash reduce visual polish.",
+  "judge2_note": "Beam sweeps with flares, rain and a bright lightning strike are shown, but the spray floats in open sea and a rectangular light-column artifact appears under the bolt."
+ },
+ "lighthouse/opus-low": {
+  "anonymous_code_judge1": "F54",
+  "anonymous_code_judge2": "K512",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.5,
+  "score": 8.75,
+  "judge1_note": "The beam sweeps, rain persists, waves produce spray, and lightning illuminates the sky; the 960×540 composition works, though the rendering is somewhat flat.",
+  "judge2_note": "A well-sweeping beam, rain, spray at the rock base and a vivid lightning flash work, but the waves are thin line strokes."
+ },
+ "lighthouse/opus-medium": {
+  "anonymous_code_judge1": "F46",
+  "anonymous_code_judge2": "K422",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.0,
+  "score": 8.5,
+  "judge1_note": "The beam visibly sweeps, rain persists, waves produce spray, and lightning illuminates the sky; the 960×540 composition is strong, though the spray looks artificial.",
+  "judge2_note": "Rotating beam with flares, rain and a strong lightning flash are present, but the sea is nearly flat and the spray is bokeh-like dots, not waves hitting rocks."
+ },
+ "lighthouse/sonnet-high": {
+  "anonymous_code_judge1": "F18",
+  "anonymous_code_judge2": "K532",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.5,
+  "score": 8.75,
+  "judge1_note": "The sweeping beam, steady rain, wave spray, and sky-lighting lightning are visible, but the spray looks like translucent bubbles.",
+  "judge2_note": "Sweeping beam, rain, low-poly cliff with a cottage and a good lightning flash, but the spray is made of crude circle clusters."
+ },
+ "lighthouse/sonnet-low": {
+  "anonymous_code_judge1": "F48",
+  "anonymous_code_judge2": "K682",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.0,
+  "score": 8.5,
+  "judge1_note": "The beam sweeps, rain persists, waves produce spray, and lightning illuminates the sky; the composition is clear but visually simple.",
+  "judge2_note": "Beam rotation, rain, lightning flash and spray on the rock are present, but the wave is a crude flat wedge and the large dark rock dominates the composition."
+ },
+ "lighthouse/sonnet-medium": {
+  "anonymous_code_judge1": "F57",
+  "anonymous_code_judge2": "K305",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 7.0,
+  "score": 8.0,
+  "judge1_note": "Rain, a sweeping beam, and sky-brightening lightning are visible, but the spray does not clearly show waves crashing against rocks.",
+  "judge2_note": "Beam sweep, rain and a clear lightning flash are present, but there are no real rocks, the spray appears in open water and the waves are flat line patterns."
+ },
+ "hexagon/opus-high": {
+  "anonymous_code_judge1": "H21",
+  "anonymous_code_judge2": "K553",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.5,
+  "score": 9.75,
+  "judge1_note": "The rotating hexagon contains 12 numbered balls that settle at the bottom without visible overlaps or escapes, with polished lighting and clear presentation.",
+  "judge2_note": "Most polished look, with green felt, a thick glowing frame and 12 billiard balls that pile and roll convincingly inside the rotating hexagon."
+ },
+ "hexagon/opus-low": {
+  "anonymous_code_judge1": "H60",
+  "anonymous_code_judge2": "K542",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 8.5,
+  "score": 9.25,
+  "judge1_note": "The rotating hexagon contains 12 numbered, non-overlapping balls that fall and gather at the bottom, with clean overall presentation.",
+  "judge2_note": "Physics is correct, with a rotating hexagon and 12 balls piling inside without overlap, but the gray styling is plain and the numbers are tiny."
+ },
+ "hexagon/opus-medium": {
+  "anonymous_code_judge1": "H20",
+  "anonymous_code_judge2": "K376",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.5,
+  "judge1_note": "The large hexagon visibly rotates, all 12 numbered balls remain inside without visible overlap, and gravity produces clear bottom piling with polished visuals.",
+  "judge2_note": "Rotating glowing hexagon with 12 numbered pool-style balls that fall, pile and roll correctly, with an interaction hint."
+ },
+ "hexagon/sonnet-high": {
+  "anonymous_code_judge1": "H39",
+  "anonymous_code_judge2": "K960",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 9.0,
+  "score": 9.5,
+  "judge1_note": "The hexagon visibly rotates, all 12 numbered balls remain inside without visible overlap, and their bottom clustering convincingly suggests gravity.",
+  "judge2_note": "Rotating glowing hexagon with 12 clearly numbered balls that pile and slide correctly, with no escapes or overlaps."
+ },
+ "hexagon/sonnet-low": {
+  "anonymous_code_judge1": "H03",
+  "anonymous_code_judge2": "K558",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 8.5,
+  "score": 9.25,
+  "judge1_note": "The hexagon visibly rotates, all 12 numbered balls remain inside without visible overlap, and their bottomward piling convincingly suggests gravity.",
+  "judge2_note": "Rotating hexagon with 12 lively bouncing numbered balls that stay inside, but the styling is plain and the numbers are hard to read."
+ },
+ "hexagon/sonnet-medium": {
+  "anonymous_code_judge1": "H57",
+  "anonymous_code_judge2": "K822",
+  "judge1_gpt61_sol": 10,
+  "judge2_claude_opus55": 8.5,
+  "score": 9.25,
+  "judge1_note": "The hexagon visibly rotates, all 12 numbered balls remain inside without visible overlap, and the bottom piles convincingly show gravity.",
+  "judge2_note": "Rotating hexagon with 12 numbered balls that fall and pile correctly inside, but the look is plain and the numbers are hard to read."
+ },
+ "octopus/opus-high": {
+  "anonymous_code_judge1": "O48",
+  "anonymous_code_judge2": "K926",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.5,
+  "score": 8.75,
+  "judge1_note": "A charming, recognisable octopus rides a well-formed bicycle with tentacles on the handlebars and pedals, though its seating on the saddle is unclear.",
+  "judge2_note": "Pink helmeted octopus riding a red bike with chain, pedals, saddle and handlebar, with tentacles placed correctly, but the drawing is fairly simple."
+ },
+ "octopus/opus-low": {
+  "anonymous_code_judge1": "O30",
+  "anonymous_code_judge2": "K593",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 7.0,
+  "score": 8.0,
+  "judge1_note": "A charming, recognisable octopus rides a well-formed bicycle, though its seating on the saddle is unclear.",
+  "judge2_note": "Basic flat drawing in which the octopus floats above a thin bike, with no visible pedals and only one tentacle on the handlebar."
+ },
+ "octopus/opus-medium": {
+  "anonymous_code_judge1": "O67",
+  "anonymous_code_judge2": "K705",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.5,
+  "score": 8.75,
+  "judge1_note": "A charming, recognisable octopus rides a well-drawn bicycle, though its contact with the saddle and pedals is slightly unclear.",
+  "judge2_note": "Correct bike with saddle, chainring, pedals and handlebar, held by a pink helmeted octopus, but the drawing is simple."
+ },
+ "octopus/sonnet-high": {
+  "anonymous_code_judge1": "O05",
+  "anonymous_code_judge2": "K466",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 7.5,
+  "score": 8.25,
+  "judge1_note": "A charming, recognisable octopus rides a complete bicycle, though its contact with the saddle and pedals is slightly unclear.",
+  "judge2_note": "Flat cartoon with a helmeted octopus holding the handlebar and reaching the pedals of a red bike on a road, but it has few tentacles and basic, slightly off frame geometry."
+ },
+ "octopus/sonnet-low": {
+  "anonymous_code_judge1": "O28",
+  "anonymous_code_judge2": "K427",
+  "judge1_gpt61_sol": 8,
+  "judge2_claude_opus55": 7.0,
+  "score": 7.5,
+  "judge1_note": "The octopus is charming and recognisable, with a convincing bicycle frame and wheels, but the handlebars, pedals and riding contact points are unclear.",
+  "judge2_note": "Simple flat drawing: the octopus has few tentacles and floats above the frame, and the bike lacks visible pedals and has only a vague handlebar."
+ },
+ "octopus/sonnet-medium": {
+  "anonymous_code_judge1": "O49",
+  "anonymous_code_judge2": "K638",
+  "judge1_gpt61_sol": 9,
+  "judge2_claude_opus55": 8.0,
+  "score": 8.5,
+  "judge1_note": "A charming, recognisable octopus on a well-formed bicycle, though its seating position and handlebar grip are slightly unclear.",
+  "judge2_note": "Clear flat octopus with eight tentacles sitting on the saddle of a red bike with handlebar, crank and pedal, but the style is plain and the grip on the bars is loose."
+ }
+}

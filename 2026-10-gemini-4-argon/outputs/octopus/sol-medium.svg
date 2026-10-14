@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1">
+      <stop stop-color="#d9f5ff"/>
+      <stop offset="1" stop-color="#fff7df"/>
+    </linearGradient>
+    <linearGradient id="octopus" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ff9eae"/>
+      <stop offset="1" stop-color="#d95387"/>
+    </linearGradient>
+    <pattern id="spokes" width="800" height="600" patternUnits="userSpaceOnUse">
+      <path d="M260 340V520M170 430H350M196 366L324 494M196 494L324 366
+               M555 340V520M465 430H645M491 366L619 494M491 494L619 366"
+            fill="none" stroke="#adc3cb" stroke-width="3"/>
+    </pattern>
+  </defs>
+
+  <!-- A sunny afternoon -->
+  <rect width="800" height="600" rx="30" fill="url(#sky)"/>
+  <circle cx="675" cy="100" r="43" fill="#ffdb79"/>
+  <g fill="white" opacity=".85">
+    <path d="M80 132a25 25 0 0 1 40-20 34 34 0 0 1 65 12 21 21 0 0 1 12 39H84a16 16 0 0 1-4-31Z"/>
+    <path d="M514 89a19 19 0 0 1 31-17 25 25 0 0 1 47 11 16 16 0 0 1 10 30h-82a12 12 0 0 1-6-24Z"/>
+  </g>
+  <path d="M0 450Q110 397 220 452T445 452T650 440T800 447V600H0Z" fill="#c7e8bb"/>
+  <path d="M0 520Q350 493 800 523V600H0Z" fill="#f1dfbd"/>
+  <ellipse cx="413" cy="532" rx="263" ry="16" fill="#b4a68d" opacity=".23"/>
+
+  <!-- Bicycle wheels -->
+  <g>
+    <circle cx="260" cy="430" r="94" fill="#ffffff" fill-opacity=".45"/>
+    <circle cx="555" cy="430" r="94" fill="#ffffff" fill-opacity=".45"/>
+    <circle cx="260" cy="430" r="89" fill="url(#spokes)"/>
+    <circle cx="555" cy="430" r="89" fill="url(#spokes)"/>
+    <g fill="none" stroke="#293e50" stroke-width="12">
+      <circle cx="260" cy="430" r="94"/>
+      <circle cx="555" cy="430" r="94"/>
+    </g>
+    <g fill="none" stroke="#eff7fa" stroke-width="3">
+      <circle cx="260" cy="430" r="85"/>
+      <circle cx="555" cy="430" r="85"/>
+    </g>
+  </g>
+
+  <!-- Eight curling arms, with two reaching behind the frame -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#ae3d70" stroke-width="27">
+      <path d="M345 273C303 294 279 323 249 321S216 290 236 279"/>
+      <path d="M361 280C329 320 329 354 303 376S269 376 277 360"/>
+    </g>
+    <g stroke="#ef82a0" stroke-width="19">
+      <path d="M345 273C303 294 279 323 249 321S216 290 236 279"/>
+      <path d="M361 280C329 320 329 354 303 376S269 376 277 360"/>
+    </g>
+  </g>
+
+  <!-- Bicycle frame -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M260 430L349 325L421 430H260L349 325H499L421 430"
+          stroke="#147e89" stroke-width="13"/>
+    <path d="M260 430L349 325L421 430H260L349 325H499L421 430"
+          stroke="#45c3bf" stroke-width="6"/>
+    <path d="M555 430L489 285" stroke="#147e89" stroke-width="12"/>
+    <path d="M555 430L489 285" stroke="#45c3bf" stroke-width="5"/>
+    <path d="M349 325L337 293M499 325L484 273L506 250H530"
+          stroke="#344d60" stroke-width="9"/>
+    <path d="M316 291H357" stroke="#293e50" stroke-width="15"/>
+    <path d="M520 250H538" stroke="#293e50" stroke-width="12"/>
+    <circle cx="421" cy="430" r="23" fill="#dce8e9" stroke="#344d60" stroke-width="5"/>
+    <path d="M260 419L421 407M260 441L421 453" stroke="#728b94" stroke-width="3"/>
+    <path d="M400 457L442 403" stroke="#344d60" stroke-width="7"/>
+    <path d="M384 458H410M431 401H455" stroke="#293e50" stroke-width="8"/>
+  </g>
+  <g fill="#344d60">
+    <circle cx="260" cy="430" r="9"/>
+    <circle cx="555" cy="430" r="9"/>
+    <circle cx="421" cy="430" r="7"/>
+  </g>
+
+  <!-- Six foreground arms: steering, pedaling, and waving -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#ae3d70" stroke-width="28">
+      <path d="M382 286C374 330 394 344 409 372S430 406 449 401"/>
+      <path d="M401 289C415 325 446 338 437 376S417 435 395 457"/>
+      <path d="M424 279C455 288 456 319 485 318S518 285 519 253"/>
+      <path d="M442 266C473 265 476 245 503 244S533 264 540 251"/>
+      <path d="M338 256C302 269 281 253 278 228S294 198 305 211"/>
+      <path d="M452 245C490 228 505 206 493 181S459 164 463 185"/>
+    </g>
+    <g stroke="#f58ca7" stroke-width="20">
+      <path d="M382 286C374 330 394 344 409 372S430 406 449 401"/>
+      <path d="M401 289C415 325 446 338 437 376S417 435 395 457"/>
+      <path d="M424 279C455 288 456 319 485 318S518 285 519 253"/>
+      <path d="M442 266C473 265 476 245 503 244S533 264 540 251"/>
+      <path d="M338 256C302 269 281 253 278 228S294 198 305 211"/>
+      <path d="M452 245C490 228 505 206 493 181S459 164 463 185"/>
+    </g>
+  </g>
+
+  <!-- Little suction cups -->
+  <g fill="#ffd1d9">
+    <ellipse cx="291" cy="247" rx="5" ry="4" transform="rotate(35 291 247)"/>
+    <ellipse cx="307" cy="257" rx="5" ry="4"/>
+    <ellipse cx="323" cy="258" rx="5" ry="4"/>
+    <ellipse cx="391" cy="326" rx="4" ry="6" transform="rotate(-25 391 326)"/>
+    <ellipse cx="401" cy="346" rx="4" ry="6" transform="rotate(-25 401 346)"/>
+    <ellipse cx="420" cy="389" rx="4" ry="6" transform="rotate(-35 420 389)"/>
+    <ellipse cx="429" cy="412" rx="4" ry="6" transform="rotate(25 429 412)"/>
+    <ellipse cx="416" cy="436" rx="4" ry="6" transform="rotate(35 416 436)"/>
+    <ellipse cx="462" cy="305" rx="5" ry="4" transform="rotate(30 462 305)"/>
+    <ellipse cx="481" cy="313" rx="5" ry="4"/>
+    <ellipse cx="501" cy="303" rx="4" ry="5" transform="rotate(35 501 303)"/>
+    <ellipse cx="481" cy="214" rx="5" ry="4" transform="rotate(-35 481 214)"/>
+    <ellipse cx="491" cy="198" rx="4" ry="5"/>
+  </g>
+
+  <!-- Octopus head -->
+  <path d="M328 237C314 211 318 163 341 141C366 117 416 115 445 138
+           C472 159 482 202 464 237L455 266
+           C449 293 427 304 403 297
+           C385 306 363 298 348 282Z"
+        fill="url(#octopus)" stroke="#ae3d70" stroke-width="5"/>
+  <path d="M339 190C337 164 357 143 379 140"
+        fill="none" stroke="#ffc0ce" stroke-width="12" stroke-linecap="round" opacity=".8"/>
+
+  <!-- Bright eyes and a happy grin -->
+  <g fill="white" stroke="#ae3d70" stroke-width="3">
+    <ellipse cx="371" cy="218" rx="21" ry="25"/>
+    <ellipse cx="426" cy="218" rx="21" ry="25"/>
+  </g>
+  <g fill="#293e50">
+    <ellipse cx="377" cy="222" rx="9" ry="13"/>
+    <ellipse cx="432" cy="222" rx="9" ry="13"/>
+  </g>
+  <g fill="white">
+    <circle cx="380" cy="218" r="3.5"/>
+    <circle cx="435" cy="218" r="3.5"/>
+  </g>
+  <g fill="#ffbfca">
+    <ellipse cx="348" cy="245" rx="13" ry="7"/>
+    <ellipse cx="450" cy="245" rx="13" ry="7"/>
+  </g>
+  <path d="M382 254Q399 276 417 254" fill="#853557" stroke="#853557" stroke-width="4" stroke-linecap="round"/>
+  <path d="M391 266Q400 260 409 266" fill="none" stroke="#ff9ab2" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- A jaunty cycling cap -->
+  <path d="M334 156Q338 114 382 109Q424 105 447 143Z"
+        fill="#f3c854" stroke="#a97b34" stroke-width="4"/>
+  <path d="M383 110Q402 123 405 149" fill="none" stroke="#fff0ad" stroke-width="9"/>
+  <path d="M328 156Q389 139 449 143L472 151Q411 167 332 163Z"
+        fill="#eab943" stroke="#a97b34" stroke-width="4"/>
+
+  <!-- Breeze and roadside flowers -->
+  <g fill="none" stroke="#83bcc6" stroke-width="4" stroke-linecap="round" opacity=".7">
+    <path d="M186 214H239M168 233H221M197 252H242"/>
+  </g>
+  <g stroke="#659b61" stroke-width="3" fill="none">
+    <path d="M94 526V495M711 537V508M733 539V488"/>
+  </g>
+  <g fill="#fff7ef">
+    <circle cx="94" cy="490" r="10"/>
+    <circle cx="711" cy="503" r="9"/>
+    <circle cx="733" cy="484" r="11"/>
+  </g>
+  <g fill="#f1bb49">
+    <circle cx="94" cy="490" r="4"/>
+    <circle cx="711" cy="503" r="3"/>
+    <circle cx="733" cy="484" r="4"/>
+  </g>
+</svg>

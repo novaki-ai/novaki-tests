@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Night Rocket Launch</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    background: #04060d;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  #stage {
+    position: relative;
+    width: 960px;
+    height: 540px;
+    overflow: hidden;
+    background: #050814;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+  }
+  canvas {
+    display: block;
+    width: 960px;
+    height: 540px;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="scene" width="960" height="540"></canvas>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const W = 960;
+  const H = 540;
+  const LOOP_DURATION = 10.0; // seconds
+
+  // Deterministic PRNG for stars and scenery
+  let seed = 42;
+  function rand() {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  }
+
+  // Generate stars
+  const stars = Array.from({ length: 220 }, () => ({
+    x: rand() * W,
+    y: rand() * (H - 80),
+    r: 0.5 + rand() * 1.6,
+    baseAlpha: 0.3 + rand() * 0.7,
+    twinkleSpeed: 1.5 + rand() * 4.0,
+    phase: rand() * Math.PI * 2,
+    tint: rand() > 0.8 ? '#bad8ff' : rand() > 0.9 ? '#ffe2b8' : '#ffffff'
+  }));
+
+  // Generate distant city/base lights on horizon
+  const horizonLights = Array.from({ length: 45 }, () => ({
+    x: 40 + rand() * (W - 80),
+    y: 446 + rand() * 6,
+    w: 1.5 + rand() * 3,
+    color: rand() > 0.35 ? '#ffb86c' : '#8be9fd',
+    alpha: 0.25 + rand() * 0.55
+  }));
+
+  // Particle arrays
+  let smokeParticles = [];
+  let sparkParticles = [];
+  let lastLoopCycle = -1;
+
+  function resetParticles() {
+    smokeParticles = [];
+    sparkParticles = [];
+  }
+
+  function spawnSmoke(x, y, vx, vy, size, life, isHot) {
+    smokeParticles.push({
+      x, y, vx, vy,
+      size,
+      maxSize: size * (2.2 + Math.random() * 1.8),
+      age: 0,
+      life,
+      isHot,
+      rot: Math.random() * Math.PI * 2,
+      vRot: (Math.random() - 0.5) * 1.5,
+      shade: 185 + Math.floor(Math.random() * 65)
+    });
+  }
+
+  function spawnSpark(x, y, vx, vy, life) {
+    sparkParticles.push({
+      x, y, vx, vy,
+      age: 0,
+      life,
+      size: 1.2 + Math.random() * 2.0,
+      color: Math.random() > 0.4 ? '#fff6c5' : '#ff9e3b'
+    });
+  }
+
+  // Smooth step helpers
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+  function smoothstep(edge0, edge1, x) {
+    const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+
+  function drawSky(t, glowIntensity, cameraPanY) {
+    // Base night sky gradient
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+    skyGrad.addColorStop(0, '#03050c');
+    skyGrad.addColorStop(0.55, '#091126');
+    skyGrad.addColorStop(0.85, '#132142');
+    skyGrad.addColorStop(1, '#1d2d4e');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle Milky Way / nebula band
+    ctx.save();
+    ctx.translate(W * 0.5, H * 0.3 + cameraPanY * 0.15);
+    ctx.rotate(-0.35);
+    const nebGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, 420);
+    nebGrad.addColorStop(0, 'rgba(58, 92, 168, 0.12)');
+    nebGrad.addColorStop(0.5, 'rgba(38, 60, 115, 0.06)');
+    nebGrad.addColorStop(1, 'rgba(10, 18, 40, 0)');
+    ctx.fillStyle = nebGrad;
+    ctx.scale(1.8, 0.45);
+    ctx.beginPath();
+    ctx.arc(0, 0, 420, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Stars (parallax shift slightly when rocket climbs)
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      const sy = (s.y + cameraPanY * 0.25) % (H - 60);
+      const twinkle = 0.65 + 0.35 * Math.sin(t * s.twinkleSpeed + s.phase);
+      ctx.globalAlpha = s.baseAlpha * twinkle;
+      ctx.fillStyle = s.tint;
+      ctx.beginPath();
+      ctx.arc(s.x, sy, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Crescent Moon
+    const moonX = 795;
+    const moonY = 95 + cameraPanY * 0.2;
+    ctx.save();
+    const moonHalo = ctx.createRadialGradient(moonX, moonY, 16, moonX, moonY, 85);
+    moonHalo.addColorStop(0, 'rgba(220, 235, 255, 0.22)');
+    moonHalo.addColorStop(0.4, 'rgba(180, 210, 255, 0.07)');
+    moonHalo.addColorStop(1, 'rgba(180, 210, 255, 0)');
+    ctx.fillStyle = moonHalo;
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 85, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#eef5ff';
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 22, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#070e20';
+    ctx.beginPath();
+    ctx.arc(moonX - 8, moonY - 5, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Ambient launch pad / engine illumination on the sky & horizon
+    if (glowIntensity > 0.001) {
+      const glowY = 445 + cameraPanY;
+      const ambGrad = ctx.createRadialGradient(W / 2, glowY, 10, W / 2, glowY, 440);
+      ambGrad.addColorStop(0, `rgba(255, 175, 80, ${0.48 * glowIntensity})`);
+      ambGrad.addColorStop(0.35, `rgba(255, 105, 35, ${0.22 * glowIntensity})`);
+      ambGrad.addColorStop(0.7, `rgba(180, 50, 25, ${0.07 * glowIntensity})`);
+      ambGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = ambGrad;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function drawLandscapeAndPad(t, glowIntensity, armRetract, cameraPanY) {
+    ctx.save();
+    ctx.translate(0, cameraPanY);
+
+    // Distant mountain range
+    ctx.fillStyle = '#0a1122';
+    ctx.beginPath();
+    ctx.moveTo(0, 455);
+    ctx.lineTo(0, 415);
+    ctx.lineTo(95, 392);
+    ctx.lineTo(185, 420);
+    ctx.lineTo(290, 385);
+    ctx.lineTo(395, 430);
+    ctx.lineTo(560, 432);
+    ctx.lineTo(665, 395);
+    ctx.lineTo(775, 422);
+    ctx.lineTo(875, 388);
+    ctx.lineTo(960, 418);
+    ctx.lineTo(960, 455);
+    ctx.closePath();
+    ctx.fill();
+
+    // Closer hills silhouette
+    ctx.fillStyle = '#070b16';
+    ctx.beginPath();
+    ctx.moveTo(0, 465);
+    ctx.lineTo(0, 438);
+    ctx.quadraticCurveTo(140, 418, 280, 442);
+    ctx.quadraticCurveTo(480, 452, 670, 440);
+    ctx.quadraticCurveTo(820, 420, 960, 440);
+    ctx.lineTo(960, 465);
+    ctx.closePath();
+    ctx.fill();
+
+    // Horizon city/facility lights
+    for (let i = 0; i < horizonLights.length; i++) {
+      const hl = horizonLights[i];
+      if (Math.abs(hl.x - W / 2) < 95) continue; // clear around pad
+      ctx.fillStyle = hl.color;
+      ctx.globalAlpha = hl.alpha * (0.7 + 0.3 * Math.sin(t * 3 + i));
+      ctx.fillRect(hl.x, hl.y, hl.w, 1.8);
+    }
+    ctx.globalAlpha = 1;
+
+    // Ground plane
+    const groundGrad = ctx.createLinearGradient(0, 450, 0, H);
+    groundGrad.addColorStop(0, '#080c17');
+    groundGrad.addColorStop(1, '#030509');
+    ctx.fillStyle = groundGrad;
+    ctx.fillRect(0, 450, W, H - 450);
+
+    // Searchlights sweeping behind the pad
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    const leftAngle = -0.38 + Math.sin(t * 0.9) * 0.08;
+    const rightAngle = 0.38 - Math.sin(t * 0.85 + 1) * 0.08;
+
+    function drawBeam(bx, by, angle) {
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(angle);
+      const beamGrad = ctx.createLinearGradient(0, 0, 0, -420);
+      beamGrad.addColorStop(0, 'rgba(180, 220, 255, 0.22)');
+      beamGrad.addColorStop(0.5, 'rgba(140, 195, 255, 0.06)');
+      beamGrad.addColorStop(1, 'rgba(140, 195, 255, 0)');
+      ctx.fillStyle = beamGrad;
+      ctx.beginPath();
+      ctx.moveTo(-3, 0);
+      ctx.lineTo(-58, -420);
+      ctx.lineTo(58, -420);
+      ctx.lineTo(3, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    drawBeam(330, 455, leftAngle);
+    drawBeam(630, 455, rightAngle);
+    ctx.restore();
+
+    // Flame trench & concrete launch pad base
+    const padCenterX = W / 2;
+    const padTopY = 438;
+
+    // Concrete bunker / flame deflector sloped base
+    ctx.fillStyle = '#182132';
+    ctx.beginPath();
+    ctx.moveTo(padCenterX - 95, 462);
+    ctx.lineTo(padCenterX - 68, padTopY);
+    ctx.lineTo(padCenterX + 68, padTopY);
+    ctx.lineTo(padCenterX + 95, 462);
+    ctx.closePath();
+    ctx.fill();
+
+    // Pad surface highlight from engine glow
+    if (glowIntensity > 0.01) {
+      ctx.fillStyle = `rgba(255, 160, 75, ${0.45 * glowIntensity})`;
+      ctx.beginPath();
+      ctx.moveTo(padCenterX - 68, padTopY);
+      ctx.lineTo(padCenterX + 68, padTopY);
+      ctx.lineTo(padCenterX + 82, 450);
+      ctx.lineTo(padCenterX - 82, 450);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Flame trench dark opening
+    ctx.fillStyle = '#070a10';
+    ctx.fillRect(padCenterX - 36, padTopY + 3, 72, 19);
+
+    // Launch Umbilical Tower (left of rocket)
+    const towerX = padCenterX - 56;
+    const towerTopY = 278;
+    const towerBottomY = padTopY;
+    const towerW = 20;
+
+    ctx.strokeStyle = glowIntensity > 0.1
+      ? `rgb(${45 + Math.floor(glowIntensity * 120)}, ${58 + Math.floor(glowIntensity * 70)}, 78)`
+      : '#2c394f';
+    ctx.lineWidth = 2;
+
+    // Vertical columns
+    ctx.beginPath();
+    ctx.moveTo(towerX, towerBottomY);
+    ctx.lineTo(towerX, towerTopY);
+    ctx.moveTo(towerX + towerW, towerBottomY);
+    ctx.lineTo(towerX + towerW, towerTopY);
+    ctx.stroke();
+
+    // Cross bracing truss
+    ctx.lineWidth = 1.3;
+    const stepH = 16;
+    for (let y = towerBottomY; y > towerTopY; y -= stepH) {
+      const nextY = Math.max(towerTopY, y - stepH);
+      ctx.beginPath();
+      ctx.moveTo(towerX, y);
+      ctx.lineTo(towerX + towerW, y);
+      ctx.moveTo(towerX, y);
+      ctx.lineTo(towerX + towerW, nextY);
+      ctx.moveTo(towerX + towerW, y);
+      ctx.lineTo(towerX, nextY);
+      ctx.stroke();
+    }
+
+    // Tower crane / lightning mast
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(towerX + towerW * 0.5, towerTopY);
+    ctx.lineTo(towerX + towerW * 0.5, towerTopY - 26);
+    ctx.stroke();
+
+    // Blinking red aviation warning light on tower top
+    const beaconOn = Math.sin(t * 6) > 0;
+    ctx.fillStyle = beaconOn ? '#ff2e4c' : '#66101e';
+    ctx.beginPath();
+    ctx.arc(towerX + towerW * 0.5, towerTopY - 28, 2.8, 0, Math.PI * 2);
+    ctx.fill();
+    if (beaconOn) {
+      ctx.fillStyle = 'rgba(255, 46, 76, 0.35)';
+      ctx.beginPath();
+      ctx.arc(towerX + towerW * 0.5, towerTopY - 28, 9, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Retracting Umbilical Arms
+    const armLevels = [318, 355, 392];
+    ctx.strokeStyle = '#485b7a';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < armLevels.length; i++) {
+      const ay = armLevels[i];
+      ctx.save();
+      ctx.translate(towerX + towerW, ay);
+      ctx.rotate(-armRetract * 1.15);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(26, 0);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Lightning arrestor towers on far sides of pad
+    function drawLightPole(px) {
+      ctx.strokeStyle = '#1f293a';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(px, 452);
+      ctx.lineTo(px, 345);
+      ctx.stroke();
+      // Floodlight head
+      ctx.fillStyle = '#dbeeff';
+      ctx.beginPath();
+      ctx.arc(px, 345, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    drawLightPole(padCenterX - 115);
+    drawLightPole(padCenterX + 115);
+
+    ctx.restore();
+  }
+
+  function drawEnginePlume(rx, ry, plumePower, t) {
+    if (plumePower <= 0.01) return;
+
+    ctx.save();
+    ctx.translate(rx, ry);
+
+    const flicker = 0.88 + 0.24 * Math.sin(t * 65) * Math.cos(t * 43);
+    const len = (55 + 95 * plumePower) * flicker;
+    const width = (14 + 18 * plumePower) * (0.92 + 0.16 * Math.sin(t * 50));
+
+    // Outer orange/red afterburner glow
+    const outerHalo = ctx.createRadialGradient(0, len * 0.35, 2, 0, len * 0.4, len * 0.85);
+    outerHalo.addColorStop(0, `rgba(255, 200, 90, ${0.85 * plumePower})`);
+    outerHalo.addColorStop(0.45, `rgba(255, 95, 20, ${0.55 * plumePower})`);
+    outerHalo.addColorStop(1, 'rgba(255, 40, 0, 0)');
+    ctx.fillStyle = outerHalo;
+    ctx.beginPath();
+    ctx.ellipse(0, len * 0.4, width * 2.2, len * 0.75, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Main flame cone
+    const flameGrad = ctx.createLinearGradient(0, 0, 0, len);
+    flameGrad.addColorStop(0, '#ffffff');
+    flameGrad.addColorStop(0.25, '#fff3a8');
+    flameGrad.addColorStop(0.6, '#ff9429');
+    flameGrad.addColorStop(0.9, '#e8320c');
+    flameGrad.addColorStop(1, 'rgba(180, 15, 0, 0)');
+
+    ctx.fillStyle = flameGrad;
+    ctx.beginPath();
+    ctx.moveTo(-8, 0);
+    ctx.quadraticCurveTo(-width, len * 0.35, 0, len);
+    ctx.quadraticCurveTo(width, len * 0.35, 8, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    // Inner white-hot core + Mach diamonds
+    const coreLen = len * 0.55;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(-5, 0);
+    ctx.quadraticCurveTo(-width * 0.45, coreLen * 0.4, 0, coreLen);
+    ctx.quadraticCurveTo(width * 0.45, coreLen * 0.4, 5, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    if (plumePower > 0.5) {
+      for (let d = 1; d <= 3; d++) {
+        const dy = d * 22 * flicker;
+        const dw = Math.max(1.5, (5 - d) * 1.6);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.beginPath();
+        ctx.moveTo(0, dy - 5);
+        ctx.lineTo(dw, dy);
+        ctx.lineTo(0, dy + 5);
+        ctx.lineTo(-dw, dy);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  function drawRocket(rx, ry, glowIntensity) {
+    // rx, ry is the bottom of the engine nozzles
+    ctx.save();
+    ctx.translate(rx, ry);
+
+    const bodyW = 22;
+    const bodyH = 96;
+    const noseH = 34;
+
+    // Side boosters (left & right)
+    function drawBooster(bx) {
+      const bw = 9;
+      const bh = 54;
+      // Booster nozzle
+      ctx.fillStyle = '#2a3140';
+      ctx.beginPath();
+      ctx.moveTo(bx - 2.5, -6);
+      ctx.lineTo(bx + 2.5, -6);
+      ctx.lineTo(bx + 4, 0);
+      ctx.lineTo(bx - 4, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Booster body
+      const bGrad = ctx.createLinearGradient(bx - bw / 2, 0, bx + bw / 2, 0);
+      bGrad.addColorStop(0, '#cfd8e6');
+      bGrad.addColorStop(0.4, '#ffffff');
+      bGrad.addColorStop(1, '#8c9bb3');
+      ctx.fillStyle = bGrad;
+      ctx.fillRect(bx - bw / 2, -6 - bh, bw, bh);
+
+      // Orange accent band
+      ctx.fillStyle = '#e05324';
+      ctx.fillRect(bx - bw / 2, -6 - bh + 8, bw, 4);
+
+      // Booster nose cone
+      ctx.fillStyle = bGrad;
+      ctx.beginPath();
+      ctx.moveTo(bx - bw / 2, -6 - bh);
+      ctx.quadraticCurveTo(bx, -6 - bh - 16, bx, -6 - bh - 16);
+      ctx.quadraticCurveTo(bx, -6 - bh - 16, bx + bw / 2, -6 - bh);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    drawBooster(-15.5);
+    drawBooster(15.5);
+
+    // Aerodynamic tail fins
+    ctx.fillStyle = '#c83228';
+    // Left fin
+    ctx.beginPath();
+    ctx.moveTo(-bodyW / 2, -28);
+    ctx.lineTo(-bodyW / 2 - 14, -4);
+    ctx.lineTo(-bodyW / 2 - 14, 2);
+    ctx.lineTo(-bodyW / 2, -8);
+    ctx.closePath();
+    ctx.fill();
+    // Right fin
+    ctx.beginPath();
+    ctx.moveTo(bodyW / 2, -28);
+    ctx.lineTo(bodyW / 2 + 14, -4);
+    ctx.lineTo(bodyW / 2 + 14, 2);
+    ctx.lineTo(bodyW / 2, -8);
+    ctx.closePath();
+    ctx.fill();
+
+    // Main center engine bell
+    ctx.fillStyle = '#252c3a';
+    ctx.beginPath();
+    ctx.moveTo(-5, -8);
+    ctx.lineTo(5, -8);
+    ctx.lineTo(8, 0);
+    ctx.lineTo(-8, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    // Main fuselage cylinder with 3D shading
+    const bodyGrad = ctx.createLinearGradient(-bodyW / 2, 0, bodyW / 2, 0);
+    bodyGrad.addColorStop(0, '#c2cddc');
+    bodyGrad.addColorStop(0.35, '#ffffff');
+    bodyGrad.addColorStop(0.7, '#d8e1ed');
+    bodyGrad.addColorStop(1, '#7d8da6');
+    ctx.fillStyle = bodyGrad;
+    ctx.fillRect(-bodyW / 2, -8 - bodyH, bodyW, bodyH);
+
+    // Black interstage & roll pattern bands
+    ctx.fillStyle = '#18202c';
+    ctx.fillRect(-bodyW / 2, -8 - bodyH * 0.58, bodyW, 9);
+    ctx.fillRect(-bodyW / 2, -16, bodyW, 8);
+
+    // Red/Orange mission stripe
+    ctx.fillStyle = '#e04224';
+    ctx.fillRect(-bodyW / 2, -8 - bodyH + 14, bodyW, 5);
+
+    // Nose cone (ogive curve)
+    const noseTopY = -8 - bodyH - noseH;
+    const noseBaseY = -8 - bodyH;
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath();
+    ctx.moveTo(-bodyW / 2, noseBaseY);
+    ctx.quadraticCurveTo(-bodyW / 2, noseBaseY - noseH * 0.65, 0, noseTopY);
+    ctx.quadraticCurveTo(bodyW / 2, noseBaseY - noseH * 0.65, bodyW / 2, noseBaseY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Red nose tip
+    ctx.fillStyle = '#d93829';
+    ctx.beginPath();
+    ctx.moveTo(-4.2, noseTopY + 10);
+    ctx.quadraticCurveTo(0, noseTopY - 1, 0, noseTopY);
+    ctx.quadraticCurveTo(0, noseTopY - 1, 4.2, noseTopY + 10);
+    ctx.closePath();
+    ctx.fill();
+
+    // Porthole window
+    ctx.fillStyle = '#142238';
+    ctx.beginPath();
+    ctx.arc(0, noseBaseY + 30, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#7ce0ff';
+    ctx.beginPath();
+    ctx.arc(0, noseBaseY + 30, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-1, noseBaseY + 29, 1, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Warm reflection on bottom of rocket when engines fire
+    if (glowIntensity > 0.05) {
+      const reflGrad = ctx.createLinearGradient(0, 0, 0, -65);
+      reflGrad.addColorStop(0, `rgba(255, 140, 40, ${0.55 * glowIntensity})`);
+      reflGrad.addColorStop(1, 'rgba(255, 140, 40, 0)');
+      ctx.fillStyle = reflGrad;
+      ctx.fillRect(-bodyW / 2, -65, bodyW, 57);
+    }
+
+    ctx.restore();
+  }
+
+  function updateAndDrawParticles(dt, cameraPanY) {
+    ctx.save();
+    ctx.translate(0, cameraPanY);
+
+    // Update & render sparks
+    for (let i = sparkParticles.length - 1; i >= 0; i--) {
+      const sp = sparkParticles[i];
+      sp.age += dt;
+      if (sp.age >= sp.life) {
+        sparkParticles.splice(i, 1);
+        continue;
+      }
+      sp.vy += 120 * dt; // gravity
+      sp.x += sp.vx * dt;
+      sp.y += sp.vy * dt;
+      if (sp.y > 450) {
+        sp.y = 450;
+        sp.vy *= -0.45;
+        sp.vx *= 0.8;
+      }
+      const alpha = 1 - sp.age / sp.life;
+      ctx.fillStyle = sp.color;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Update & render billowing smoke clouds
+    for (let i = 0; i < smokeParticles.length; i++) {
+      const p = smokeParticles[i];
+      p.age += dt;
+      if (p.age >= p.life) {
+        smokeParticles.splice(i, 1);
+        i--;
+        continue;
+      }
+
+      // Ground deflection physics: smoke hitting pad spreads horizontally and curls up
+      if (p.y > 436) {
+        p.y = 436;
+        p.vy = -Math.abs(p.vy) * 0.25 - 12;
+        p.vx += (p.x >= W / 2 ? 1 : -1) * 90 * dt;
+      }
+
+      // Drag and buoyancy
+      p.vx *= (1 - 0.85 * dt);
+      p.vy -= 18 * dt; // warm smoke rises slightly
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+
+      const progress = p.age / p.life;
+      const curSize = p.size + (p.maxSize - p.size) * Math.pow(progress, 0.65);
+
+      // Fade in quickly, fade out smoothly
+      const fadeIn = Math.min(1, progress * 6);
+      const fadeOut = Math.pow(1 - progress, 1.35);
+      const alpha = fadeIn * fadeOut * 0.78;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+
+      const grad = ctx.createRadialGradient(0, 0, curSize * 0.1, 0, 0, curSize);
+      if (p.isHot && progress < 0.32) {
+        const hotMix = 1 - progress / 0.32;
+        const r = Math.round(p.shade + (255 - p.shade) * hotMix);
+        const g = Math.round(p.shade + (165 - p.shade) * hotMix * 0.6);
+        const b = Math.round(p.shade * (1 - hotMix * 0.7));
+        grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+        grad.addColorStop(0.55, `rgba(${p.shade - 25}, ${p.shade - 25}, ${p.shade - 15}, ${alpha * 0.7})`);
+      } else {
+        grad.addColorStop(0, `rgba(${p.shade}, ${p.shade + 4}, ${p.shade + 12}, ${alpha})`);
+        grad.addColorStop(0.6, `rgba(${p.shade - 35}, ${p.shade - 30}, ${p.shade - 20}, ${alpha * 0.6})`);
+      }
+      grad.addColorStop(1, 'rgba(60, 68, 85, 0)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, curSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function drawCountdownOverlay(t) {
+    // 0.3s -> 1.3s: "3"
+    // 1.3s -> 2.3s: "2"
+    // 2.3s -> 3.3s: "1"
+    if (t < 0.3 || t >= 3.45) return;
+
+    let label = '';
+    let localT = 0;
+
+    if (t < 1.3) {
+      label = '3';
+      localT = (t - 0.3) / 1.0;
+    } else if (t < 2.3) {
+      label = '2';
+      localT = (t - 1.3) / 1.0;
+    } else if (t < 3.3) {
+      label = '1';
+      localT = (t - 2.3) / 1.0;
+    } else {
+      return;
+    }
+
+    const fadeIn = smoothstep(0.0, 0.15, localT);
+    const fadeOut = 1 - smoothstep(0.72, 1.0, localT);
+    const alpha = fadeIn * fadeOut;
+    const scale = 0.82 + 0.35 * Math.pow(localT, 0.6);
+
+    ctx.save();
+    ctx.translate(W / 2, 165);
+
+    // Outer HUD ring around countdown
+    ctx.strokeStyle = `rgba(110, 210, 255, ${alpha * 0.45})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, 74, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - localT));
+    ctx.stroke();
+
+    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.15})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, 82, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Big countdown number
+    ctx.scale(scale, scale);
+    ctx.font = '800 112px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.shadowColor = 'rgba(80, 195, 255, 0.85)';
+    ctx.shadowBlur = 28;
+    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+    ctx.fillText(label, 0, 6);
+
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = `rgba(160, 225, 255, ${alpha * 0.8})`;
+    ctx.lineWidth = 2;
+    ctx.strokeText(label, 0, 6);
+
+    ctx.restore();
+  }
+
+  let prevTime = performance.now();
+
+  function animate(now) {
+    const rawDt = (now - prevTime) / 1000;
+    prevTime = now;
+    const dt = Math.min(rawDt, 0.05);
+
+    const totalSec = now / 1000;
+    const cycle = Math.floor(totalSec / LOOP_DURATION);
+    const t = totalSec % LOOP_DURATION;
+
+    if (cycle !== lastLoopCycle) {
+      lastLoopCycle = cycle;
+      resetParticles();
+    }
+
+    // Timeline phases within 10s loop:
+    // 0.0 - 0.3s : Calm pad at night, pre-ignition steam vent
+    // 0.3 - 3.3s : Countdown 3, 2, 1
+    // 3.1 - 4.3s : Main engine ignition, intense flames & billowing smoke on pad
+    // 4.3 - 8.6s : Liftoff! Accelerating upward through starry sky and exiting top
+    // 8.6 - 10.0s: Smoke clears, scene resets smoothly for next loop
+
+    const padY = 438;
+    let rocketY = padY;
+    let rocketVelY = 0;
+    let plumePower = 0;
+    let glowIntensity = 0;
+    let armRetract = 0;
+    let shakeAmt = 0;
+
+    if (t >= 2.8 && t < 4.3) {
+      // Ignition build-up
+      plumePower = smoothstep(2.8, 3.45, t);
+      glowIntensity = plumePower;
+      shakeAmt = plumePower * 2.2;
+      armRetract = smoothstep(3.1, 3.8, t);
+    } else if (t >= 4.3 && t < 8.8) {
+      // Liftoff and upward acceleration
+      armRetract = 1;
+      const liftT = t - 4.3;
+      // Smooth quadratic/cubic acceleration upward
+      const accelDist = 14 * Math.pow(liftT, 2) + 46 * Math.pow(liftT, 3.15);
+      rocketY = padY - accelDist;
+      rocketVelY = -(28 * liftT + 144.9 * Math.pow(liftT, 2.15));
+      plumePower = 1.0;
+
+      // Ground glow fades as rocket gets high, then fades completely as it exits frame
+      const heightFactor = clamp(1 - accelDist / 520, 0, 1);
+      glowIntensity = 0.25 + 0.75 * heightFactor;
+      if (rocketY < -180) {
+        const exitFade = clamp(1 - (-180 - rocketY) / 220, 0, 1);
+        glowIntensity *= exitFade;
+      }
+      shakeAmt = Math.max(0, (1 - liftT / 2.8) * 2.8);
+    }
+
+    // Subtle camera pan to follow liftoff, settling back before loop end
+    const climbFactor = smoothstep(440, 80, rocketY);
+    const resetFactor = 1 - smoothstep(8.5, 9.6, t);
+    const cameraPanY = climbFactor * resetFactor * 28;
+
+    // Spawn pre-launch cryogenic vent mist along umbilical tower
+    if (t < 3.6 && Math.random() < 0.45) {
+      spawnSmoke(
+        W / 2 - 22 + (Math.random() - 0.5) * 6,
+        355 + (Math.random() - 0.5) * 55,
+        12 + Math.random() * 18,
+        -8 - Math.random() * 12,
+        4 + Math.random() * 4,
+        1.1 + Math.random() * 0.8,
+        false
+      );
+    }
+
+    // Spawn ignition & liftoff billowing smoke and sparks
+    if (plumePower > 0.05 && rocketY > -160) {
+      const smokeCount = rocketY > 360 ? 7 : 4;
+      for (let i = 0; i < smokeCount; i++) {
+        const onPad = rocketY > 385;
+        const side = Math.random() > 0.5 ? 1 : -1;
+        const spreadVx = onPad
+          ? side * (35 + Math.random() * 145) * plumePower
+          : (Math.random() - 0.5) * 38;
+        const vy = onPad
+          ? 25 + Math.random() * 65
+          : 55 + Math.random() * 75;
+
+        spawnSmoke(
+          W / 2 + (Math.random() - 0.5) * 18,
+          Math.min(padY - 2, rocketY + 12 + Math.random() * 24),
+          spreadVx,
+          vy,
+          9 + Math.random() * 11,
+          1.8 + Math.random() * 1.9,
+          true
+        );
+      }
+
+      // Ignition sparks
+      if (rocketY > 240) {
+        for (let s = 0; s < 4; s++) {
+          const angle = (Math.random() - 0.5) * 2.4;
+          const speed = 70 + Math.random() * 170;
+          spawnSpark(
+            W / 2 + (Math.random() - 0.5) * 16,
+            Math.min(padY, rocketY + 8),
+            Math.sin(angle) * speed,
+            Math.cos(angle) * speed * 0.5 - 30,
+            0.4 + Math.random() * 0.65
+          );
+        }
+      }
+    }
+
+    // Apply camera shake during ignition & early liftoff
+    ctx.save();
+    if (shakeAmt > 0.01) {
+      const sx = (Math.random() - 0.5) * shakeAmt * 2;
+      const sy = (Math.random() - 0.5) * shakeAmt * 2;
+      ctx.translate(sx, sy);
+    }
+
+    // 1. Sky, stars, moon
+    drawSky(t, glowIntensity, cameraPanY);
+
+    // 2. Landscape, searchlights, launch pad & tower
+    drawLandscapeAndPad(t, glowIntensity, armRetract, cameraPanY);
+
+    // 3. Engine plume & Rocket (in camera-panned space)
+    ctx.save();
+    ctx.translate(0, cameraPanY);
+    if (rocketY > -260) {
+      drawEnginePlume(W / 2, rocketY, plumePower, t);
+      drawRocket(W / 2, rocketY, glowIntensity);
+    }
+    ctx.restore();
+
+    // 4. Billowing smoke and sparks in front/around pad
+    updateAndDrawParticles(dt, cameraPanY);
+
+    // 5. Big 3, 2, 1 Countdown Overlay
+    drawCountdownOverlay(t);
+
+    // 6. Smooth fade at the very start & end of the 10s loop for seamless transition
+    let fadeOverlay = 0;
+    if (t < 0.35) {
+      fadeOverlay = 1 - t / 0.35;
+    } else if (t > LOOP_DURATION - 0.45) {
+      fadeOverlay = (t - (LOOP_DURATION - 0.45)) / 0.45;
+    }
+    if (fadeOverlay > 0) {
+      ctx.fillStyle = `rgba(4, 6, 13, ${clamp(fadeOverlay, 0, 1)})`;
+      ctx.fillRect(-10, -10, W + 20, H + 20);
+    }
+
+    ctx.restore();
+    requestAnimationFrame(animate);
+  }
+
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>

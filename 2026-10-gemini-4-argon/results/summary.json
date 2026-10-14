@@ -1,0 +1,361 @@
+{
+ "by_model_and_effort": {
+  "Gemini 4 Argon · low": {
+   "score": 9.55,
+   "visual": 9.19,
+   "code": 10.0,
+   "reasoning": 9.58,
+   "tests": {
+    "rocket": 9.0,
+    "lighthouse": 9.0,
+    "hexagon": 9.5,
+    "octopus": 9.25,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 8.75
+   },
+   "seconds_total": 591,
+   "cost_usd_total": 0.747,
+   "output_tokens": 49034,
+   "thinking_tokens": 0
+  },
+  "Gemini 4 Argon · medium": {
+   "score": 9.6,
+   "visual": 9.31,
+   "code": 10.0,
+   "reasoning": 9.58,
+   "tests": {
+    "rocket": 8.75,
+    "lighthouse": 9.0,
+    "hexagon": 9.75,
+    "octopus": 9.75,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 8.75
+   },
+   "seconds_total": 578,
+   "cost_usd_total": 0.798,
+   "output_tokens": 54146,
+   "thinking_tokens": 4231
+  },
+  "Gemini 4 Argon · high": {
+   "score": 9.62,
+   "visual": 9.38,
+   "code": 10.0,
+   "reasoning": 9.58,
+   "tests": {
+    "rocket": 9.0,
+    "lighthouse": 9.0,
+    "hexagon": 9.5,
+    "octopus": 10.0,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 8.75
+   },
+   "seconds_total": 1157,
+   "cost_usd_total": 1.572,
+   "output_tokens": 131548,
+   "thinking_tokens": 36091
+  },
+  "GPT-6.1 Sol · low": {
+   "score": 9.6,
+   "visual": 9.0,
+   "code": 10.0,
+   "reasoning": 10.0,
+   "tests": {
+    "rocket": 8.75,
+    "lighthouse": 8.5,
+    "hexagon": 9.25,
+    "octopus": 9.5,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 10.0
+   },
+   "seconds_total": 412,
+   "cost_usd_total": 0.272,
+   "output_tokens": 17829,
+   "thinking_tokens": 3091
+  },
+  "GPT-6.1 Sol · medium": {
+   "score": 9.72,
+   "visual": 9.31,
+   "code": 10.0,
+   "reasoning": 10.0,
+   "tests": {
+    "rocket": 9.0,
+    "lighthouse": 9.25,
+    "hexagon": 9.5,
+    "octopus": 9.5,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 10.0
+   },
+   "seconds_total": 517,
+   "cost_usd_total": 0.283,
+   "output_tokens": 20647,
+   "thinking_tokens": 3440
+  },
+  "GPT-6.1 Sol · high": {
+   "score": 9.6,
+   "visual": 9.0,
+   "code": 10.0,
+   "reasoning": 10.0,
+   "tests": {
+    "rocket": 8.75,
+    "lighthouse": 8.75,
+    "hexagon": 9.5,
+    "octopus": 9.0,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 10.0
+   },
+   "seconds_total": 602,
+   "cost_usd_total": 0.358,
+   "output_tokens": 27205,
+   "thinking_tokens": 6741
+  },
+  "GPT-6 Astra · low": {
+   "score": 9.53,
+   "visual": 8.81,
+   "code": 10.0,
+   "reasoning": 10.0,
+   "tests": {
+    "rocket": 8.5,
+    "lighthouse": 8.25,
+    "hexagon": 9.5,
+    "octopus": 9.0,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 10.0
+   },
+   "seconds_total": 537,
+   "cost_usd_total": 1.292,
+   "output_tokens": 18839,
+   "thinking_tokens": 2608
+  },
+  "GPT-6 Astra · medium": {
+   "score": 9.6,
+   "visual": 9.0,
+   "code": 10.0,
+   "reasoning": 10.0,
+   "tests": {
+    "rocket": 8.5,
+    "lighthouse": 9.0,
+    "hexagon": 9.5,
+    "octopus": 9.0,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 10.0
+   },
+   "seconds_total": 575,
+   "cost_usd_total": 1.343,
+   "output_tokens": 19867,
+   "thinking_tokens": 3093
+  },
+  "GPT-6 Astra · high": {
+   "score": 9.62,
+   "visual": 9.06,
+   "code": 10.0,
+   "reasoning": 10.0,
+   "tests": {
+    "rocket": 8.75,
+    "lighthouse": 9.0,
+    "hexagon": 9.5,
+    "octopus": 9.0,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 10.0
+   },
+   "seconds_total": 643,
+   "cost_usd_total": 1.671,
+   "output_tokens": 25421,
+   "thinking_tokens": 4305
+  },
+  "Claude Opus 5.5 · low": {
+   "score": 9.47,
+   "visual": 8.69,
+   "code": 10.0,
+   "reasoning": 10.0,
+   "tests": {
+    "rocket": 8.75,
+    "lighthouse": 8.75,
+    "hexagon": 9.25,
+    "octopus": 8.0,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 10.0
+   },
+   "seconds_total": 260,
+   "cost_usd_total": 0.62,
+   "output_tokens": 25869,
+   "thinking_tokens": 3893
+  },
+  "Claude Opus 5.5 · medium": {
+   "score": 9.53,
+   "visual": 8.81,
+   "code": 10.0,
+   "reasoning": 10.0,
+   "tests": {
+    "rocket": 8.5,
+    "lighthouse": 8.5,
+    "hexagon": 9.5,
+    "octopus": 8.75,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 10.0
+   },
+   "seconds_total": 598,
+   "cost_usd_total": 1.267,
+   "output_tokens": 60345,
+   "thinking_tokens": 25519
+  },
+  "Claude Opus 5.5 · high": {
+   "score": 9.6,
+   "visual": 9.0,
+   "code": 10.0,
+   "reasoning": 10.0,
+   "tests": {
+    "rocket": 9.0,
+    "lighthouse": 8.5,
+    "hexagon": 9.75,
+    "octopus": 8.75,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 10.0
+   },
+   "seconds_total": 954,
+   "cost_usd_total": 2.03,
+   "output_tokens": 98488,
+   "thinking_tokens": 58814
+  },
+  "Claude Sonnet 5.5 · low": {
+   "score": 9.12,
+   "visual": 8.12,
+   "code": 10.0,
+   "reasoning": 9.58,
+   "tests": {
+    "rocket": 7.25,
+    "lighthouse": 8.5,
+    "hexagon": 9.25,
+    "octopus": 7.5,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 8.75
+   },
+   "seconds_total": 238,
+   "cost_usd_total": 0.343,
+   "output_tokens": 29518,
+   "thinking_tokens": 8270
+  },
+  "Claude Sonnet 5.5 · medium": {
+   "score": 9.43,
+   "visual": 8.56,
+   "code": 10.0,
+   "reasoning": 10.0,
+   "tests": {
+    "rocket": 8.5,
+    "lighthouse": 8.0,
+    "hexagon": 9.25,
+    "octopus": 8.5,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 10.0
+   },
+   "seconds_total": 287,
+   "cost_usd_total": 0.394,
+   "output_tokens": 36392,
+   "thinking_tokens": 12646
+  },
+  "Claude Sonnet 5.5 · high": {
+   "score": 9.55,
+   "visual": 8.88,
+   "code": 10.0,
+   "reasoning": 10.0,
+   "tests": {
+    "rocket": 9.0,
+    "lighthouse": 8.75,
+    "hexagon": 9.5,
+    "octopus": 8.25,
+    "snake": 10,
+    "duration-parser": 10.0,
+    "calculator": 10.0,
+    "logic-puzzle": 10,
+    "hard-logic-puzzle": 10,
+    "trick-questions": 10.0
+   },
+   "seconds_total": 676,
+   "cost_usd_total": 0.899,
+   "output_tokens": 86894,
+   "thinking_tokens": 54201
+  }
+ },
+ "by_model": {
+  "Gemini 4 Argon": {
+   "score": 9.59,
+   "seconds_total": 2326,
+   "cost_usd_total": 3.12
+  },
+  "GPT-6.1 Sol": {
+   "score": 9.64,
+   "seconds_total": 1531,
+   "cost_usd_total": 0.91
+  },
+  "GPT-6 Astra": {
+   "score": 9.58,
+   "seconds_total": 1755,
+   "cost_usd_total": 4.31
+  },
+  "Claude Opus 5.5": {
+   "score": 9.53,
+   "seconds_total": 1812,
+   "cost_usd_total": 3.92
+  },
+  "Claude Sonnet 5.5": {
+   "score": 9.37,
+   "seconds_total": 1201,
+   "cost_usd_total": 1.64
+  }
+ }
+}

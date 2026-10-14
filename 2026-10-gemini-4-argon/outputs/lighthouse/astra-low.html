@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stormlight</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #050b13;
+  }
+  body { display: grid; place-items: center; }
+  canvas {
+    display: block;
+    width: min(100vw, 177.7778vh);
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+</style>
+</head>
+<body>
+<canvas id="scene" width="960" height="540"
+        role="img"
+        aria-label="A lighthouse above a stormy sea. Its golden beam sweeps through falling rain as waves burst against the cliff and lightning illuminates the clouds."></canvas>
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("scene");
+  const ctx = canvas.getContext("2d");
+  const W = 960, H = 540, TAU = Math.PI * 2, PERIOD = 12;
+  const mod = (n, m) => ((n % m) + m) % m;
+  let seed = 72619;
+  function random() {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+
+  const rain = Array.from({ length: 610 }, () => ({
+    x: random() * 1200,
+    y: random() * 680,
+    depth: random(),
+    cycles: 8 + Math.floor(random() * 7)
+  }));
+  const clouds = Array.from({ length: 45 }, () => ({
+    x: random() * 1200,
+    y: random() * 180 - 35,
+    rx: 70 + random() * 135,
+    ry: 24 + random() * 43,
+    shade: random()
+  }));
+  const spray = Array.from({ length: 145 }, () => ({
+    delay: random() * .28,
+    vx: -35 - random() * 165,
+    vy: -70 - random() * 160,
+    life: .45 + random() * .55,
+    radius: .5 + random() * 1.8
+  }));
+  const rockMarks = Array.from({ length: 70 }, () => ({
+    x: 594 + random() * 360,
+    y: 340 + random() * 200,
+    length: 10 + random() * 65
+  }));
+
+  function polygon(points, fill, stroke, width = 1) {
+    ctx.beginPath();
+    points.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    }
+  }
+
+  function gradient(x0, y0, x1, y1, stops) {
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    stops.forEach(([p, c]) => g.addColorStop(p, c));
+    return g;
+  }
+
+  function glow(x, y, radius, color) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
+    g.addColorStop(0, color);
+    g.addColorStop(1, "rgba(255,220,145,0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+
+  function flashAt(t, center) {
+    const d = mod(t - center + PERIOD / 2, PERIOD) - PERIOD / 2;
+    return Math.exp(-Math.pow(d / .045, 2)) * .9
+      + Math.exp(-Math.pow((d - .15) / .07, 2)) * .62
+      + Math.exp(-Math.pow((d - .30) / .14, 2)) * .12;
+  }
+
+  function lightning(x, y, direction, alpha) {
+    if (alpha < .018) return;
+    const points = [
+      [x, y], [x - 17 * direction, y + 33],
+      [x + 8 * direction, y + 56],
+      [x - 27 * direction, y + 94],
+      [x - 15 * direction, y + 98],
+      [x - 55 * direction, y + 152]
+    ];
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, alpha);
+    ctx.strokeStyle = "#e5f7ff";
+    ctx.shadowColor = "#a4d9ff";
+    ctx.shadowBlur = 20;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    points.forEach(([px, py], i) => i ? ctx.lineTo(px, py) : ctx.moveTo(px, py));
+    ctx.stroke();
+    ctx.lineWidth = .8;
+    ctx.beginPath();
+    ctx.moveTo(points[2][0], points[2][1]);
+    ctx.lineTo(x + 36 * direction, y + 76);
+    ctx.lineTo(x + 23 * direction, y + 104);
+    ctx.lineTo(x + 48 * direction, y + 125);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  const cliff = [
+    [541, 540], [573, 494], [557, 476], [584, 450],
+    [575, 432], [611, 411], [600, 393], [627, 365],
+    [650, 360], [673, 338], [729, 334], [750, 326],
+    [790, 341], [819, 333], [851, 351], [896, 340],
+    [960, 359], [960, 540]
+  ];
+
+  function draw(t) {
+    const phase = TAU * t / PERIOD;
+    const flash1 = flashAt(t, 2.15);
+    const flash2 = flashAt(t, 8.05);
+    const flash = Math.max(flash1, flash2);
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = gradient(0, 0, 0, 350, [
+      [0, "#080f1d"], [.55, "#162838"], [1, "#374955"]
+    ]);
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = `rgba(177,210,237,${flash * .63})`;
+    ctx.fillRect(0, 0, W, 350);
+
+    lightning(266, 50, 1, flash1);
+    lightning(479, 27, -1, flash2);
+
+    clouds.forEach(c => {
+      const x = mod(c.x + t * 100, 1200) - 120;
+      for (const offset of [-1200, 0, 1200]) {
+        const g = ctx.createRadialGradient(
+          x + offset, c.y, 3, x + offset, c.y, c.rx
+        );
+        const brightness = Math.round(13 + c.shade * 12 + flash * 38);
+        g.addColorStop(0, `rgba(${brightness},${brightness + 8},${brightness + 18},.85)`);
+        g.addColorStop(1, "rgba(10,20,33,0)");
+        ctx.save();
+        ctx.translate(x + offset, c.y);
+        ctx.scale(1, c.ry / c.rx);
+        ctx.translate(-x - offset, -c.y);
+        ctx.fillStyle = g;
+        ctx.fillRect(x + offset - c.rx, c.y - c.rx, c.rx * 2, c.rx * 2);
+        ctx.restore();
+      }
+    });
+
+    polygon([[0, 308], [46, 286], [83, 296], [119, 277],
+      [169, 302], [223, 292], [273, 315], [0, 329]], "#172c38");
+    polygon([[779, 316], [827, 294], [860, 300],
+      [906, 275], [960, 288], [960, 339]], "#1b303b");
+
+    ctx.fillStyle = gradient(0, 302, 0, 540, [
+      [0, "#293f4c"], [.16, "#183541"], [.65, "#0d2836"], [1, "#071923"]
+    ]);
+    ctx.fillRect(0, 310, W, 230);
+    ctx.fillStyle = `rgba(164,203,224,${flash * .25})`;
+    ctx.fillRect(0, 310, W, 230);
+
+    // Traveling wave bands: every temporal frequency is an integer
+    // multiple of the master loop frequency.
+    for (let row = 0; row < 24; row++) {
+      const depth = row / 23;
+      const base = 315 + Math.pow(depth, 1.65) * 232;
+      const amplitude = 1.2 + depth * depth * 13;
+      ctx.beginPath();
+      for (let x = -10; x <= W + 10; x += 6) {
+        const y = base
+          + Math.sin(x * (.025 - depth * .014) + phase * 4 + row * 1.7) * amplitude
+          + Math.sin(x * .043 - phase * 6 + row) * amplitude * .32;
+        x === -10 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = `rgba(104,151,166,${.10 + depth * .16 + flash * .16})`;
+      ctx.lineWidth = .6 + depth * 1.6;
+      ctx.stroke();
+      ctx.lineTo(W + 10, base + 35);
+      ctx.lineTo(-10, base + 35);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(3,17,26,.16)";
+      ctx.fill();
+    }
+
+    polygon(cliff, gradient(575, 375, 940, 510, [
+      [0, "#29373b"], [.28, "#172329"], [1, "#090f19"]
+    ]));
+
+    ctx.save();
+    ctx.beginPath();
+    cliff.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.closePath();
+    ctx.clip();
+    polygon([[664, 354], [706, 373], [662, 414], [646, 452],
+      [613, 488], [641, 405]], "#354247");
+    polygon([[744, 350], [715, 412], [752, 450], [696, 540],
+      [789, 540], [812, 435]], "#101a22");
+    polygon([[858, 357], [818, 404], [849, 445], [812, 526],
+      [866, 481], [889, 397]], "#233037");
+    rockMarks.forEach(r => {
+      ctx.strokeStyle = "rgba(117,144,148,.12)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(r.x, r.y);
+      ctx.lineTo(r.x - r.length * .5, r.y + r.length);
+      ctx.stroke();
+    });
+    ctx.fillStyle = `rgba(184,213,225,${flash * .16})`;
+    ctx.fillRect(540, 325, 420, 215);
+    ctx.restore();
+
+    polygon([[628, 365], [673, 338], [729, 334], [750, 326],
+      [790, 341], [819, 333], [851, 351], [812, 345],
+      [789, 351], [746, 337], [677, 348]], "#344441");
+
+    // Keeper's cottage.
+    polygon([[758, 311], [812, 311], [812, 342], [758, 338]], "#303b40");
+    polygon([[749, 313], [784, 288], [822, 315]], "#111b26");
+    ctx.fillStyle = "#17232c";
+    ctx.fillRect(800, 287, 8, 18);
+    ctx.fillStyle = "#d6a266";
+    ctx.fillRect(775, 321, 9, 10);
+    glow(779, 326, 24, "rgba(255,180,87,.18)");
+
+    // Tower.
+    polygon([[682, 191], [711, 191], [728, 342], [665, 342]],
+      gradient(665, 0, 730, 0, [
+        [0, "#46545c"], [.35, "#b4b4a6"], [.63, "#7e8b8b"], [1, "#293b49"]
+      ]));
+    polygon([[677, 235], [716, 235], [720, 272], [673, 272]],
+      gradient(673, 0, 720, 0, [
+        [0, "#422d32"], [.4, "#84504b"], [1, "#302c36"]
+      ]));
+    ctx.fillStyle = "#152631";
+    ctx.fillRect(692, 212, 7, 13);
+    ctx.fillRect(692, 284, 7, 14);
+    polygon([[687, 342], [687, 321], [692, 316],
+      [702, 318], [706, 342]], "#10212b");
+    ctx.fillStyle = "#a5b1af";
+    ctx.fillRect(659, 342, 75, 4);
+    ctx.fillStyle = "#15232f";
+    ctx.fillRect(674, 185, 44, 10);
+
+    // Broad, softly layered beam rotating around the lantern.
+    const angle = Math.PI + .36 * Math.sin(phase);
+    const strength = .78 + .22 * Math.cos(phase);
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    for (let layer = 10; layer >= 1; layer--) {
+      const spread = .026 + layer * .008;
+      const reach = 1150;
+      const g = gradient(697, 173,
+        697 + Math.cos(angle) * reach,
+        173 + Math.sin(angle) * reach,
+        [[0, `rgba(255,231,163,${.025 * strength})`],
+         [.35, `rgba(207,221,171,${.016 * strength})`],
+         [1, "rgba(185,213,183,0)"]]);
+      polygon([[697, 173],
+        [697 + Math.cos(angle - spread) * reach, 173 + Math.sin(angle - spread) * reach],
+        [697 + Math.cos(angle + spread) * reach, 173 + Math.sin(angle + spread) * reach]], g);
+    }
+    ctx.restore();
+
+    ctx.fillStyle = "#8caaa4";
+    ctx.fillRect(680, 157, 33, 27);
+    ctx.fillStyle = "#f2dca0";
+    ctx.fillRect(685, 160, 23, 22);
+    glow(697, 172, 55, "rgba(255,212,132,.24)");
+    glow(697, 172, 19, "rgba(255,238,177,.65)");
+    ctx.fillStyle = "#ffecc0";
+    ctx.fillRect(693, 160, 6, 22);
+
+    ctx.strokeStyle = "#152631";
+    ctx.lineWidth = 3;
+    for (const x of [681, 691, 703, 712]) {
+      ctx.beginPath();
+      ctx.moveTo(x, 157);
+      ctx.lineTo(x, 184);
+      ctx.stroke();
+    }
+    polygon([[673, 157], [681, 146], [696, 139],
+      [712, 146], [720, 157]], "#121e2b", "#56636b");
+    ctx.fillStyle = "#263642";
+    ctx.fillRect(695, 127, 2, 14);
+
+    ctx.strokeStyle = "#172b35";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(670, 178, 53, 10);
+    for (let x = 670; x <= 723; x += 9) {
+      ctx.beginPath();
+      ctx.moveTo(x, 178);
+      ctx.lineTo(x, 189);
+      ctx.stroke();
+    }
+
+    // Repeating breakers and ballistic spray, fading before each reset.
+    for (let breaker = 0; breaker < 3; breaker++) {
+      const age = mod(t + breaker * 1.0, 3);
+      const progress = age / 3;
+      const impactX = 584 + breaker * 15;
+      const impactY = 485 - breaker * 27;
+      const burst = Math.sin(Math.PI * progress) ** 2;
+
+      ctx.beginPath();
+      ctx.moveTo(impactX - 230, impactY + 35);
+      ctx.bezierCurveTo(impactX - 135, impactY + 45,
+        impactX - 36, impactY - 28 * burst,
+        impactX, impactY - 45 * burst);
+      ctx.strokeStyle = `rgba(174,209,216,${burst * .48})`;
+      ctx.lineWidth = 2 + burst * 7;
+      ctx.stroke();
+
+      spray.forEach(p => {
+        const a = age - .65 - p.delay;
+        if (a <= 0 || a >= p.life) return;
+        const fade = Math.sin(Math.PI * a / p.life);
+        const x = impactX + p.vx * a - 24 * a * a;
+        const y = impactY + p.vy * a + 145 * a * a;
+        ctx.fillStyle = `rgba(201,227,231,${fade * .64})`;
+        ctx.beginPath();
+        ctx.ellipse(x, y, p.radius, p.radius * 1.5, -.45, 0, TAU);
+        ctx.fill();
+      });
+    }
+
+    // Rain wraps on a larger torus so streaks enter and leave offscreen.
+    ctx.lineCap = "round";
+    rain.forEach(r => {
+      const travel = mod(r.y + t / PERIOD * 680 * r.cycles, 680);
+      const x = mod(r.x - travel * .38, 1200) - 120;
+      const y = travel - 70;
+      const length = 7 + r.depth * 16;
+      ctx.strokeStyle = `rgba(175,201,217,${.09 + r.depth * .21 + flash * .2})`;
+      ctx.lineWidth = .45 + r.depth * .7;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - length * .38, y + length);
+      ctx.stroke();
+    });
+
+    // Lightning exposes the foreground as well as the sky.
+    ctx.fillStyle = `rgba(201,223,255,${flash * .12})`;
+    ctx.fillRect(0, 0, W, H);
+
+    const vignette = ctx.createRadialGradient(470, 260, 130, 470, 260, 570);
+    vignette.addColorStop(0, "rgba(0,5,14,0)");
+    vignette.addColorStop(1, "rgba(0,5,14,.65)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  const start = performance.now();
+  function animate(now) {
+    draw(mod((now - start) / 1000, PERIOD));
+    requestAnimationFrame(animate);
+  }
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>

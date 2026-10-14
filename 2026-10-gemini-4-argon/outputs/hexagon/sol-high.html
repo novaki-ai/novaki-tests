@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rotating Hexagon</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #080e1a;
+  }
+  body {
+    display: grid;
+    place-items: center;
+    font-family: system-ui, sans-serif;
+  }
+  canvas {
+    display: block;
+    width: min(100vw, calc(100vh * 16 / 9));
+    height: min(100vh, calc(100vw * 9 / 16));
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas" width="960" height="540"
+        aria-label="Twelve numbered balls bouncing inside a rotating hexagon"></canvas>
+<script>
+"use strict";
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const W = 960, H = 540;
+const CENTER = { x: 480, y: 280 };
+const HEX_RADIUS = 230;
+const BALL_RADIUS = 15;
+const WALL_WIDTH = 3;
+const CLEARANCE = BALL_RADIUS + WALL_WIDTH / 2 + 0.025;
+const OMEGA = 0.19;              // Radians per second.
+const GRAVITY = 620;             // Pixels per second squared.
+const STEP = 1 / 360;
+const SOLVER_ITERATIONS = 10;
+const WALL_RESTITUTION = 0.83;
+const BALL_RESTITUTION = 0.91;
+const WALL_FRICTION = 0.24;
+const BALL_FRICTION = 0.14;
+const REST_THRESHOLD = 22;
+
+// Equal unit masses, with solid-disk moment of inertia.
+const INV_INERTIA = 2 / (BALL_RADIUS * BALL_RADIUS);
+const insetRadius = HEX_RADIUS - CLEARANCE / Math.cos(Math.PI / 6);
+
+let angle = -Math.PI / 6;
+let accumulator = 0;
+let previousTime = null;
+let paused = false;
+let vertices = [];
+let insetVertices = [];
+let walls = [];
+
+const balls = Array.from({ length: 12 }, (_, i) => ({
+  x: CENTER.x + ((i % 4) - 1.5) * 39,
+  y: CENTER.y - 95 + Math.floor(i / 4) * 39,
+  vx: Math.sin(i * 2.7 + 1) * 105,
+  vy: Math.cos(i * 1.9) * 45,
+  spin: 0,
+  rotation: 0,
+  number: i + 1,
+  hue: 175 + i * 15
+}));
+
+function updateGeometry() {
+  vertices = [];
+  insetVertices = [];
+  walls = [];
+
+  for (let i = 0; i < 6; i++) {
+    const a = angle + i * Math.PI / 3;
+    const c = Math.cos(a), s = Math.sin(a);
+    vertices.push({
+      x: CENTER.x + HEX_RADIUS * c,
+      y: CENTER.y + HEX_RADIUS * s
+    });
+    insetVertices.push({
+      x: CENTER.x + insetRadius * c,
+      y: CENTER.y + insetRadius * s
+    });
+  }
+
+  for (let i = 0; i < 6; i++) {
+    const a = vertices[i], b = vertices[(i + 1) % 6];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const length = Math.hypot(dx, dy);
+    walls.push({ x: a.x, y: a.y, nx: -dy / length, ny: dx / length });
+  }
+}
+
+function collideWalls(ball) {
+  for (const wall of walls) {
+    const { nx, ny } = wall;
+    const distance = (ball.x - wall.x) * nx + (ball.y - wall.y) * ny;
+    if (distance > CLEARANCE) continue;
+
+    const penetration = CLEARANCE - distance;
+    ball.x += nx * penetration;
+    ball.y += ny * penetration;
+
+    // The velocity of the rotating wall at the contact point.
+    const contactX = ball.x - nx * CLEARANCE;
+    const contactY = ball.y - ny * CLEARANCE;
+    const wallVX = -OMEGA * (contactY - CENTER.y);
+    const wallVY =  OMEGA * (contactX - CENTER.x);
+    const relativeVX = ball.vx - wallVX;
+    const relativeVY = ball.vy - wallVY;
+    const normalSpeed = relativeVX * nx + relativeVY * ny;
+
+    if (normalSpeed >= 0) continue;
+
+    const restitution = normalSpeed < -REST_THRESHOLD ? WALL_RESTITUTION : 0;
+    const normalImpulse = -(1 + restitution) * normalSpeed;
+    ball.vx += normalImpulse * nx;
+    ball.vy += normalImpulse * ny;
+
+    const tx = -ny, ty = nx;
+    const tangentSpeed =
+      relativeVX * tx + relativeVY * ty - ball.spin * BALL_RADIUS;
+
+    // Friction affects both translation and disk rotation.
+    const effectiveMass = 1 + BALL_RADIUS * BALL_RADIUS * INV_INERTIA;
+    const maxFriction = WALL_FRICTION * normalImpulse;
+    const tangentImpulse = Math.max(
+      -maxFriction,
+      Math.min(maxFriction, -tangentSpeed / effectiveMass)
+    );
+
+    ball.vx += tangentImpulse * tx;
+    ball.vy += tangentImpulse * ty;
+    ball.spin -= BALL_RADIUS * tangentImpulse * INV_INERTIA;
+  }
+}
+
+function collideBalls(a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const diameter = BALL_RADIUS * 2;
+  const distanceSquared = dx * dx + dy * dy;
+  if (distanceSquared > diameter * diameter) return;
+
+  const distance = Math.sqrt(distanceSquared);
+  const nx = distance > 1e-9 ? dx / distance : 1;
+  const ny = distance > 1e-9 ? dy / distance : 0;
+  const correction = (diameter - distance) * 0.5;
+
+  a.x -= nx * correction;
+  a.y -= ny * correction;
+  b.x += nx * correction;
+  b.y += ny * correction;
+
+  const relativeVX = b.vx - a.vx;
+  const relativeVY = b.vy - a.vy;
+  const normalSpeed = relativeVX * nx + relativeVY * ny;
+  if (normalSpeed >= 0) return;
+
+  const restitution = normalSpeed < -REST_THRESHOLD ? BALL_RESTITUTION : 0;
+  const normalImpulse = -(1 + restitution) * normalSpeed / 2;
+
+  a.vx -= normalImpulse * nx;
+  a.vy -= normalImpulse * ny;
+  b.vx += normalImpulse * nx;
+  b.vy += normalImpulse * ny;
+
+  const tx = -ny, ty = nx;
+  const tangentSpeed =
+    relativeVX * tx + relativeVY * ty -
+    BALL_RADIUS * (a.spin + b.spin);
+  const effectiveMass =
+    2 + 2 * BALL_RADIUS * BALL_RADIUS * INV_INERTIA;
+  const maxFriction = BALL_FRICTION * normalImpulse;
+  const tangentImpulse = Math.max(
+    -maxFriction,
+    Math.min(maxFriction, -tangentSpeed / effectiveMass)
+  );
+
+  a.vx -= tangentImpulse * tx;
+  a.vy -= tangentImpulse * ty;
+  b.vx += tangentImpulse * tx;
+  b.vy += tangentImpulse * ty;
+
+  const angularImpulse = BALL_RADIUS * tangentImpulse * INV_INERTIA;
+  a.spin -= angularImpulse;
+  b.spin -= angularImpulse;
+}
+
+// Project onto the exact convex region allowed for ball centers.
+// This final constraint prevents escape even when several contacts
+// compete near a corner.
+function enforceContainment(ball) {
+  const inside = walls.every(wall =>
+    (ball.x - wall.x) * wall.nx +
+    (ball.y - wall.y) * wall.ny >= CLEARANCE
+  );
+  if (inside) return;
+
+  let bestDistance = Infinity, bestX = CENTER.x, bestY = CENTER.y;
+
+  for (let i = 0; i < 6; i++) {
+    const a = insetVertices[i], b = insetVertices[(i + 1) % 6];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const t = Math.max(0, Math.min(1,
+      ((ball.x - a.x) * dx + (ball.y - a.y) * dy) /
+      (dx * dx + dy * dy)
+    ));
+    const x = a.x + t * dx, y = a.y + t * dy;
+    const d = (ball.x - x) ** 2 + (ball.y - y) ** 2;
+
+    if (d < bestDistance) {
+      bestDistance = d;
+      bestX = x;
+      bestY = y;
+    }
+  }
+
+  // A tiny inward margin absorbs floating-point rounding.
+  ball.x = bestX + (CENTER.x - bestX) * 1e-10;
+  ball.y = bestY + (CENTER.y - bestY) * 1e-10;
+}
+
+function simulate(dt) {
+  angle = (angle + OMEGA * dt) % (Math.PI * 2);
+  updateGeometry();
+
+  const airDrag = Math.exp(-0.075 * dt);
+  const spinDrag = Math.exp(-0.035 * dt);
+
+  for (const ball of balls) {
+    ball.vx *= airDrag;
+    ball.vy = (ball.vy + GRAVITY * dt) * airDrag;
+    ball.spin *= spinDrag;
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+    ball.rotation += ball.spin * dt;
+  }
+
+  for (let iteration = 0; iteration < SOLVER_ITERATIONS; iteration++) {
+    for (const ball of balls) collideWalls(ball);
+
+    // Alternate order to reduce solver bias in tightly packed groups.
+    if (iteration % 2 === 0) {
+      for (let i = 0; i < balls.length; i++)
+        for (let j = i + 1; j < balls.length; j++)
+          collideBalls(balls[i], balls[j]);
+    } else {
+      for (let i = balls.length - 1; i >= 0; i--)
+        for (let j = i - 1; j >= 0; j--)
+          collideBalls(balls[i], balls[j]);
+    }
+  }
+
+  for (const ball of balls) {
+    collideWalls(ball);
+    enforceContainment(ball);
+  }
+}
+
+function hexPath() {
+  ctx.beginPath();
+  vertices.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.closePath();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  const background = ctx.createRadialGradient(480, 260, 40, 480, 260, 550);
+  background.addColorStop(0, "#142237");
+  background.addColorStop(1, "#080e1a");
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = "#c7d7eb";
+  ctx.font = "600 17px system-ui, sans-serif";
+  ctx.fillText("ROTATING HEXAGON", 28, 37);
+  ctx.fillStyle = "#69829f";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText("12 balls · gravity · friction", 28, 58);
+  ctx.fillText("SPACE to pause", 28, H - 25);
+
+  ctx.textAlign = "right";
+  ctx.fillText(paused ? "PAUSED" : "LIVE PHYSICS", W - 28, 37);
+  ctx.textAlign = "left";
+
+  hexPath();
+  ctx.fillStyle = "rgba(8, 17, 30, 0.58)";
+  ctx.fill();
+  ctx.strokeStyle = "#69dce7";
+  ctx.lineWidth = WALL_WIDTH;
+  ctx.shadowColor = "#44d9e9";
+  ctx.shadowBlur = 15;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  for (const ball of balls) {
+    ctx.save();
+    ctx.translate(ball.x, ball.y);
+
+    const gradient = ctx.createRadialGradient(-5, -6, 1, 0, 0, BALL_RADIUS);
+    gradient.addColorStop(0, `hsl(${ball.hue}, 88%, 82%)`);
+    gradient.addColorStop(0.55, `hsl(${ball.hue}, 75%, 61%)`);
+    gradient.addColorStop(1, `hsl(${ball.hue}, 63%, 38%)`);
+
+    ctx.beginPath();
+    ctx.arc(0, 0, BALL_RADIUS, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+    ctx.shadowBlur = 5;
+    ctx.shadowOffsetY = 2;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = "rgba(255,255,255,0.38)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // A small rim mark makes friction-driven spin visible.
+    ctx.save();
+    ctx.rotate(ball.rotation);
+    ctx.beginPath();
+    ctx.arc(0, 0, BALL_RADIUS - 3, -0.18, 0.18);
+    ctx.strokeStyle = "rgba(255,255,255,0.65)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = "#101b2b";
+    ctx.font = "700 12px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(ball.number, 0, 0.5);
+    ctx.restore();
+  }
+}
+
+window.addEventListener("keydown", event => {
+  if (event.code === "Space") {
+    event.preventDefault();
+    if (!event.repeat) {
+      paused = !paused;
+      accumulator = 0;
+    }
+  }
+});
+
+document.addEventListener("visibilitychange", () => {
+  previousTime = null;
+  accumulator = 0;
+});
+
+function frame(time) {
+  if (previousTime === null) previousTime = time;
+  const elapsed = Math.min((time - previousTime) / 1000, 0.05);
+  previousTime = time;
+
+  if (!paused) {
+    accumulator += elapsed;
+    while (accumulator >= STEP) {
+      simulate(STEP);
+      accumulator -= STEP;
+    }
+  }
+
+  draw();
+  requestAnimationFrame(frame);
+}
+
+updateGeometry();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

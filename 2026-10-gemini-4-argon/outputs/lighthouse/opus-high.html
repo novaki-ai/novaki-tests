@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lighthouse in the Storm</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas {
+    display: block;
+    width: min(100vw, calc(100vh * 16 / 9));
+    aspect-ratio: 16 / 9;
+    background: #05070b;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(() => {
+  const W = 960, H = 540, LOOP = 30, TAU = Math.PI * 2;
+  const HY = 360;            // horizon
+  const LX = 250, LY = 134;  // lamp position
+  const G = 520, WIND = 80;  // spray physics
+
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+
+  // ---------- helpers ----------
+  function rng(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  const R = rng(1337);
+  const lerp = (a, b, u) => a + (b - a) * u;
+  const wrapT = x => ((x % LOOP) + LOOP) % LOOP;
+  function makeCanvas(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    return c;
+  }
+
+  // soft particle sprite
+  const sprite = makeCanvas(64, 64);
+  {
+    const g = sprite.getContext('2d');
+    const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(228,236,245,1)');
+    gr.addColorStop(0.4, 'rgba(228,236,245,0.5)');
+    gr.addColorStop(1, 'rgba(228,236,245,0)');
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 64, 64);
+  }
+  function blob(x, y, r, a) {
+    if (a <= 0.003 || r <= 0) return;
+    ctx.globalAlpha = Math.min(1, a);
+    ctx.drawImage(sprite, x - r, y - r, 2 * r, 2 * r);
+  }
+
+  // ---------- clouds (pre-rendered, horizontally tileable) ----------
+  function cloudBlobs(seed, count, yMin, yMax, rMin, rMax) {
+    const r = rng(seed), out = [];
+    for (let i = 0; i < count; i++) {
+      out.push({
+        x: r() * W,
+        y: yMin + (yMax - yMin) * Math.pow(r(), 1.3),
+        rad: rMin + (rMax - rMin) * r(),
+        a: 0.25 + 0.5 * r()
+      });
+    }
+    return out;
+  }
+  function renderClouds(blobs, h, rgb, alphaMul) {
+    const c = makeCanvas(W, h), g = c.getContext('2d');
+    for (const b of blobs) {
+      for (const ox of [-W, 0, W]) {
+        const x = b.x + ox;
+        if (x + b.rad < 0 || x - b.rad > W) continue;
+        const gr = g.createRadialGradient(x, b.y, 0, x, b.y, b.rad);
+        gr.addColorStop(0, `rgba(${rgb},${b.a * alphaMul})`);
+        gr.addColorStop(1, `rgba(${rgb},0)`);
+        g.fillStyle = gr;
+        g.beginPath(); g.arc(x, b.y, b.rad, 0, TAU); g.fill();
+      }
+    }
+    return c;
+  }
+  const farBlobs = cloudBlobs(11, 95, 0, 240, 50, 140);
+  const nearBlobs = cloudBlobs(22, 75, 0, 150, 60, 160);
+  const farDark = renderClouds(farBlobs, 320, '52,60,78', 0.6);
+  const farLit = renderClouds(farBlobs, 320, '190,200,235', 0.7);
+  const nearDark = renderClouds(nearBlobs, 300, '16,20,30', 0.85);
+  const nearLit = renderClouds(nearBlobs, 300, '120,128,158', 0.85);
+
+  function drawCloudLayer(dark, lit, t, speed, y, F) {
+    const off = ((t / LOOP) * speed * W) % W;
+    ctx.drawImage(dark, off, y, W, dark.height);
+    ctx.drawImage(dark, off - W, y, W, dark.height);
+    if (F > 0.01) {
+      ctx.globalAlpha = F;
+      ctx.drawImage(lit, off, y, W, lit.height);
+      ctx.drawImage(lit, off - W, y, W, lit.height);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // ---------- lightning ----------
+  function makeBolt(seed, x0, y0, y1) {
+    const r = rng(seed), segs = [];
+    const x1 = x0 + (r() - 0.5) * 160;
+    function branch(ax, ay, bx, by, w, depth) {
+      let pts = [[ax, ay], [bx, by]];
+      let disp = Math.hypot(bx - ax, by - ay) * 0.28;
+      for (let it = 0; it < 6; it++) {
+        const np = [pts[0]];
+        for (let i = 0; i < pts.length - 1; i++) {
+          const [px, py] = pts[i], [qx, qy] = pts[i + 1];
+          np.push([(px + qx) / 2 + (r() - 0.5) * disp, (py + qy) / 2 + (r() - 0.5) * disp * 0.3]);
+          np.push(pts[i + 1]);
+        }
+        pts = np;
+        disp *= 0.55;
+      }
+      segs.push({ pts, w });
+      if (depth < 2) {
+        const nb = depth === 0 ? 4 : 2;
+        for (let k = 0; k < nb; k++) {
+          const idx = Math.floor(pts.length * (0.12 + 0.6 * r()));
+          const [sx, sy] = pts[idx];
+          const len = (by - ay) * (0.22 + 0.3 * r()) / (depth + 1);
+          const ang = (r() < 0.5 ? -1 : 1) * (0.3 + 0.6 * r());
+          branch(sx, sy, sx + Math.sin(ang) * len, sy + Math.cos(ang) * len, w * 0.5, depth + 1);
+        }
+      }
+    }
+    branch(x0, y0, x1, y1, 2.6, 0);
+    return segs;
+  }
+
+  const STRIKES = [
+    { t: 2.2,  x: 720, bolt: true,  power: 1 },
+    { t: 7.4,  x: 430, bolt: false, power: 0.6 },
+    { t: 12.3, x: 580, bolt: true,  power: 1 },
+    { t: 17.6, x: 850, bolt: true,  power: 0.85 },
+    { t: 21.9, x: 200, bolt: false, power: 0.55 },
+    { t: 26.1, x: 660, bolt: true,  power: 1 }
+  ];
+  STRIKES.forEach((s, i) => { if (s.bolt) s.segs = makeBolt(3000 + i * 7, s.x, 30, HY + 2); });
+
+  function flashAt(dt) {
+    if (dt < 0 || dt > 1.2) return 0;
+    const flick = dt < 0.06 ? 1 : dt < 0.11 ? 0.35 : dt < 0.17 ? 0.9 : dt < 0.24 ? 0.4 : dt < 0.3 ? 0.75 : 1;
+    return Math.exp(-dt * 5) * flick;
+  }
+  function boltVisible(dt) {
+    return dt >= 0 && (dt < 0.06 || (dt >= 0.11 && dt < 0.17) || (dt >= 0.24 && dt < 0.3));
+  }
+  function drawBolt(segs) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    const passes = [[5, 'rgba(120,140,255,0.10)'], [2.2, 'rgba(180,195,255,0.35)'], [0.7, 'rgba(255,255,255,0.95)']];
+    for (const [m, col] of passes) {
+      ctx.strokeStyle = col;
+      for (const sg of segs) {
+        ctx.lineWidth = Math.max(0.5, sg.w * m);
+        ctx.beginPath();
+        sg.pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  // ---------- terrain ----------
+  const CLIFF = [[0,252],[28,258],[64,268],[100,282],[136,293],[166,300],[334,300],[346,307],[352,318],
+    [364,330],[370,346],[382,358],[388,374],[402,386],[408,404],[424,416],[430,436],[446,448],[452,466],
+    [470,478],[478,494],[494,504],[506,520],[526,530],[540,542],[0,542]];
+  const ROCK_B = [[548,542],[556,520],[570,505],[588,494],[606,488],[622,492],[636,500],[652,512],[664,526],[676,542]];
+  const ROCK_C = [[694,542],[704,520],[718,507],[734,504],[748,514],[760,542]];
+
+  function polyPath(pts) {
+    const p = new Path2D();
+    pts.forEach((q, i) => i ? p.lineTo(q[0], q[1]) : p.moveTo(q[0], q[1]));
+    p.closePath();
+    return p;
+  }
+  const cliffPath = polyPath(CLIFF);
+  const rockBPath = polyPath(ROCK_B);
+  const rockCPath = polyPath(ROCK_C);
+
+  function cliffY(x) {
+    for (let i = 0; i < CLIFF.length - 2; i++) {
+      const [x0, y0] = CLIFF[i], [x1, y1] = CLIFF[i + 1];
+      if (x >= x0 && x <= x1) return y0 + (y1 - y0) * (x - x0) / ((x1 - x0) || 1);
+    }
+    return 300;
+  }
+
+  const STRATA = [];
+  {
+    const r = rng(77);
+    for (let i = 0; i < 46; i++) {
+      let x = r() * 680, y = 255 + r() * 285;
+      const pts = [[x, y]];
+      const n = 3 + Math.floor(r() * 4);
+      for (let j = 0; j < n; j++) {
+        x += 8 + r() * 22;
+        y += (r() - 0.3) * 8 + 3;
+        pts.push([x, y]);
+      }
+      STRATA.push(pts);
+    }
+  }
+
+  const TUFTS = [];
+  {
+    const r = rng(4242);
+    for (let i = 0; i < 64; i++) {
+      const x = 4 + r() * 350;
+      TUFTS.push({ x, y: cliffY(x) + 1, h: 4 + 6 * r(), n: 6 + Math.floor(r() * 5), p: r() * TAU, b: 2 + Math.floor(r() * 3) });
+    }
+  }
+
+  // ---------- sea ----------
+  const NB = 11, BANDS = [];
+  for (let i = 0; i < NB; i++) {
+    const u = i / (NB - 1);
+    BANDS.push({
+      u,
+      base: HY + 1 + Math.pow(u, 1.7) * (H - 2 - HY),
+      amp: 0.8 + 10 * Math.pow(u, 1.6),
+      k: TAU / (50 + 330 * u),
+      n1: 2 + i, n2: 3 + 2 * i,
+      p1: R() * TAU, p2: R() * TAU,
+      col: `rgb(${Math.round(lerp(30, 8, u))},${Math.round(lerp(40, 13, u))},${Math.round(lerp(56, 20, u))})`,
+      crest: `rgba(150,172,200,${0.10 + 0.22 * u})`,
+      lw: 0.6 + 1.2 * u
+    });
+  }
+  function waveY(b, x, t, bumps) {
+    let y = b.base + b.amp * (0.7 * Math.sin(b.k * x + TAU * b.n1 * t / LOOP + b.p1) +
+                              0.3 * Math.sin(1.9 * b.k * x - TAU * b.n2 * t / LOOP + b.p2));
+    if (b.u > 0.55) {
+      const s = (b.u - 0.55) / 0.45;
+      for (const bp of bumps) {
+        const d = (x - bp.cx) / (55 + 45 * b.u);
+        y -= 18 * s * bp.h * Math.exp(-d * d);
+      }
+    }
+    return y;
+  }
+  function drawBands(from, to, t, bumps) {
+    for (let i = from; i < to; i++) {
+      const b = BANDS[i];
+      const top = new Path2D();
+      for (let x = -8; x <= W + 8; x += 8) {
+        const y = waveY(b, x, t, bumps);
+        x === -8 ? top.moveTo(x, y) : top.lineTo(x, y);
+      }
+      const fill = new Path2D(top);
+      fill.lineTo(W + 8, H + 20);
+      fill.lineTo(-8, H + 20);
+      fill.closePath();
+      ctx.fillStyle = b.col;
+      ctx.fill(fill);
+      ctx.strokeStyle = b.crest;
+      ctx.lineWidth = b.lw;
+      ctx.stroke(top);
+      if (b.u > 0.55) {
+        const s = (b.u - 0.55) / 0.45;
+        for (const bp of bumps) {
+          if (bp.h < 0.15) continue;
+          for (let k = -3; k <= 3; k++) {
+            const x = bp.cx + k * 16;
+            blob(x + 8 * s, waveY(b, x, t, bumps) + 2, 7 + 6 * s, 0.12 * bp.h * s * (1 - Math.abs(k) / 4));
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  // ---------- crashing waves ----------
+  const CRASHES = [];
+  for (let i = 0; i < 6; i++) {
+    const r = rng(500 + i * 17);
+    const atRock = i % 2 === 1;
+    const ox = atRock ? 650 : 500, oy = atRock ? 508 : 510;
+    const str = 0.8 + 0.4 * r();
+    const parts = [], mist = [], foam = [];
+    for (let j = 0; j < 150; j++) {
+      parts.push({
+        x: ox + (r() - 0.5) * 34, y: oy + (r() - 0.5) * 14,
+        vx: (-150 + 260 * r()) * str, vy: -(120 + 330 * Math.pow(r(), 0.7)) * str,
+        d: r() * 0.3, life: 0.9 + 1.3 * r(), r: 1 + 2.5 * r()
+      });
+    }
+    for (let j = 0; j < 14; j++) {
+      mist.push({
+        x: ox + (r() - 0.5) * 50, y: oy - 10 - r() * 30,
+        vx: -20 + 70 * r(), vy: -30 - 60 * r(),
+        d: 0.1 + 0.35 * r(), life: 2 + 1.4 * r(), r: 18 + 26 * r(), a: 0.10 + 0.08 * r()
+      });
+    }
+    for (let j = 0; j < 10; j++) foam.push({ x: ox - 20 + r() * 60, y: oy - 4 + r() * 22, r: 10 + 18 * r() });
+    CRASHES.push({ t: 1.5 + 5 * i, ox, oy, str, parts, mist, foam });
+  }
+
+  const FRINGE = [];
+  {
+    const r = rng(808);
+    const spots = [[470, 520, 60], [636, 516, 50], [696, 514, 70]];
+    for (const [sx, sy, w] of spots) {
+      for (let j = 0; j < 8; j++) {
+        FRINGE.push({ x: sx + r() * w, y: sy + r() * 12, r: 8 + 12 * r(), n: 2 + Math.floor(r() * 5), p: r() * TAU });
+      }
+    }
+  }
+
+  function drawCrashes(t) {
+    for (const c of CRASHES) {
+      const a = wrapT(t - c.t);
+      if (a > 3.6) continue;
+      const e = a < 0.25 ? a / 0.25 : Math.exp(-(a - 0.25) * 1.3);
+      for (const f of c.foam) blob(f.x, f.y, f.r * (1 + 0.4 * a), 0.45 * e * c.str);
+      for (const m of c.mist) {
+        const age = a - m.d;
+        if (age < 0 || age > m.life) continue;
+        const k = age / m.life;
+        blob(m.x + m.vx * age + 0.5 * WIND * age * age, m.y + m.vy * age + 8 * age * age,
+             m.r * (1 + 1.5 * k), m.a * Math.sin(Math.PI * k) * c.str);
+      }
+      for (const p of c.parts) {
+        const age = a - p.d;
+        if (age < 0 || age > p.life) continue;
+        const k = age / p.life;
+        const fade = Math.min(1, age / 0.06) * Math.pow(1 - k, 1.5);
+        blob(p.x + p.vx * age + 0.5 * WIND * age * age, p.y + p.vy * age + 0.5 * G * age * age,
+             p.r * (1 + 1.2 * k) * 1.6, 0.55 * fade);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ---------- rain ----------
+  const RAIN_LAYERS = [
+    { n: 260, kMin: 17, kMax: 21, len: 9,  w: 0.7, a: 0.16 },
+    { n: 200, kMin: 25, kMax: 31, len: 15, w: 1.0, a: 0.24 },
+    { n: 70,  kMin: 36, kMax: 42, len: 26, w: 1.5, a: 0.32 }
+  ];
+  const SLANT = 0.28, RANGE = H + 120;
+  for (const L of RAIN_LAYERS) {
+    L.drops = [];
+    for (let i = 0; i < L.n; i++) {
+      // integer cycle count per loop keeps the rain seamless
+      L.drops.push({ x0: R() * (W + 300), p0: R(), k: L.kMin + Math.floor(R() * (L.kMax - L.kMin + 1)) });
+    }
+  }
+  function rainPaths(t) {
+    return RAIN_LAYERS.map(L => {
+      const p = new Path2D();
+      for (const d of L.drops) {
+        const ph = (d.p0 + d.k * t / LOOP) % 1;
+        const y = ph * RANGE - 60;
+        const x = (d.x0 + y * SLANT) % (W + 300) - 150;
+        p.moveTo(x, y);
+        p.lineTo(x - L.len * SLANT, y - L.len);
+      }
+      return p;
+    });
+  }
+
+  // ---------- static gradients ----------
+  const skyDark = ctx.createLinearGradient(0, 0, 0, HY);
+  skyDark.addColorStop(0, '#06080f');
+  skyDark.addColorStop(0.6, '#10151f');
+  skyDark.addColorStop(1, '#1c2432');
+  const skyLit = ctx.createLinearGradient(0, 0, 0, HY);
+  skyLit.addColorStop(0, '#4f5a7c');
+  skyLit.addColorStop(1, '#9aa6c6');
+
+  const haze = ctx.createLinearGradient(0, HY - 40, 0, HY + 40);
+  haze.addColorStop(0, 'rgba(40,50,66,0)');
+  haze.addColorStop(0.5, 'rgba(48,58,76,0.35)');
+  haze.addColorStop(1, 'rgba(40,50,66,0)');
+
+  const cliffDark = ctx.createLinearGradient(0, 250, 0, 540);
+  cliffDark.addColorStop(0, '#161b22');
+  cliffDark.addColorStop(1, '#06080b');
+  const cliffLit = ctx.createLinearGradient(0, 250, 0, 540);
+  cliffLit.addColorStop(0, '#5a647c');
+  cliffLit.addColorStop(1, '#262b36');
+
+  const towerShade = ctx.createLinearGradient(224, 0, 276, 0);
+  towerShade.addColorStop(0, 'rgba(4,8,18,0.78)');
+  towerShade.addColorStop(0.38, 'rgba(4,8,18,0.32)');
+  towerShade.addColorStop(0.62, 'rgba(4,8,18,0.42)');
+  towerShade.addColorStop(1, 'rgba(4,8,18,0.85)');
+  const towerGlow = ctx.createLinearGradient(0, 150, 0, 215);
+  towerGlow.addColorStop(0, 'rgba(255,200,120,0.28)');
+  towerGlow.addColorStop(1, 'rgba(255,200,120,0)');
+
+  const vignette = ctx.createRadialGradient(W / 2, H / 2, 240, W / 2, H / 2, 640);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.6)');
+
+  // ---------- drawing pieces ----------
+  function drawTerrain(F) {
+    for (const path of [cliffPath, rockBPath, rockCPath]) {
+      ctx.fillStyle = cliffDark;
+      ctx.fill(path);
+      if (F > 0.01) {
+        ctx.globalAlpha = 0.55 * F;
+        ctx.fillStyle = cliffLit;
+        ctx.fill(path);
+        ctx.globalAlpha = 1;
+      }
+    }
+    // rock strata
+    ctx.save();
+    const clip = new Path2D();
+    clip.addPath(cliffPath); clip.addPath(rockBPath); clip.addPath(rockCPath);
+    ctx.clip(clip);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = `rgba(200,215,240,${0.04 + 0.16 * F})`;
+    ctx.beginPath();
+    for (const pts of STRATA) pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+    ctx.stroke();
+    ctx.restore();
+    if (F > 0.01) {
+      ctx.strokeStyle = `rgba(200,215,255,${0.5 * F})`;
+      ctx.lineWidth = 1.2;
+      ctx.stroke(cliffPath); ctx.stroke(rockBPath); ctx.stroke(rockCPath);
+    }
+  }
+
+  function drawLighthouse(s, F) {
+    // tower body
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(224, 300); ctx.lineTo(234, 152); ctx.lineTo(266, 152); ctx.lineTo(276, 300);
+    ctx.closePath();
+    ctx.clip();
+    for (let i = 0; i < 5; i++) {
+      ctx.fillStyle = i % 2 === 0 ? '#86302a' : '#a9a49a';
+      ctx.fillRect(220, 152 + i * 29.6, 60, 30);
+    }
+    ctx.fillStyle = towerShade; ctx.fillRect(220, 150, 60, 152);
+    ctx.fillStyle = towerGlow; ctx.fillRect(220, 150, 60, 152);
+    if (F > 0.01) {
+      ctx.fillStyle = `rgba(190,200,235,${0.3 * F})`;
+      ctx.fillRect(220, 150, 60, 152);
+    }
+    ctx.restore();
+
+    // windows & door
+    ctx.fillStyle = '#16120e';
+    ctx.fillRect(247, 180, 6, 9);
+    ctx.fillRect(246, 228, 7, 10);
+    ctx.beginPath();
+    ctx.moveTo(243, 300); ctx.lineTo(243, 289); ctx.arc(250, 289, 7, Math.PI, 0); ctx.lineTo(257, 300);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,190,100,0.35)';
+    ctx.fillRect(248, 182, 4, 5);
+
+    // lantern glass
+    const gI = 0.75 + 0.25 * Math.max(0, s);
+    const gg = ctx.createRadialGradient(LX, LY, 1, LX, LY, 20);
+    gg.addColorStop(0, 'rgba(255,252,235,1)');
+    gg.addColorStop(0.35, `rgba(255,215,130,${gI})`);
+    gg.addColorStop(1, `rgba(170,110,40,${0.8 * gI})`);
+    ctx.fillStyle = '#1a1612';
+    ctx.fillRect(238, 120, 24, 27);
+    ctx.fillStyle = gg;
+    ctx.fillRect(238, 120, 24, 27);
+    ctx.strokeStyle = '#2a2218';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (const x of [238.5, 245.5, 254.5, 261.5]) { ctx.moveTo(x, 120); ctx.lineTo(x, 147); }
+    ctx.moveTo(238, 128.5); ctx.lineTo(262, 128.5);
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(LX, LY, 3.5, 0, TAU); ctx.fill();
+
+    // gallery and railing
+    ctx.fillStyle = '#16181b';
+    ctx.fillRect(225, 147, 50, 6);
+    ctx.strokeStyle = '#1f2226';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(226, 138.5); ctx.lineTo(274, 138.5);
+    for (let x = 227.5; x <= 273; x += 5.5) { ctx.moveTo(x, 139); ctx.lineTo(x, 147); }
+    ctx.stroke();
+
+    // dome
+    ctx.fillStyle = '#141517';
+    ctx.fillRect(233, 118, 34, 3);
+    ctx.beginPath();
+    ctx.moveTo(234, 119); ctx.quadraticCurveTo(250, 98, 266, 119); ctx.closePath();
+    ctx.fill();
+    ctx.beginPath(); ctx.arc(250, 104, 2.5, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#141517';
+    ctx.beginPath(); ctx.moveTo(250, 102); ctx.lineTo(250, 91); ctx.stroke();
+
+    // keeper's house
+    ctx.fillStyle = '#1e2024';
+    ctx.fillRect(286, 280, 40, 20);
+    ctx.fillStyle = '#121316';
+    ctx.fillRect(316, 266, 5, 10);
+    ctx.beginPath();
+    ctx.moveTo(282, 281); ctx.lineTo(306, 265); ctx.lineTo(330, 281); ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#0d0e10';
+    ctx.fillRect(312, 287, 7, 13);
+    ctx.fillStyle = '#ffc766';
+    ctx.fillRect(296, 286, 8, 7);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const wg = ctx.createRadialGradient(300, 289, 0, 300, 289, 24);
+    wg.addColorStop(0, 'rgba(255,190,90,0.28)');
+    wg.addColorStop(1, 'rgba(255,190,90,0)');
+    ctx.fillStyle = wg;
+    ctx.fillRect(276, 265, 48, 48);
+    ctx.restore();
+    ctx.fillStyle = '#2a2016';
+    ctx.fillRect(299.5, 286, 1, 7);
+    ctx.fillRect(296, 289, 8, 1);
+  }
+
+  function drawTufts(t) {
+    ctx.strokeStyle = '#0a0e0c';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const tf of TUFTS) {
+      const sway = 0.35 + 0.25 * Math.sin(TAU * tf.n * t / LOOP + tf.p);
+      for (let k = 0; k < tf.b; k++) {
+        const ang = sway + (k - (tf.b - 1) / 2) * 0.35;
+        const x = tf.x + k * 1.5;
+        ctx.moveTo(x, tf.y);
+        ctx.lineTo(x + Math.sin(ang) * tf.h, tf.y - Math.cos(ang) * tf.h);
+      }
+    }
+    ctx.stroke();
+  }
+
+  function beamPoly(c, spMul) {
+    const L = c * 1300, ac = Math.abs(c);
+    const sp = (26 + 80 * (1 - ac)) * spMul;
+    const ey = LY + 22 * ac;
+    const p = new Path2D();
+    p.moveTo(LX, LY - 2.5 * spMul);
+    p.lineTo(LX + L, ey - sp);
+    p.lineTo(LX + L, ey + sp);
+    p.lineTo(LX, LY + 2.5 * spMul);
+    p.closePath();
+    return p;
+  }
+
+  // ---------- frame ----------
+  function render(t) {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+
+    // lightning state
+    let F = 0;
+    const visibleBolts = [], cloudGlows = [];
+    for (const s of STRIKES) {
+      const dt = wrapT(t - s.t);
+      const f = flashAt(dt) * s.power;
+      if (f > 0.01) cloudGlows.push([s.x, f]);
+      F += f;
+      if (s.bolt && boltVisible(dt)) visibleBolts.push(s);
+    }
+    F = Math.min(1, F);
+
+    // beam rotation: two revolutions per loop
+    const th = TAU * 2 * t / LOOP;
+    const bc = Math.cos(th), bs = Math.sin(th);
+
+    // sky
+    ctx.fillStyle = skyDark;
+    ctx.fillRect(0, 0, W, HY + 2);
+    if (F > 0.01) {
+      ctx.globalAlpha = F;
+      ctx.fillStyle = skyLit;
+      ctx.fillRect(0, 0, W, HY + 2);
+      ctx.globalAlpha = 1;
+    }
+    drawCloudLayer(farDark, farLit, t, 1, 0, F);
+    for (const s of visibleBolts) drawBolt(s.segs);
+    drawCloudLayer(nearDark, nearLit, t, 2, -10, F);
+    if (cloudGlows.length) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (const [x, f] of cloudGlows) {
+        const g = ctx.createRadialGradient(x, 70, 0, x, 70, 320);
+        g.addColorStop(0, `rgba(200,210,255,${0.4 * f})`);
+        g.addColorStop(1, 'rgba(200,210,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(x - 320, 0, 640, HY);
+      }
+      ctx.restore();
+    }
+
+    // swells rolling toward the rocks before each crash
+    const bumps = [];
+    for (const c of CRASHES) {
+      const a = wrapT(t - c.t + 1.6);
+      if (a < 1.9) {
+        const p = Math.min(a / 1.6, 1);
+        const cx = 1040 - (1040 - c.ox) * (p * p * (3 - 2 * p));
+        const h = c.str * (a < 1.6 ? 0.3 + 0.7 * p : Math.max(0, 1 - (a - 1.6) / 0.3));
+        bumps.push({ cx, h });
+      }
+    }
+
+    // sea (back)
+    ctx.fillStyle = BANDS[0].col;
+    ctx.fillRect(0, HY, W, H - HY);
+    drawBands(0, 9, t, bumps);
+
+    // bolt reflections on water
+    if (visibleBolts.length) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (const s of visibleBolts) {
+        const end = s.segs[0].pts[s.segs[0].pts.length - 1][0];
+        const g = ctx.createLinearGradient(0, HY, 0, H);
+        g.addColorStop(0, 'rgba(180,195,255,0.35)');
+        g.addColorStop(1, 'rgba(180,195,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(end - 18, HY, 36, H - HY);
+      }
+      ctx.restore();
+    }
+
+    // beam glow on the sea surface
+    if (bc > 0.1) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.translate(LX + bc * 600, HY + 18);
+      ctx.scale(1, 0.12);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 240);
+      g.addColorStop(0, `rgba(255,230,170,${0.14 * bc * bc})`);
+      g.addColorStop(1, 'rgba(255,230,170,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(-240, -240, 480, 480);
+      ctx.restore();
+    }
+
+    ctx.fillStyle = haze;
+    ctx.fillRect(0, HY - 40, W, 80);
+
+    // land
+    drawTerrain(F);
+    drawLighthouse(bs, F);
+    drawTufts(t);
+
+    // sea (front) + surf
+    drawBands(9, NB, t, bumps);
+    for (const f of FRINGE) {
+      blob(f.x, f.y, f.r, 0.06 + 0.07 * (0.5 + 0.5 * Math.sin(TAU * f.n * t / LOOP + f.p)));
+    }
+    ctx.globalAlpha = 1;
+    drawCrashes(t);
+
+    // lighthouse beam
+    const rain = rainPaths(t);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const ac = Math.abs(bc);
+    let beamI = 0;
+    if (ac > 0.02) {
+      beamI = (bs < 0 ? 0.6 : 1) * Math.min(1, (ac - 0.02) / 0.35);
+      const L = bc * 1300;
+      const g = ctx.createLinearGradient(LX, LY, LX + L, LY);
+      g.addColorStop(0, `rgba(255,238,190,${0.5 * beamI})`);
+      g.addColorStop(0.12, `rgba(255,232,180,${0.26 * beamI})`);
+      g.addColorStop(0.45, `rgba(255,228,170,${0.09 * beamI})`);
+      g.addColorStop(1, 'rgba(255,228,170,0)');
+      ctx.fillStyle = g;
+      ctx.fill(beamPoly(bc, 1));
+      ctx.fill(beamPoly(bc, 0.45));
+    }
+    // lamp glow + glare when facing the viewer
+    let rg = ctx.createRadialGradient(LX, LY, 0, LX, LY, 70);
+    rg.addColorStop(0, 'rgba(255,220,150,0.45)');
+    rg.addColorStop(1, 'rgba(255,220,150,0)');
+    ctx.fillStyle = rg;
+    ctx.fillRect(LX - 70, LY - 70, 140, 140);
+    const gl = Math.pow(Math.max(0, bs), 6);
+    if (gl > 0.003) {
+      const R1 = 30 + 280 * gl;
+      rg = ctx.createRadialGradient(LX, LY, 0, LX, LY, R1);
+      rg.addColorStop(0, `rgba(255,250,230,${0.95 * gl})`);
+      rg.addColorStop(0.2, `rgba(255,230,170,${0.45 * gl})`);
+      rg.addColorStop(1, 'rgba(255,220,150,0)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(LX - R1, LY - R1, 2 * R1, 2 * R1);
+      ctx.save();
+      ctx.translate(LX, LY);
+      ctx.scale(1, 0.05);
+      const R2 = 500 * gl;
+      rg = ctx.createRadialGradient(0, 0, 0, 0, 0, R2);
+      rg.addColorStop(0, `rgba(255,240,200,${0.6 * gl})`);
+      rg.addColorStop(1, 'rgba(255,240,200,0)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(-R2, -R2, 2 * R2, 2 * R2);
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // rain
+    ctx.lineCap = 'round';
+    RAIN_LAYERS.forEach((L, i) => {
+      ctx.strokeStyle = `rgba(185,200,222,${Math.min(1, L.a * (1 + 1.8 * F))})`;
+      ctx.lineWidth = L.w;
+      ctx.stroke(rain[i]);
+    });
+    // rain caught in the beam
+    if (beamI > 0.01) {
+      ctx.save();
+      ctx.clip(beamPoly(bc, 1));
+      ctx.globalCompositeOperation = 'lighter';
+      const L = bc * 1300;
+      const g = ctx.createLinearGradient(LX, LY, LX + L, LY);
+      g.addColorStop(0, `rgba(255,240,205,${0.9 * beamI})`);
+      g.addColorStop(0.2, `rgba(255,240,205,${0.55 * beamI})`);
+      g.addColorStop(0.6, `rgba(255,240,205,${0.18 * beamI})`);
+      g.addColorStop(1, 'rgba(255,240,205,0)');
+      ctx.strokeStyle = g;
+      RAIN_LAYERS.forEach((Ly, i) => {
+        ctx.globalAlpha = Math.min(1, Ly.a * 2.5);
+        ctx.lineWidth = Ly.w;
+        ctx.stroke(rain[i]);
+      });
+      ctx.restore();
+    }
+
+    // global flash + vignette
+    if (F > 0.01) {
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = `rgba(150,165,210,${0.16 * F})`;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  const t0 = performance.now();
+  function frame(now) {
+    render(((now - t0) / 1000) % LOOP);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

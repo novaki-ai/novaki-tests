@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Snake</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #101827;
+      color: #e8eef7;
+      font-family: system-ui, sans-serif;
+    }
+    main {
+      width: 960px;
+      height: 540px;
+      padding: 30px;
+      display: flex;
+      gap: 36px;
+      align-items: center;
+    }
+    canvas {
+      display: block;
+      width: 480px;
+      height: 480px;
+      background: #172238;
+      border-radius: 12px;
+    }
+    aside { flex: 1; }
+    h1 {
+      margin: 0 0 24px;
+      font-size: 48px;
+      letter-spacing: -2px;
+    }
+    .label {
+      color: #9aaac1;
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    #score {
+      display: block;
+      margin: 4px 0 28px;
+      color: #77efab;
+      font-size: 56px;
+      font-weight: 700;
+    }
+    p { color: #9aaac1; line-height: 1.7; }
+    kbd {
+      padding: 3px 8px;
+      border: 1px solid #41506a;
+      border-radius: 5px;
+      color: #e8eef7;
+      font-family: inherit;
+    }
+    #status { color: #e8eef7; }
+  </style>
+</head>
+<body>
+  <main>
+    <canvas id="board" width="480" height="480"
+            aria-label="Snake game on a 20 by 20 grid"></canvas>
+    <aside>
+      <h1>Snake</h1>
+      <div class="label">Score</div>
+      <output id="score" aria-live="polite">0</output>
+      <p><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> to steer</p>
+      <p><kbd>Space</kbd> to start or restart</p>
+      <p>Eat food. Grow longer.<br>Avoid the walls and yourself.</p>
+      <p id="status" aria-live="polite">Press Space to start</p>
+    </aside>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const SIZE = 20;
+      const CELL = 24;
+      const STEP_MS = 150;
+      const canvas = document.getElementById("board");
+      const ctx = canvas.getContext("2d");
+      const scoreElement = document.getElementById("score");
+      const statusElement = document.getElementById("status");
+
+      const vectors = {
+        up:    { x: 0, y: -1 },
+        down:  { x: 0, y: 1 },
+        left:  { x: -1, y: 0 },
+        right: { x: 1, y: 0 }
+      };
+      const opposite = {
+        up: "down", down: "up", left: "right", right: "left"
+      };
+      const arrowDirections = {
+        ArrowUp: "up", ArrowDown: "down",
+        ArrowLeft: "left", ArrowRight: "right"
+      };
+
+      let body;
+      let food;
+      let dir;
+      let pendingDir;
+      let running = false;
+      let gameOver = false;
+      let score = 0;
+      let timer = null;
+
+      function placeRandomFood() {
+        const empty = [];
+        for (let y = 0; y < SIZE; y++) {
+          for (let x = 0; x < SIZE; x++) {
+            if (!body.some(segment => segment.x === x && segment.y === y)) {
+              empty.push({ x, y });
+            }
+          }
+        }
+        if (empty.length === 0) return false;
+        food = empty[Math.floor(Math.random() * empty.length)];
+        return true;
+      }
+
+      function reset() {
+        clearInterval(timer);
+        timer = null;
+        body = [
+          { x: 10, y: 10 },
+          { x: 9, y: 10 },
+          { x: 8, y: 10 }
+        ];
+        dir = "right";
+        pendingDir = null;
+        score = 0;
+        running = false;
+        gameOver = false;
+        scoreElement.textContent = "0";
+        statusElement.textContent = "Press Space to start";
+        placeRandomFood();
+        draw();
+      }
+
+      function start() {
+        if (running) return;
+        if (gameOver) reset();
+        running = true;
+        statusElement.textContent = "Playing";
+        timer = setInterval(step, STEP_MS);
+        draw();
+      }
+
+      function endGame() {
+        running = false;
+        gameOver = true;
+        pendingDir = null;
+        clearInterval(timer);
+        timer = null;
+        statusElement.textContent = "Game Over";
+        draw();
+      }
+
+      function step() {
+        if (!running) return;
+
+        if (pendingDir !== null) dir = pendingDir;
+        pendingDir = null;
+
+        const vector = vectors[dir];
+        const head = {
+          x: body[0].x + vector.x,
+          y: body[0].y + vector.y
+        };
+        const eating = head.x === food.x && head.y === food.y;
+
+        // The tail vacates its cell on a move that does not eat food.
+        const occupied = eating ? body : body.slice(0, -1);
+        const collision =
+          head.x < 0 || head.x >= SIZE ||
+          head.y < 0 || head.y >= SIZE ||
+          occupied.some(segment =>
+            segment.x === head.x && segment.y === head.y
+          );
+
+        if (collision) {
+          endGame();
+          return;
+        }
+
+        body.unshift(head);
+
+        if (eating) {
+          score += 10;
+          scoreElement.textContent = String(score);
+          if (!placeRandomFood()) {
+            endGame();
+            return;
+          }
+        } else {
+          body.pop();
+        }
+
+        draw();
+      }
+
+      function draw() {
+        ctx.fillStyle = "#172238";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.strokeStyle = "#223049";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 0; i <= SIZE; i++) {
+          const position = i * CELL;
+          ctx.moveTo(position, 0);
+          ctx.lineTo(position, canvas.height);
+          ctx.moveTo(0, position);
+          ctx.lineTo(canvas.width, position);
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = "#ff7185";
+        ctx.beginPath();
+        ctx.arc(
+          food.x * CELL + CELL / 2,
+          food.y * CELL + CELL / 2,
+          CELL * 0.35, 0, Math.PI * 2
+        );
+        ctx.fill();
+
+        body.forEach((segment, index) => {
+          ctx.fillStyle = index === 0 ? "#a0ffd0" : "#49cf88";
+          ctx.fillRect(
+            segment.x * CELL + 2,
+            segment.y * CELL + 2,
+            CELL - 4,
+            CELL - 4
+          );
+        });
+
+        if (!running) {
+          ctx.fillStyle = "rgba(9, 16, 28, 0.76)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = "#e8eef7";
+          ctx.font = "bold 38px system-ui";
+          ctx.fillText(gameOver ? "Game Over" : "Snake", 240, 216);
+          ctx.fillStyle = "#b4c3d8";
+          ctx.font = "18px system-ui";
+          ctx.fillText(
+            gameOver ? "Press Space to restart" : "Press Space to start",
+            240, 262
+          );
+        }
+      }
+
+      window.addEventListener("keydown", event => {
+        if (event.code === "Space" || event.key === " ") {
+          event.preventDefault();
+          if (!event.repeat) start();
+          return;
+        }
+
+        const requestedDir = arrowDirections[event.key];
+        if (!requestedDir) return;
+        event.preventDefault();
+
+        // Accept at most one turn per step, preventing rapid-key reversals.
+        if (
+          running &&
+          pendingDir === null &&
+          requestedDir !== dir &&
+          requestedDir !== opposite[dir]
+        ) {
+          pendingDir = requestedDir;
+        }
+      });
+
+      window.snake = {
+        state() {
+          return {
+            running,
+            gameOver,
+            score,
+            length: body.length,
+            head: { ...body[0] },
+            food: { ...food },
+            dir
+          };
+        },
+        setFood(x, y) {
+          if (
+            !Number.isInteger(x) || !Number.isInteger(y) ||
+            x < 0 || x >= SIZE || y < 0 || y >= SIZE
+          ) {
+            throw new RangeError("Food coordinates must be integers from 0 to 19.");
+          }
+          food = { x, y };
+          draw();
+        }
+      };
+
+      reset();
+    })();
+  </script>
+</body>
+</html>

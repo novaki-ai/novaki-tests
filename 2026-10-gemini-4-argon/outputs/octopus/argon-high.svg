@@ -1,0 +1,481 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <!-- Sky & Background Gradients -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#BCE7FD" />
+      <stop offset="65%" stop-color="#E8F7FF" />
+      <stop offset="100%" stop-color="#FFF8EB" />
+    </linearGradient>
+
+    <linearGradient id="seaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3CAEA3" />
+      <stop offset="100%" stop-color="#1D6A78" />
+    </linearGradient>
+
+    <linearGradient id="roadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F2D7B6" />
+      <stop offset="100%" stop-color="#DFB992" />
+    </linearGradient>
+
+    <!-- Octopus Gradients -->
+    <radialGradient id="octoHeadGrad" cx="38%" cy="32%" r="68%" fx="32%" fy="25%">
+      <stop offset="0%" stop-color="#FF8E6E" />
+      <stop offset="45%" stop-color="#F45158" />
+      <stop offset="85%" stop-color="#C92A42" />
+      <stop offset="100%" stop-color="#9E1B32" />
+    </radialGradient>
+
+    <linearGradient id="tentacleFrontGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F45158" />
+      <stop offset="60%" stop-color="#D93248" />
+      <stop offset="100%" stop-color="#B01E35" />
+    </linearGradient>
+
+    <linearGradient id="tentacleBackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C92A42" />
+      <stop offset="100%" stop-color="#8A1529" />
+    </linearGradient>
+
+    <linearGradient id="suckerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFE6D4" />
+      <stop offset="100%" stop-color="#F7B199" />
+    </linearGradient>
+
+    <!-- Bicycle Gradients -->
+    <linearGradient id="frameGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2EC4B6" />
+      <stop offset="50%" stop-color="#159A8C" />
+      <stop offset="100%" stop-color="#0B6E64" />
+    </linearGradient>
+
+    <linearGradient id="chromeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="45%" stop-color="#D9E2EC" />
+      <stop offset="100%" stop-color="#829AB1" />
+    </linearGradient>
+
+    <linearGradient id="tireGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334E68" />
+      <stop offset="100%" stop-color="#102A43" />
+    </linearGradient>
+
+    <linearGradient id="leatherGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#B86B35" />
+      <stop offset="100%" stop-color="#7C3F16" />
+    </linearGradient>
+
+    <linearGradient id="hatGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE89E" />
+      <stop offset="100%" stop-color="#E6B84D" />
+    </linearGradient>
+
+    <!-- Wheel Spokes Template -->
+    <g id="wheel">
+      <!-- Outer Shadow -->
+      <circle cx="0" cy="0" r="88" fill="none" stroke="rgba(16,42,67,0.12)" stroke-width="6" />
+      <!-- Spokes -->
+      <g stroke="#BCCCDC" stroke-width="2" stroke-linecap="round">
+        <line x1="-80" y1="0" x2="80" y2="0" />
+        <line x1="0" y1="-80" x2="0" y2="80" />
+        <line x1="-56.5" y1="-56.5" x2="56.5" y2="56.5" />
+        <line x1="-56.5" y1="56.5" x2="56.5" y2="-56.5" />
+        <line x1="-73.9" y1="-30.6" x2="73.9" y2="30.6" />
+        <line x1="-30.6" y1="-73.9" x2="30.6" y2="73.9" />
+        <line x1="-73.9" y1="30.6" x2="73.9" y2="-30.6" />
+        <line x1="-30.6" y1="73.9" x2="30.6" y2="-73.9" />
+      </g>
+      <!-- Inner Rim -->
+      <circle cx="0" cy="0" r="74" fill="none" stroke="url(#chromeGrad)" stroke-width="5" />
+      <!-- Whitewall Side -->
+      <circle cx="0" cy="0" r="80" fill="none" stroke="#FFF9F0" stroke-width="7" />
+      <!-- Rubber Tire -->
+      <circle cx="0" cy="0" r="86" fill="none" stroke="url(#tireGrad)" stroke-width="9" />
+      <!-- Hub -->
+      <circle cx="0" cy="0" r="14" fill="#829AB1" />
+      <circle cx="0" cy="0" r="9" fill="url(#chromeGrad)" />
+    </g>
+
+    <!-- Bubble Template -->
+    <g id="bubble">
+      <circle cx="0" cy="0" r="14" fill="rgba(255, 255, 255, 0.35)" stroke="#FFFFFF" stroke-width="1.5" />
+      <path d="M -7 -5 A 8 8 0 0 1 2 -9" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" />
+      <circle cx="5" cy="6" r="2" fill="#FFFFFF" opacity="0.7" />
+    </g>
+  </defs>
+
+  <!-- ================= BACKGROUND ================= -->
+  <rect width="800" height="600" fill="url(#skyGrad)" />
+
+  <!-- Warm Sun -->
+  <circle cx="680" cy="110" r="52" fill="#FFF3B0" opacity="0.7" />
+  <circle cx="680" cy="110" r="38" fill="#FFE169" />
+
+  <!-- Soft Fluffy Clouds -->
+  <g fill="#FFFFFF" opacity="0.85">
+    <path d="M 90 125 Q 90 100 115 100 Q 130 80 158 85 Q 185 80 198 102 Q 220 105 220 125 Z" />
+    <path d="M 450 85 Q 450 68 470 68 Q 485 50 510 55 Q 530 55 540 72 Q 558 75 558 85 Z" />
+  </g>
+
+  <!-- Distant Ocean Horizon -->
+  <path d="M 0 415 Q 200 402 400 415 T 800 412 L 800 475 L 0 475 Z" fill="url(#seaGrad)" />
+  <!-- Sparkling Waves -->
+  <g stroke="#A6E3E9" stroke-width="2" stroke-linecap="round" opacity="0.6">
+    <path d="M 50 432 Q 70 427 90 432" fill="none" />
+    <path d="M 160 445 Q 185 440 210 445" fill="none" />
+    <path d="M 610 430 Q 635 425 660 430" fill="none" />
+    <path d="M 700 448 Q 720 443 740 448" fill="none" />
+  </g>
+
+  <!-- Seaside Promenade Wall -->
+  <rect x="0" y="462" width="800" height="16" fill="#E2C29D" />
+  <line x1="0" y1="462" x2="800" y2="462" stroke="#FFF5E4" stroke-width="3" />
+  <line x1="0" y1="478" x2="800" y2="478" stroke="#C59B6D" stroke-width="2" />
+
+  <!-- Promenade Ground / Road -->
+  <rect x="0" y="478" width="800" height="122" fill="url(#roadGrad)" />
+
+  <!-- Ground Shadow under Bicycle -->
+  <ellipse cx="405" cy="524" rx="235" ry="16" fill="#B58D63" opacity="0.45" />
+  <ellipse cx="240" cy="524" rx="75" ry="9" fill="#8C6239" opacity="0.35" />
+  <ellipse cx="560" cy="524" rx="75" ry="9" fill="#8C6239" opacity="0.35" />
+
+  <!-- Speed / Breeze Lines -->
+  <g stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.65">
+    <line x1="35" y1="260" x2="95" y2="260" />
+    <line x1="55" y1="278" x2="85" y2="278" />
+    <line x1="25" y1="395" x2="105" y2="395" />
+    <line x1="65" y1="548" x2="165" y2="548" />
+    <line x1="480" y1="560" x2="590" y2="560" />
+  </g>
+
+  <!-- ================= BACK LAYER TENTACLES (Behind Bicycle) ================= -->
+
+  <!-- Tentacle 1: Reaching to Far Handlebar Grip (Back-Right) -->
+  <g id="tentacle-back-handlebar">
+    <path d="M 355 245 C 395 235, 435 190, 488 218 C 503 226, 492 242, 478 232"
+          fill="none" stroke="url(#tentacleBackGrad)" stroke-width="22" stroke-linecap="round" />
+    <!-- Suction cups -->
+    <circle cx="405" cy="228" r="5" fill="url(#suckerGrad)" />
+    <circle cx="428" cy="218" r="4.5" fill="url(#suckerGrad)" />
+    <circle cx="452" cy="213" r="4" fill="url(#suckerGrad)" />
+  </g>
+
+  <!-- Tentacle 3: Reaching to Back/Upper Left Pedal -->
+  <g id="tentacle-back-pedal">
+    <!-- Far Crank & Pedal (Behind Frame) -->
+    <line x1="380" y1="430" x2="348" y2="376" stroke="#829AB1" stroke-width="8" stroke-linecap="round" />
+    <path d="M 326 268 C 295 310, 302 355, 345 374 C 362 381, 368 365, 354 360"
+          fill="none" stroke="url(#tentacleBackGrad)" stroke-width="24" stroke-linecap="round" />
+    <!-- Suction cups -->
+    <circle cx="302" cy="312" r="5.5" fill="url(#suckerGrad)" />
+    <circle cx="308" cy="336" r="5" fill="url(#suckerGrad)" />
+    <circle cx="322" cy="356" r="4.5" fill="url(#suckerGrad)" />
+    <!-- Far Pedal Platform -->
+    <rect x="330" y="370" width="36" height="10" rx="4" fill="#334E68" stroke="#BCCCDC" stroke-width="1.5" />
+  </g>
+
+  <!-- Tentacle 6: Trailing Upper Back holding a Pinwheel -->
+  <g id="tentacle-pinwheel">
+    <!-- Suction cups under tentacle -->
+    <circle cx="242" cy="252" r="6" fill="url(#suckerGrad)" />
+    <circle cx="215" cy="242" r="5.5" fill="url(#suckerGrad)" />
+    <circle cx="188" cy="226" r="5" fill="url(#suckerGrad)" />
+    <circle cx="162" cy="216" r="4.5" fill="url(#suckerGrad)" />
+    <circle cx="136" cy="216" r="4" fill="url(#suckerGrad)" />
+
+    <path d="M 295 250 C 245 252, 200 205, 145 208 C 115 210, 108 182, 128 176 C 142 172, 144 190, 132 192"
+          fill="none" stroke="url(#tentacleBackGrad)" stroke-width="22" stroke-linecap="round" />
+
+    <!-- Pinwheel Stick -->
+    <line x1="124" y1="202" x2="105" y2="118" stroke="#8C6239" stroke-width="4" stroke-linecap="round" />
+    <!-- Pinwheel Blades -->
+    <g transform="translate(105, 118) rotate(-15)">
+      <path d="M 0 0 C 12 -22, 32 -12, 26 6 C 18 12, 6 4, 0 0 Z" fill="#FFBE0B" stroke="#FFFFFF" stroke-width="1" />
+      <path d="M 0 0 C 22 12, 12 32, -6 26 C -12 18, -4 6, 0 0 Z" fill="#3A86FF" stroke="#FFFFFF" stroke-width="1" />
+      <path d="M 0 0 C -12 22, -32 12, -26 -6 C -18 -12, -6 -4, 0 0 Z" fill="#FF006E" stroke="#FFFFFF" stroke-width="1" />
+      <path d="M 0 0 C -22 -12, -12 -32, 6 -26 C 12 -18, 4 -6, 0 0 Z" fill="#8338EC" stroke="#FFFFFF" stroke-width="1" />
+      <circle cx="0" cy="0" r="5" fill="#FFFFFF" stroke="#334E68" stroke-width="1.5" />
+    </g>
+  </g>
+
+  <!-- ================= BICYCLE ================= -->
+  <g id="bicycle">
+    <!-- Wheels -->
+    <use href="#wheel" x="240" y="430" />
+    <use href="#wheel" x="560" y="430" />
+
+    <!-- Fenders (Mudguards) -->
+    <path d="M 146 412 A 96 96 0 0 1 322 380" fill="none" stroke="url(#frameGrad)" stroke-width="8" stroke-linecap="round" />
+    <path d="M 472 390 A 96 96 0 0 1 642 380" fill="none" stroke="url(#frameGrad)" stroke-width="8" stroke-linecap="round" />
+    <!-- Fender Stays -->
+    <line x1="240" y1="430" x2="162" y2="380" stroke="#BCCCDC" stroke-width="2.5" />
+    <line x1="560" y1="430" x2="635" y2="390" stroke="#BCCCDC" stroke-width="2.5" />
+
+    <!-- Drive Chain & ChainGuard -->
+    <path d="M 240 416 L 380 404 A 26 26 0 0 1 380 456 L 240 444 A 14 14 0 0 1 240 416 Z"
+          fill="none" stroke="#627D98" stroke-width="3.5" stroke-dasharray="6,4" />
+
+    <!-- Bicycle Frame Tubes -->
+    <g stroke="url(#frameGrad)" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <!-- Chainstay -->
+      <line x1="240" y1="430" x2="380" y2="430" stroke-width="11" />
+      <!-- Seatstay -->
+      <line x1="240" y1="430" x2="328" y2="310" stroke-width="10" />
+      <!-- Down Tube (Cruiser Curve) -->
+      <path d="M 380 430 C 435 410, 480 355, 520 312" stroke-width="14" />
+      <!-- Top Tube (Cruiser Curve) -->
+      <path d="M 325 305 C 390 320, 450 305, 512 282" stroke-width="13" />
+      <!-- Seat Tube -->
+      <line x1="380" y1="430" x2="322" y2="295" stroke-width="14" />
+      <!-- Head Tube -->
+      <line x1="508" y1="270" x2="525" y2="320" stroke-width="16" />
+      <!-- Front Fork -->
+      <path d="M 522 315 C 534 360, 545 398, 560 430" stroke-width="12" />
+    </g>
+
+    <!-- Frame Highlights & Lugs -->
+    <circle cx="240" cy="430" r="8" fill="url(#chromeGrad)" />
+    <circle cx="560" cy="430" r="8" fill="url(#chromeGrad)" />
+    <rect x="503" y="266" width="18" height="6" rx="2" transform="rotate(-18 508 270)" fill="url(#chromeGrad)" />
+    <rect x="515" y="314" width="18" height="6" rx="2" transform="rotate(-18 522 315)" fill="url(#chromeGrad)" />
+
+    <!-- Seatpost & Vintage Leather Saddle -->
+    <line x1="322" y1="295" x2="314" y2="272" stroke="url(#chromeGrad)" stroke-width="9" stroke-linecap="round" />
+    <!-- Saddle Springs -->
+    <circle cx="294" cy="278" r="6" fill="none" stroke="#829AB1" stroke-width="2.5" />
+    <circle cx="302" cy="280" r="6" fill="none" stroke="#829AB1" stroke-width="2.5" />
+    <!-- Leather Saddle Body -->
+    <path d="M 278 265 C 278 252, 305 256, 330 262 C 348 266, 355 270, 348 276 C 335 282, 282 280, 278 265 Z"
+          fill="url(#leatherGrad)" stroke="#5C2D0C" stroke-width="2" />
+    <!-- Saddle Rivets -->
+    <circle cx="286" cy="266" r="2" fill="#FFE169" />
+    <circle cx="292" cy="271" r="2" fill="#FFE169" />
+
+    <!-- Handlebars & Stem -->
+    <!-- Far Handlebar Grip (partially visible) -->
+    <path d="M 505 242 C 502 225, 495 218, 472 222" fill="none" stroke="url(#chromeGrad)" stroke-width="9" stroke-linecap="round" />
+    <rect x="456" y="217" width="24" height="11" rx="5" transform="rotate(-8 468 222)" fill="url(#leatherGrad)" />
+
+    <!-- Stem & Near Swept-Back Handlebar -->
+    <path d="M 510 270 L 502 238 C 498 222, 475 232, 448 248" fill="none" stroke="url(#chromeGrad)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Brass Bicycle Bell -->
+    <ellipse cx="478" cy="226" rx="10" ry="7" fill="#FFBE0B" stroke="#B8860B" stroke-width="1.5" />
+    <path d="M 470 226 Q 478 232 486 226" fill="none" stroke="#FFF3B0" stroke-width="1.5" />
+    <!-- Bell Ringing Sound Waves -->
+    <path d="M 472 212 Q 478 206 485 211" fill="none" stroke="#FF9F1C" stroke-width="2" stroke-linecap="round" />
+    <path d="M 467 205 Q 478 196 490 204" fill="none" stroke="#FF9F1C" stroke-width="2" stroke-linecap="round" />
+
+    <!-- Wicker Front Basket -->
+    <g transform="translate(520, 238) rotate(8)">
+      <!-- Basket Straps -->
+      <rect x="-8" y="8" width="10" height="6" rx="2" fill="url(#leatherGrad)" />
+      <rect x="-8" y="28" width="10" height="6" rx="2" fill="url(#leatherGrad)" />
+      <!-- Friendly Little Crab Passenger in Basket -->
+      <g transform="translate(26, -6)">
+        <line x1="-6" y1="0" x2="-10" y2="-10" stroke="#E03A4E" stroke-width="3" stroke-linecap="round" />
+        <line x1="6" y1="0" x2="10" y2="-10" stroke="#E03A4E" stroke-width="3" stroke-linecap="round" />
+        <circle cx="-10" cy="-11" r="4" fill="#FFFFFF" stroke="#102A43" stroke-width="1.5" />
+        <circle cx="-9" cy="-11" r="2" fill="#102A43" />
+        <circle cx="10" cy="-11" r="4" fill="#FFFFFF" stroke="#102A43" stroke-width="1.5" />
+        <circle cx="11" cy="-11" r="2" fill="#102A43" />
+        <ellipse cx="0" cy="4" rx="14" ry="9" fill="#FF5E5B" stroke="#B01E35" stroke-width="1.5" />
+        <!-- Cute Crab Claw waving -->
+        <path d="M 12 2 C 22 -6, 26 -14, 20 -18 C 16 -20, 14 -12, 18 -10" fill="#FF5E5B" stroke="#B01E35" stroke-width="1.5" />
+      </g>
+      <!-- Wicker Basket Body -->
+      <path d="M 0 0 L 48 0 L 40 42 C 39 46, 35 48, 30 48 L 10 48 C 5 48, 2 45, 1 40 Z"
+            fill="#E6B86A" stroke="#9C6B27" stroke-width="2.5" stroke-linejoin="round" />
+      <!-- Wicker Weave Pattern -->
+      <line x1="3" y1="12" x2="45" y2="12" stroke="#B58338" stroke-width="2" stroke-dasharray="6,4" />
+      <line x1="4" y1="24" x2="43" y2="24" stroke="#B58338" stroke-width="2" stroke-dasharray="6,4" />
+      <line x1="6" y1="36" x2="41" y2="36" stroke="#B58338" stroke-width="2" stroke-dasharray="6,4" />
+      <!-- Basket Rim -->
+      <rect x="-3" y="-3" width="54" height="7" rx="3.5" fill="#D49B4B" stroke="#8C5818" stroke-width="2" />
+    </g>
+
+    <!-- Crankset / Sprocket -->
+    <circle cx="380" cy="430" r="26" fill="url(#chromeGrad)" stroke="#627D98" stroke-width="3" />
+    <circle cx="380" cy="430" r="19" fill="none" stroke="#829AB1" stroke-width="2" stroke-dasharray="8,6" />
+    <!-- Sprocket Cutouts -->
+    <circle cx="380" cy="417" r="4" fill="#E8F7FF" />
+    <circle cx="392" cy="436" r="4" fill="#DFB992" />
+    <circle cx="368" cy="436" r="4" fill="#DFB992" />
+    <circle cx="380" cy="430" r="7" fill="#627D98" />
+  </g>
+
+  <!-- ================= OCTOPUS BODY & FRONT TENTACLES ================= -->
+
+  <!-- Tentacle 7: Curving Playfully Behind Over Rear Wheel -->
+  <g id="tentacle-rear-curl">
+    <!-- Suction cups -->
+    <circle cx="268" cy="292" r="6" fill="url(#suckerGrad)" />
+    <circle cx="242" cy="312" r="5.5" fill="url(#suckerGrad)" />
+    <circle cx="212" cy="325" r="5" fill="url(#suckerGrad)" />
+    <circle cx="182" cy="328" r="4.5" fill="url(#suckerGrad)" />
+    <circle cx="152" cy="322" r="4" fill="url(#suckerGrad)" />
+    <circle cx="126" cy="306" r="3.5" fill="url(#suckerGrad)" />
+
+    <path d="M 308 265 C 275 280, 240 322, 180 320 C 130 318, 102 285, 118 262 C 130 245, 154 258, 145 274 C 138 285, 125 278, 130 268"
+          fill="none" stroke="url(#tentacleFrontGrad)" stroke-width="22" stroke-linecap="round" />
+    <!-- Highlight -->
+    <path d="M 295 268 C 265 282, 235 316, 180 314"
+          fill="none" stroke="#FF9B85" stroke-width="4" stroke-linecap="round" opacity="0.6" />
+  </g>
+
+  <!-- Tentacle 5: Gripping the Saddle & Seatpost -->
+  <g id="tentacle-saddle-grip">
+    <path d="M 322 252 C 300 262, 285 288, 312 302 C 335 314, 352 296, 336 286"
+          fill="none" stroke="url(#tentacleFrontGrad)" stroke-width="20" stroke-linecap="round" />
+    <circle cx="298" cy="295" r="4.5" fill="url(#suckerGrad)" />
+    <circle cx="312" cy="306" r="4" fill="url(#suckerGrad)" />
+  </g>
+
+  <!-- Tentacle 4: Pushing the Front/Lower Right Pedal -->
+  <g id="tentacle-front-pedal">
+    <!-- Near Crank Arm -->
+    <line x1="380" y1="430" x2="412" y2="484" stroke="url(#chromeGrad)" stroke-width="9" stroke-linecap="round" />
+    <circle cx="380" cy="430" r="5" fill="#FFFFFF" />
+
+    <!-- Suction cups along inside of leg -->
+    <circle cx="362" cy="318" r="6" fill="url(#suckerGrad)" />
+    <circle cx="354" cy="346" r="5.5" fill="url(#suckerGrad)" />
+    <circle cx="354" cy="375" r="5.5" fill="url(#suckerGrad)" />
+    <circle cx="362" cy="404" r="5" fill="url(#suckerGrad)" />
+    <circle cx="375" cy="432" r="4.5" fill="url(#suckerGrad)" />
+    <circle cx="390" cy="458" r="4" fill="url(#suckerGrad)" />
+
+    <!-- Main Tentacle Path to Front Pedal -->
+    <path d="M 348 265 C 332 325, 335 415, 398 478 C 414 494, 438 486, 428 468 C 422 458, 408 464, 412 474"
+          fill="none" stroke="url(#tentacleFrontGrad)" stroke-width="24" stroke-linecap="round" />
+    <!-- Highlight -->
+    <path d="M 344 280 C 330 330, 335 405, 385 462"
+          fill="none" stroke="#FF9B85" stroke-width="4.5" stroke-linecap="round" opacity="0.6" />
+
+    <!-- Near Pedal Platform (Clamped under tentacle tip) -->
+    <rect x="394" y="479" width="38" height="11" rx="4" fill="#102A43" stroke="#BCCCDC" stroke-width="2" />
+    <rect x="400" y="482" width="26" height="5" rx="2" fill="#FF9F1C" />
+  </g>
+
+  <!-- Tentacle 2: Holding Near Handlebar Grip -->
+  <g id="tentacle-front-handlebar">
+    <!-- Near Handlebar Grip -->
+    <rect x="428" y="242" width="28" height="12" rx="6" transform="rotate(-25 442 248)" fill="url(#leatherGrad)" stroke="#5C2D0C" stroke-width="1.5" />
+
+    <!-- Suction cups -->
+    <circle cx="382" cy="278" r="5.5" fill="url(#suckerGrad)" />
+    <circle cx="406" cy="276" r="5" fill="url(#suckerGrad)" />
+    <circle cx="428" cy="268" r="4.5" fill="url(#suckerGrad)" />
+
+    <path d="M 358 255 C 382 276, 415 272, 442 250 C 458 236, 474 248, 458 262 C 446 272, 434 260, 444 250"
+          fill="none" stroke="url(#tentacleFrontGrad)" stroke-width="21" stroke-linecap="round" />
+    <!-- Highlight -->
+    <path d="M 365 255 C 385 270, 412 268, 436 250"
+          fill="none" stroke="#FF9B85" stroke-width="4" stroke-linecap="round" opacity="0.6" />
+  </g>
+
+  <!-- ================= OCTOPUS HEAD & MANTE ================= -->
+  <g id="octopus-head">
+    <!-- Main Bulbous Mantle / Head tilted back jauntily -->
+    <path d="M 290 250
+             C 245 235, 215 175, 240 125
+             C 262 80, 335 72, 375 110
+             C 405 138, 408 188, 388 225
+             C 375 248, 325 262, 290 250 Z"
+          fill="url(#octoHeadGrad)" />
+
+    <!-- Specular Glossy Highlights on Head -->
+    <ellipse cx="285" cy="128" rx="34" ry="18" transform="rotate(-25 285 128)" fill="#FFB5A0" opacity="0.55" />
+    <circle cx="255" cy="158" r="9" fill="#FFB5A0" opacity="0.5" />
+
+    <!-- Subtle Decorative Spots on Mantle -->
+    <circle cx="262" cy="195" r="11" fill="#C92A42" opacity="0.45" />
+    <circle cx="290" cy="215" r="7" fill="#C92A42" opacity="0.45" />
+    <circle cx="245" cy="175" r="6" fill="#C92A42" opacity="0.4" />
+
+    <!-- Eyes & Spectacles -->
+    <!-- Left (Near) Eye Socket Swell -->
+    <circle cx="352" cy="188" r="22" fill="#E03A4E" />
+    <!-- Right (Far) Eye Socket Swell -->
+    <circle cx="392" cy="178" r="19" fill="#C92A42" />
+
+    <!-- White Sclera -->
+    <circle cx="352" cy="188" r="17" fill="#FFFFFF" />
+    <circle cx="392" cy="178" r="15" fill="#FFFFFF" />
+
+    <!-- Irises & Pupils (Looking excitedly ahead!) -->
+    <circle cx="357" cy="187" r="10" fill="#102A43" />
+    <circle cx="396" cy="177" r="9" fill="#102A43" />
+    <!-- Eye Catchlights -->
+    <circle cx="354" cy="183" r="4" fill="#FFFFFF" />
+    <circle cx="361" cy="191" r="2" fill="#FFFFFF" />
+    <circle cx="393" cy="173" r="3.5" fill="#FFFFFF" />
+    <circle cx="399" cy="181" r="1.5" fill="#FFFFFF" />
+
+    <!-- Happy Rosy Cheeks -->
+    <ellipse cx="336" cy="210" rx="10" ry="6" fill="#FF9B85" opacity="0.75" />
+    <ellipse cx="396" cy="198" rx="7" ry="4.5" fill="#FF9B85" opacity="0.65" />
+
+    <!-- Cheerful Smile -->
+    <path d="M 358 212 Q 373 226 384 208" fill="none" stroke="#6E0D25" stroke-width="3.5" stroke-linecap="round" />
+    <path d="M 363 216 Q 373 224 380 214" fill="#FF8E6E" />
+
+    <!-- Brass Round Spectacles -->
+    <circle cx="352" cy="188" r="20" fill="none" stroke="#FFD166" stroke-width="3" />
+    <circle cx="392" cy="178" r="17" fill="none" stroke="#FFD166" stroke-width="3" />
+    <!-- Spectacle Bridge & Temple -->
+    <path d="M 371 182 Q 375 178 376 181" fill="none" stroke="#FFD166" stroke-width="3" />
+    <line x1="332" y1="188" x2="295" y2="182" stroke="#FFD166" stroke-width="2.5" stroke-linecap="round" />
+
+    <!-- Jaunty Straw Boater Hat -->
+    <g transform="translate(308, 92) rotate(-16)">
+      <!-- Hat Shadow on Head -->
+      <ellipse cx="0" cy="14" rx="58" ry="12" fill="#8A1529" opacity="0.35" />
+      <!-- Hat Brim -->
+      <ellipse cx="0" cy="10" rx="62" ry="13" fill="url(#hatGrad)" stroke="#C59B27" stroke-width="2" />
+      <!-- Hat Crown -->
+      <path d="M -38 8 L -35 -18 C -35 -24, 35 -24, 35 -18 L 38 8 Z" fill="url(#hatGrad)" stroke="#C59B27" stroke-width="2" />
+      <!-- Navy & Coral Hat Ribbon -->
+      <path d="M -37 -1 C -15 5, 15 5, 37 -1 L 38 8 C 15 14, -15 14, -38 8 Z" fill="#1D3557" />
+      <path d="M -37 2 C -15 8, 15 8, 37 2" fill="none" stroke="#FF5E5B" stroke-width="3" />
+      <!-- Hat Crown Top Ellipse -->
+      <ellipse cx="0" cy="-18" rx="35" ry="7" fill="#FFF3B0" stroke="#C59B27" stroke-width="1.5" />
+    </g>
+  </g>
+
+  <!-- Tentacle 8: Reaching Up to Hold the Boater Hat in the Breeze! -->
+  <g id="tentacle-hat-holder">
+    <!-- Suction cups -->
+    <circle cx="255" cy="215" r="5.5" fill="url(#suckerGrad)" />
+    <circle cx="238" cy="190" r="5" fill="url(#suckerGrad)" />
+    <circle cx="232" cy="162" r="4.5" fill="url(#suckerGrad)" />
+    <circle cx="240" cy="135" r="4" fill="url(#suckerGrad)" />
+
+    <path d="M 288 242 C 235 225, 205 165, 232 120 C 246 96, 275 88, 268 106 C 264 116, 250 112, 254 102"
+          fill="none" stroke="url(#tentacleFrontGrad)" stroke-width="20" stroke-linecap="round" />
+    <!-- Highlight -->
+    <path d="M 278 236 C 235 218, 212 168, 234 126"
+          fill="none" stroke="#FF9B85" stroke-width="4" stroke-linecap="round" opacity="0.6" />
+  </g>
+
+  <!-- ================= FOREGROUND DETAILS & BUBBLES ================= -->
+  <use href="#bubble" x="435" y="145" transform="scale(1.1)" />
+  <use href="#bubble" x="395" y="112" transform="scale(0.75)" />
+  <use href="#bubble" x="460" y="95" transform="scale(0.55)" />
+  <use href="#bubble" x="185" y="135" transform="scale(0.9)" />
+  <use href="#bubble" x="145" y="105" transform="scale(0.6)" />
+  <use href="#bubble" x="620" y="215" transform="scale(0.85)" />
+  <use href="#bubble" x="655" y="185" transform="scale(0.5)" />
+
+  <!-- Little Starfish on the Promenade -->
+  <g transform="translate(675, 545) rotate(12) scale(0.85)">
+    <path d="M 0 -18 L 5 -5 L 19 -4 L 8 5 L 12 18 L 0 11 L -12 18 L -8 5 L -19 -4 L -5 -5 Z"
+          fill="#FF9F1C" stroke="#E07A00" stroke-width="2" stroke-linejoin="round" />
+    <circle cx="0" cy="2" r="2" fill="#FFF3B0" />
+    <circle cx="0" cy="-6" r="1.5" fill="#FFF3B0" />
+    <circle cx="6" cy="0" r="1.5" fill="#FFF3B0" />
+    <circle cx="-6" cy="0" r="1.5" fill="#FFF3B0" />
+    <circle cx="4" cy="7" r="1.5" fill="#FFF3B0" />
+    <circle cx="-4" cy="7" r="1.5" fill="#FFF3B0" />
+  </g>
+</svg>

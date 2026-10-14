@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stormy Lighthouse</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  canvas{width:960px;height:540px;max-width:100vw;max-height:100vh;background:#05080f;display:block}
+</style>
+</head>
+<body>
+<canvas id="c" width="960" height="540"></canvas>
+<script>
+(() => {
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  const W = 960, H = 540, TAU = Math.PI * 2;
+  const LOOP = 24; // seconds; all periodic motion divides this for a seamless loop
+
+  // Deterministic PRNG so the loop is stable
+  let seed = 12345;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+
+  // Lightning schedule (times within loop, seconds)
+  const strikes = [3.0, 8.2, 8.55, 14.0, 19.5, 19.8];
+  function flashAt(t) {
+    let f = 0;
+    for (const s of strikes) {
+      let d = t - s;
+      if (d < 0) d += LOOP;
+      if (d < 0.6) f = Math.max(f, Math.exp(-d * 7) * (0.6 + 0.4 * Math.abs(Math.sin(d * 60))));
+    }
+    return f;
+  }
+
+  // Bolt shapes
+  const bolts = strikes.map((s, i) => {
+    const pts = []; let x = 120 + rnd() * 720, y = 0;
+    pts.push([x, y]);
+    while (y < 250) { x += (rnd() - 0.5) * 50; y += 12 + rnd() * 20; pts.push([x, y]); }
+    const branch = [];
+    const bi = 3 + (rnd() * 4 | 0);
+    let bx = pts[bi][0], by = pts[bi][1];
+    branch.push([bx, by]);
+    for (let k = 0; k < 5; k++) { bx += 8 + rnd() * 18 * (i % 2 ? -1 : 1); by += 10 + rnd() * 14; branch.push([bx, by]); }
+    return { pts, branch };
+  });
+
+  // Stars/cloud detail
+  const clouds = [];
+  for (let i = 0; i < 14; i++) clouds.push({ x: rnd() * W, y: 10 + rnd() * 200, r: 90 + rnd() * 130, s: 1 + (i % 3), a: 0.25 + rnd() * 0.3 });
+
+  // Rain
+  const rain = [];
+  for (let i = 0; i < 380; i++) rain.push({ x: rnd() * (W + 200), y: rnd() * H, v: 700 + rnd() * 400, l: 10 + rnd() * 14, a: 0.15 + rnd() * 0.3 });
+
+  // Cliff polygon
+  const cliff = [[0,540],[0,400],[50,385],[110,378],[170,360],[230,335],[290,318],[350,312],[420,320],[470,345],[500,380],[540,410],[600,440],[640,540]];
+
+  // Spray particles
+  const spray = [];
+
+  // Rocks in the sea
+  const rocks = [[560,455,40],[640,470,30],[720,480,22]];
+
+  function sky(f) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    const mix = (a, b) => Math.round(a + (b - a) * f);
+    g.addColorStop(0, `rgb(${mix(6,150)},${mix(10,165)},${mix(22,200)})`);
+    g.addColorStop(0.6, `rgb(${mix(14,110)},${mix(22,125)},${mix(40,160)})`);
+    g.addColorStop(1, `rgb(${mix(18,80)},${mix(30,95)},${mix(48,125)})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // clouds drifting; wrap distance equals W+2r multiples tied to loop
+    for (const c of clouds) {
+      const span = W + 2 * c.r * 2;
+      const x = ((c.x + (c.s * span / LOOP) * t) % span) - c.r * 2;
+      const rg = ctx.createRadialGradient(x, c.y, 0, x, c.y, c.r);
+      const lit = 20 + 140 * f;
+      rg.addColorStop(0, `rgba(${lit},${lit + 6},${lit + 22},${c.a})`);
+      rg.addColorStop(1, `rgba(${lit},${lit + 6},${lit + 22},0)`);
+      ctx.fillStyle = rg;
+      ctx.fillRect(x - c.r, c.y - c.r, c.r * 2, c.r * 2);
+    }
+  }
+
+  function drawBolt(f) {
+    for (let i = 0; i < strikes.length; i++) {
+      let d = t - strikes[i]; if (d < 0) d += LOOP;
+      if (d > 0.25) continue;
+      const a = Math.max(0, 1 - d / 0.25);
+      const b = bolts[i];
+      ctx.save();
+      ctx.lineJoin = 'round';
+      for (const [w, col] of [[7, `rgba(150,170,255,${0.25 * a})`], [2, `rgba(255,255,255,${a})`]]) {
+        ctx.strokeStyle = col; ctx.lineWidth = w;
+        ctx.beginPath(); b.pts.forEach((p, k) => k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();
+        ctx.beginPath(); b.branch.forEach((p, k) => k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  const LX = 330, LY = 150; // lamp position
+  function beam(f) {
+    // Sweeps slowly: one full rotation per LOOP/2 seconds
+    const ang = (t / (LOOP / 2)) * TAU;
+    // Perspective: beam horizontal direction oscillates; intensity when facing viewer
+    const dirX = Math.cos(ang), facing = Math.sin(ang);
+    const len = 900;
+    const spread = 0.09 + 0.05 * Math.abs(facing);
+    const strength = 0.25 + 0.35 * Math.abs(dirX) * 0 + 0.3 * (0.5 + 0.5 * Math.abs(dirX));
+    for (const sgn of [1, -1]) { // two opposing beams
+      const dx = dirX * sgn;
+      const ex = LX + dx * len, ey = LY + 20 * facing * sgn - 10;
+      const a = Math.atan2(ey - LY, ex - LX);
+      const thick = 0.04 + 0.5 * Math.abs(dx) * spread;
+      const g = ctx.createLinearGradient(LX, LY, ex, ey);
+      g.addColorStop(0, `rgba(255,245,200,${strength * (0.4 + 0.6 * Math.abs(dx))})`);
+      g.addColorStop(1, 'rgba(255,245,200,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(LX, LY - 3);
+      ctx.lineTo(LX + Math.cos(a - thick) * len, LY + Math.sin(a - thick) * len);
+      ctx.lineTo(LX + Math.cos(a + thick) * len, LY + Math.sin(a + thick) * len);
+      ctx.lineTo(LX, LY + 3);
+      ctx.closePath(); ctx.fill();
+    }
+    // lamp glow
+    const gl = ctx.createRadialGradient(LX, LY, 0, LX, LY, 50);
+    const gi = 0.5 + 0.5 * Math.abs(Math.cos(ang));
+    gl.addColorStop(0, `rgba(255,240,170,${0.5 + 0.4 * gi})`);
+    gl.addColorStop(1, 'rgba(255,240,170,0)');
+    ctx.fillStyle = gl; ctx.fillRect(LX - 50, LY - 50, 100, 100);
+  }
+
+  function lighthouse(f) {
+    const lit = (c, k) => Math.round(c + (200 - c) * f * k);
+    // tower
+    const bx = LX, by = 318, topY = 170, bw = 34, tw = 22;
+    ctx.fillStyle = `rgb(${lit(40,1)},${lit(44,1)},${lit(54,1)})`;
+    ctx.beginPath();
+    ctx.moveTo(bx - bw, by); ctx.lineTo(bx - tw, topY); ctx.lineTo(bx + tw, topY); ctx.lineTo(bx + bw, by); ctx.closePath(); ctx.fill();
+    // stripes
+    for (let i = 0; i < 4; i++) {
+      const y0 = topY + 12 + i * 36, y1 = y0 + 18;
+      const wAt = y => tw + (bw - tw) * (y - topY) / (by - topY);
+      ctx.fillStyle = `rgb(${lit(120,0.6)},${lit(30,0.6)},${lit(32,0.6)})`;
+      ctx.beginPath();
+      ctx.moveTo(bx - wAt(y0), y0); ctx.lineTo(bx + wAt(y0), y0); ctx.lineTo(bx + wAt(y1), y1); ctx.lineTo(bx - wAt(y1), y1); ctx.closePath(); ctx.fill();
+    }
+    // gallery
+    ctx.fillStyle = `rgb(${lit(25,1)},${lit(28,1)},${lit(34,1)})`;
+    ctx.fillRect(bx - 30, topY - 4, 60, 6);
+    ctx.fillRect(bx - 28, topY - 14, 2, 10); ctx.fillRect(bx + 26, topY - 14, 2, 10);
+    // lantern room
+    ctx.fillStyle = 'rgba(255,235,160,0.9)';
+    ctx.fillRect(bx - 14, LY - 14, 28, 26 - 4);
+    ctx.fillStyle = `rgb(${lit(25,1)},${lit(28,1)},${lit(34,1)})`;
+    ctx.fillRect(bx - 1, LY - 14, 2, 22);
+    ctx.beginPath(); ctx.moveTo(bx - 19, LY - 14); ctx.lineTo(bx, LY - 36); ctx.lineTo(bx + 19, LY - 14); ctx.closePath(); ctx.fill();
+    ctx.fillRect(bx - 1.5, LY - 46, 3, 12);
+    // door & window
+    ctx.fillStyle = '#10131a'; ctx.fillRect(bx - 5, by - 24, 10, 24);
+    ctx.fillStyle = 'rgba(255,220,130,0.6)'; ctx.fillRect(bx - 3, 226, 6, 10);
+  }
+
+  function cliffDraw(f) {
+    const g = ctx.createLinearGradient(0, 300, 0, H);
+    const m = v => Math.round(v + 70 * f);
+    g.addColorStop(0, `rgb(${m(30)},${m(32)},${m(38)})`);
+    g.addColorStop(1, `rgb(${m(10)},${m(11)},${m(14)})`);
+    ctx.fillStyle = g;
+    ctx.beginPath(); cliff.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fill();
+    // crack lines
+    ctx.strokeStyle = `rgba(0,0,0,0.35)`; ctx.lineWidth = 1.5;
+    for (let i = 0; i < 14; i++) {
+      const x = 40 + i * 38, y = 400 + (i % 4) * 30;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 14, y + 18); ctx.lineTo(x + 6, y + 40); ctx.stroke();
+    }
+    for (const r of rocks) {
+      ctx.fillStyle = `rgb(${m(16)},${m(18)},${m(22)})`;
+      ctx.beginPath(); ctx.ellipse(r[0], r[1], r[2], r[2] * 0.6, 0, Math.PI, 0); ctx.fill();
+    }
+  }
+
+  const SEA_Y = 400;
+  function sea(f) {
+    const m = (a, b) => Math.round(a + (b - a) * f);
+    for (let layer = 0; layer < 4; layer++) {
+      const base = SEA_Y + layer * 28;
+      const amp = 5 + layer * 3, k = 0.012 + layer * 0.004;
+      const ph = (t / LOOP) * TAU * (layer + 2) * (layer % 2 ? -1 : 1);
+      ctx.beginPath(); ctx.moveTo(0, H);
+      for (let x = 0; x <= W; x += 8) {
+        const y = base + Math.sin(x * k + ph) * amp + Math.sin(x * k * 2.3 - ph * 1.5) * amp * 0.4;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W, H); ctx.closePath();
+      ctx.fillStyle = `rgba(${m(8 + layer * 2, 90)},${m(24 + layer * 4, 120)},${m(44 + layer * 6, 150)},${0.75 + layer * 0.05})`;
+      ctx.fill();
+      // foam crest
+      ctx.strokeStyle = `rgba(200,220,240,${0.12 + 0.2 * f})`; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 8) {
+        const y = base + Math.sin(x * k + ph) * amp + Math.sin(x * k * 2.3 - ph * 1.5) * amp * 0.4;
+        x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // Wave crashes on the cliff: periodic every 4s (divides LOOP)
+  const CRASH = 4;
+  function crash(dt) {
+    const ph = (t % CRASH) / CRASH;
+    const prev = ((t - dt + LOOP) % CRASH) / CRASH;
+    if (ph < prev) { // new crash
+      for (let i = 0; i < 70; i++) {
+        const px = 470 + rnd() * 120, py = 372 + rnd() * 30;
+        spray.push({ x: px, y: py, vx: -60 + rnd() * 160, vy: -(120 + rnd() * 260), life: 0, max: 0.8 + rnd() * 0.9, r: 1 + rnd() * 2.2 });
+      }
+    }
+    // wave surge body
+    const s = Math.sin(Math.min(1, ph * 2.2) * Math.PI) * (ph < 0.45 ? 1 : 0);
+    if (s > 0) {
+      ctx.fillStyle = `rgba(210,228,245,${0.5 * s})`;
+      ctx.beginPath();
+      ctx.moveTo(430, 410);
+      ctx.quadraticCurveTo(470, 410 - 70 * s, 540, 400 - 20 * s);
+      ctx.quadraticCurveTo(580, 420, 600, 442);
+      ctx.lineTo(500, 430); ctx.closePath(); ctx.fill();
+    }
+  }
+  function drawSpray(dt, f) {
+    for (let i = spray.length - 1; i >= 0; i--) {
+      const p = spray[i];
+      p.life += dt; p.vy += 520 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+      if (p.life > p.max) { spray.splice(i, 1); continue; }
+      ctx.fillStyle = `rgba(220,235,250,${(1 - p.life / p.max) * (0.6 + 0.3 * f)})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill();
+    }
+  }
+
+  function drawRain(dt, f) {
+    ctx.lineWidth = 1;
+    const wind = 0.28;
+    for (const d of rain) {
+      d.y += d.v * dt; d.x -= d.v * wind * dt;
+      if (d.y > H) { d.y = -d.l; d.x = rnd() * (W + 200); }
+      if (d.x < -20) d.x += W + 200;
+      const al = d.a * (1 + f * 0.8);
+      ctx.strokeStyle = `rgba(${170 + 60 * f},${190 + 50 * f},${220 + 30 * f},${Math.min(1, al)})`;
+      ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x + d.l * wind, d.y - d.l); ctx.stroke();
+    }
+  }
+
+  let t = 0, last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    t = (t + dt) % LOOP;
+    const f = flashAt(t);
+    sky(f);
+    drawBolt(f);
+    beam(f);
+    sea(f);
+    lighthouse(f);
+    cliffDraw(f);
+    crash(dt);
+    drawSpray(dt, f);
+    drawRain(dt, f);
+    // vignette + flash overlay
+    const v = ctx.createRadialGradient(W / 2, H / 2, 200, W / 2, H / 2, 620);
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.5)');
+    ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+    if (f > 0) { ctx.fillStyle = `rgba(210,225,255,${f * 0.22})`; ctx.fillRect(0, 0, W, H); }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
