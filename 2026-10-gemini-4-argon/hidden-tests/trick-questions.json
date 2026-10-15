@@ -1,0 +1,44 @@
+{
+ "questions": [
+  {
+   "no": 1,
+   "question": "How many times does the letter e (upper or lower case) appear in this sentence: \"Seventeen elephants never needed seven extra evenings\"?",
+   "answer": "16"
+  },
+  {
+   "no": 2,
+   "question": "What day of the week is 14 March 2031?",
+   "answer": "Friday"
+  },
+  {
+   "no": 3,
+   "question": "A train leaves at 22:47 and the journey takes 3 hours 38 minutes. What time does it arrive, in 24-hour HH:MM format?",
+   "answer": "02:25"
+  },
+  {
+   "no": 4,
+   "question": "Write the word strawberry backwards, then give only its 3rd, 4th, 5th and 6th letters.",
+   "answer": "rebw"
+  },
+  {
+   "no": 5,
+   "question": "What is 2^20 minus 3^12?",
+   "answer": "517135"
+  },
+  {
+   "no": 6,
+   "question": "An analog clock shows exactly 3:15. What is the smaller angle between the hour hand and the minute hand, in degrees?",
+   "answer": "7.5"
+  },
+  {
+   "no": 7,
+   "question": "How many prime numbers are there strictly between 100 and 150?",
+   "answer": "10"
+  },
+  {
+   "no": 8,
+   "question": "How many Sundays are there in February 2032?",
+   "answer": "5"
+  }
+ ]
+}

@@ -1,0 +1,61 @@
+code_judge1,code_judge2,test,model,agent,effort,judge1_gpt61_sol,judge2_claude_opus55,score
+F01,K615,lighthouse,Gemini 4 Argon,Antigravity,medium,9,9.0,9.0
+F05,K874,lighthouse,GPT-6.1 Sol,Codex CLI,medium,10,8.5,9.25
+F13,K369,lighthouse,GPT-6.1 Sol,Codex CLI,low,9,8.0,8.5
+F14,K421,lighthouse,Gemini 4 Argon,Antigravity,high,9,9.0,9.0
+F17,K776,lighthouse,Gemini 4 Argon,Antigravity,low,9,9.0,9.0
+F18,K532,lighthouse,Claude Sonnet 5.5,Claude Code,high,9,8.5,8.75
+F21,K904,lighthouse,GPT-6.1 Sol,Codex CLI,high,9,8.5,8.75
+F25,K697,lighthouse,GPT-6 Astra,Codex CLI,medium,9,9.0,9.0
+F27,K908,lighthouse,GPT-6 Astra,Codex CLI,high,10,8.0,9.0
+F30,K740,lighthouse,GPT-6 Astra,Codex CLI,low,9,7.5,8.25
+F40,K741,lighthouse,Claude Opus 5.5,Claude Code,high,9,8.0,8.5
+F46,K422,lighthouse,Claude Opus 5.5,Claude Code,medium,9,8.0,8.5
+F48,K682,lighthouse,Claude Sonnet 5.5,Claude Code,low,9,8.0,8.5
+F54,K512,lighthouse,Claude Opus 5.5,Claude Code,low,9,8.5,8.75
+F57,K305,lighthouse,Claude Sonnet 5.5,Claude Code,medium,9,7.0,8.0
+H01,K915,hexagon,Gemini 4 Argon,Antigravity,low,10,9.0,9.5
+H03,K558,hexagon,Claude Sonnet 5.5,Claude Code,low,10,8.5,9.25
+H08,K929,hexagon,GPT-6 Astra,Codex CLI,low,10,9.0,9.5
+H10,K463,hexagon,Gemini 4 Argon,Antigravity,high,10,9.0,9.5
+H13,K255,hexagon,Gemini 4 Argon,Antigravity,medium,10,9.5,9.75
+H18,K342,hexagon,GPT-6.1 Sol,Codex CLI,high,10,9.0,9.5
+H20,K376,hexagon,Claude Opus 5.5,Claude Code,medium,10,9.0,9.5
+H21,K553,hexagon,Claude Opus 5.5,Claude Code,high,10,9.5,9.75
+H30,K546,hexagon,GPT-6 Astra,Codex CLI,high,10,9.0,9.5
+H32,K417,hexagon,GPT-6 Astra,Codex CLI,medium,10,9.0,9.5
+H36,K161,hexagon,GPT-6.1 Sol,Codex CLI,low,10,8.5,9.25
+H39,K960,hexagon,Claude Sonnet 5.5,Claude Code,high,10,9.0,9.5
+H43,K816,hexagon,GPT-6.1 Sol,Codex CLI,medium,10,9.0,9.5
+H57,K822,hexagon,Claude Sonnet 5.5,Claude Code,medium,10,8.5,9.25
+H60,K542,hexagon,Claude Opus 5.5,Claude Code,low,10,8.5,9.25
+O04,K793,octopus,GPT-6 Astra,Codex CLI,high,9,9.0,9.0
+O05,K466,octopus,Claude Sonnet 5.5,Claude Code,high,9,7.5,8.25
+O21,K438,octopus,GPT-6.1 Sol,Codex CLI,low,10,9.0,9.5
+O24,K886,octopus,GPT-6 Astra,Codex CLI,low,9,9.0,9.0
+O26,K658,octopus,Gemini 4 Argon,Antigravity,low,9,9.5,9.25
+O28,K427,octopus,Claude Sonnet 5.5,Claude Code,low,8,7.0,7.5
+O30,K593,octopus,Claude Opus 5.5,Claude Code,low,9,7.0,8.0
+O42,K844,octopus,Gemini 4 Argon,Antigravity,high,10,10.0,10.0
+O43,K253,octopus,GPT-6 Astra,Codex CLI,medium,9,9.0,9.0
+O48,K926,octopus,Claude Opus 5.5,Claude Code,high,9,8.5,8.75
+O49,K638,octopus,Claude Sonnet 5.5,Claude Code,medium,9,8.0,8.5
+O54,K748,octopus,GPT-6.1 Sol,Codex CLI,medium,10,9.0,9.5
+O58,K279,octopus,Gemini 4 Argon,Antigravity,medium,10,9.5,9.75
+O59,K620,octopus,GPT-6.1 Sol,Codex CLI,high,9,9.0,9.0
+O67,K705,octopus,Claude Opus 5.5,Claude Code,medium,9,8.5,8.75
+R01,K213,rocket,GPT-6 Astra,Codex CLI,low,9,8.0,8.5
+R02,K149,rocket,GPT-6.1 Sol,Codex CLI,low,9,8.5,8.75
+R04,K383,rocket,Claude Sonnet 5.5,Claude Code,high,9,9.0,9.0
+R05,K819,rocket,Gemini 4 Argon,Antigravity,low,9,9.0,9.0
+R06,K176,rocket,Gemini 4 Argon,Antigravity,high,9,9.0,9.0
+R07,K478,rocket,GPT-6.1 Sol,Codex CLI,medium,10,8.0,9.0
+R08,K846,rocket,GPT-6.1 Sol,Codex CLI,high,9,8.5,8.75
+R09,K974,rocket,Claude Opus 5.5,Claude Code,medium,9,8.0,8.5
+R11,K320,rocket,GPT-6 Astra,Codex CLI,high,9,8.5,8.75
+R13,K200,rocket,Claude Opus 5.5,Claude Code,high,9,9.0,9.0
+R14,K443,rocket,Gemini 4 Argon,Antigravity,medium,9,8.5,8.75
+R15,K490,rocket,GPT-6 Astra,Codex CLI,medium,9,8.0,8.5
+R26,K501,rocket,Claude Sonnet 5.5,Claude Code,low,7,7.5,7.25
+R40,K223,rocket,Claude Sonnet 5.5,Claude Code,medium,9,8.0,8.5
+R45,K112,rocket,Claude Opus 5.5,Claude Code,low,9,8.5,8.75

@@ -14,6 +14,6 @@ The narration in the videos uses an AI voice; the tests, numbers and sources are
 
 ## License
 
-- **Data, prompts, model outputs, judge notes and docs:** [CC BY 4.0](LICENSE). Use them for anything, including
+- **Data, prompts, model outputs, judge notes, judge sheets and docs:** [CC BY 4.0](LICENSE). Use them for anything, including
   commercial work; just credit "Novaki (novaki.lol)" and link back here.
-- **Code** (`score.py`): [MIT](LICENSE-CODE).
+- **Code** (`score.py`, `hidden-tests/check.mjs`, `hidden-tests/snake.mjs`): [MIT](LICENSE-CODE).

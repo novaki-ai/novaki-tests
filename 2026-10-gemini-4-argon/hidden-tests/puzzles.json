@@ -1,0 +1,49 @@
+{
+ "logic-puzzle": {
+  "name": "Ben",
+  "seat": 3,
+  "question": "Who uses Vim, and in which seat does the Gemini user sit?"
+ },
+ "hard-logic-puzzle": {
+  "name": "Ada",
+  "seat": 5,
+  "question": "Who programs in Rust, and in which seat is the person who drinks cola?",
+  "solution": [
+   {
+    "seat": 1,
+    "name": "Eli",
+    "model": "Sonnet",
+    "language": "Swift",
+    "drink": "water"
+   },
+   {
+    "seat": 2,
+    "name": "Ben",
+    "model": "Astra",
+    "language": "Go",
+    "drink": "juice"
+   },
+   {
+    "seat": 3,
+    "name": "Cem",
+    "model": "Opus",
+    "language": "Python",
+    "drink": "coffee"
+   },
+   {
+    "seat": 4,
+    "name": "Ada",
+    "model": "Sol",
+    "language": "Rust",
+    "drink": "tea"
+   },
+   {
+    "seat": 5,
+    "name": "Dua",
+    "model": "Argon",
+    "language": "Java",
+    "drink": "cola"
+   }
+  ]
+ }
+}

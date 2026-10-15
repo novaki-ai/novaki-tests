@@ -50,8 +50,24 @@ The formula was fixed before the results came in (see [`score.py`](score.py), wh
 | [`results/duration-parser-tests.json`](results/duration-parser-tests.json), [`results/calculator-tests.json`](results/calculator-tests.json) | Every hidden test: input, expected, got |
 | [`results/puzzles.json`](results/puzzles.json), [`results/trick-questions.json`](results/trick-questions.json) | Every answer given |
 | [`results/summary.json`](results/summary.json) | The scoreboard by model and effort |
+| [`hidden-tests/`](hidden-tests) | The tests the models never saw, as data: 20 duration-parser and 30 calculator tests, the 10 Snake checks, the trick-question key and both puzzle answers. [`check.mjs`](hidden-tests/check.mjs) runs them (Node, no dependencies) and [`snake.mjs`](hidden-tests/snake.mjs) is the Snake robot (Playwright) |
+| [`judge-sheets/`](judge-sheets) | The 60 sheets the blind judges scored, plus 15 lightning frames for the lighthouse, named by the anonymous code judge 1 saw. [`key.csv`](judge-sheets/key.csv) maps every code, for both judges, to the model, effort and scores |
 
 Open any HTML file in `outputs/` in a browser to watch the animation or play the game.
+
+## Try it yourself
+
+Give any model the prompts above, save what it writes, and score it the same way:
+
+```bash
+cd hidden-tests
+node check.mjs calculator my-calc.js      # also: duration, trick, logic, hard-logic
+npm install playwright && npx playwright install chromium
+node snake.mjs my-snake.html
+```
+
+Point the same commands at `../outputs/` to rerun the scoring on the models in this test. To judge the visual tests
+blind, open `judge-sheets/`, score a few sheets with [`rubric.md`](rubric.md), then check `key.csv`.
 
 ## Limits
 

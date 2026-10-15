@@ -1,0 +1,87 @@
+{
+ "function": "parseDuration",
+ "tolerance": 1e-06,
+ "note": "expected null means the function must return null",
+ "tests": [
+  {
+   "input": "1h 30m",
+   "expected": 5400
+  },
+  {
+   "input": "1h30m",
+   "expected": 5400
+  },
+  {
+   "input": "90s",
+   "expected": 90
+  },
+  {
+   "input": "2H",
+   "expected": 7200
+  },
+  {
+   "input": "1.5h",
+   "expected": 5400
+  },
+  {
+   "input": "  45m 30s ",
+   "expected": 2730
+  },
+  {
+   "input": "1d 2h",
+   "expected": 93600
+  },
+  {
+   "input": "90",
+   "expected": 90
+  },
+  {
+   "input": "0s",
+   "expected": 0
+  },
+  {
+   "input": "1d2h3m4s",
+   "expected": 93784
+  },
+  {
+   "input": "0.5d",
+   "expected": 43200
+  },
+  {
+   "input": "2h 0.5m",
+   "expected": 7230
+  },
+  {
+   "input": "1m 1m",
+   "expected": null
+  },
+  {
+   "input": "30m 1h",
+   "expected": null
+  },
+  {
+   "input": "",
+   "expected": null
+  },
+  {
+   "input": "-5m",
+   "expected": null
+  },
+  {
+   "input": "abc",
+   "expected": null
+  },
+  {
+   "input": "5x",
+   "expected": null
+  },
+  {
+   "input": "1.5.5h",
+   "expected": null
+  },
+  {
+   "input": "   ",
+   "expected": null
+  }
+ ]
+}
