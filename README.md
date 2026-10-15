@@ -11,3 +11,9 @@ Website: [novaki.lol](https://novaki.lol) · YouTube: [@Novaki_ai](https://www.y
 X: [@Novaki_ai](https://x.com/Novaki_ai) · Instagram: [@novaki_ai](https://www.instagram.com/novaki_ai/)
 
 The narration in the videos uses an AI voice; the tests, numbers and sources are real. Videos are not sponsored.
+
+## License
+
+- **Data, prompts, model outputs, judge notes and docs:** [CC BY 4.0](LICENSE). Use them for anything, including
+  commercial work; just credit "Novaki (novaki.lol)" and link back here.
+- **Code** (`score.py`): [MIT](LICENSE-CODE).

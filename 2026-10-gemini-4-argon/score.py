@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """Recomputes results/summary.json scores from the per-test result files in this folder.
 
 python3 score.py   → prints the scoreboard and checks it against results/summary.json
